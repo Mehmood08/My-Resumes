@@ -1,78 +1,103 @@
-
-import './App.css'
-import Navbar from './Components/Navbar'
-import Card from './Components/card'
-import { useEffect, useState } from 'react'
-
+import './App.css';
+import Sidebar from './Components/sidebar';
+import MarkdownEditor from './Components/MarkdownEditor';
+import { useState, useEffect } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 
 function App() {
-  
-  const [notes, setNotes] = useState([])
-  const [currentNote, setcurrentNote] = useState({ title: "", desc: "" })
+  // Load notes from localStorage on app start
+  const [notes, setNotes] = useState(() => {
+    const savedNotes = localStorage.getItem("notes");
+    return savedNotes ? JSON.parse(savedNotes) : [];
+  });
 
-useEffect(()=>{
-    console.log("I am use effect")
-    let localNotes = localStorage.getItem("notes")
-    if(localNotes){
-      setNotes(JSON.parse(localNotes))
+  const [currentNote, setCurrentNote] = useState({ title: "", desc: "", script: "", id: null, parentId: "" });
+  const [isEditing, setIsEditing] = useState(false);
+
+  // Save notes to localStorage whenever notes change
+  useEffect(() => {
+    localStorage.setItem("notes", JSON.stringify(notes));
+  }, [notes]);
+
+  // Create new note
+  const handleCreateNote = (parentId = "") => {
+    setCurrentNote({ title: "", desc: "", script: "", id: null, parentId });
+    setIsEditing(false);
+  };
+
+  // Save or update note
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!currentNote.title) return;
+
+    if (isEditing) {
+      const updatedNotes = notes.map(n =>
+        n.id === currentNote.id ? { ...currentNote } : n
+      );
+      setNotes(updatedNotes);
+    } else {
+      const newNote = { ...currentNote, id: uuidv4(), date: new Date().toLocaleString() };
+      setNotes([...notes, newNote]);
     }
-}, [] )
 
-const handleSubmit = (e) => {
-  e.preventDefault();
-  const newNote = {
-    id: Date.now(),     
-    title: currentNote.title,
-    desc: currentNote.desc
+    setCurrentNote({ title: "", desc: "", script: "", id: null, parentId: "" });
+    setIsEditing(false);
   };
 
-    const updatedNotes = [...notes, newNote];
-  setNotes(updatedNotes);
-  localStorage.setItem("notes", JSON.stringify(updatedNotes));
-  setcurrentNote({ title: "", desc: "" });
-};
-
-  const deleteNote = (id) => {
-    const updatedNotes = notes.filter(item => item.id !== id);
+  // Delete a note
+  const handleDeleteNote = (id) => {
+    const updatedNotes = notes.filter(n => n.id !== id);
     setNotes(updatedNotes);
-    localStorage.setItem("notes", JSON.stringify(updatedNotes));
+
+    if (currentNote.id === id) {
+      setCurrentNote({ title: "", desc: "", script: "", id: null, parentId: "" });
+      setIsEditing(false);
+    }
   };
 
+  // Select a note from sidebar
+  const handleSelectNote = (note) => {
+    setCurrentNote({ ...note });
+    setIsEditing(true);
+  };
 
-  const handleChange = (e) => {
-    setcurrentNote({ ...currentNote, [e.target.name]: e.target.value })
-  
-  }
   return (
-    <>
-      <Navbar />
-      <main>
-        <h1>  Create your note:</h1>
-        <form onSubmit={handleSubmit}>
-          <div>
-            <label htmlFor="title">Title</label>
-            <input value={currentNote.title} onChange={handleChange} type="text" name="title" id="title" />
-          </div>
-          <div>
-            <label htmlFor="desc">Description</label>
-            <textarea name="desc" id="desc" onChange={handleChange} value={currentNote.desc} ></textarea>
-          </div>
-          <button className='btn'>Submit</button>
-        </form>
-      </main>
-      <section>
-        <h2>Your notes</h2>
-        <div className='container'>
-          {notes && notes.map(note => {
-            return <Card key={note.id}    id={note.id} deleteNote={deleteNote}    title={note.title} desc={note.desc} />
-          })}
-          {notes.length == 0 && <div><h3>Add a notes to continue:</h3> </div>}
+    <div className="app-layout">
+      <Sidebar
+        notes={notes}
+        onSelectNote={handleSelectNote}
+        onDeleteNote={handleDeleteNote}
+        onCreateNote={handleCreateNote}
+        activeNoteId={currentNote.id}
+      />
+
+      <div className="note-editor">
+        <div className="editor-header">
+          {isEditing ? "Update Note" : "Create New Note"}
         </div>
 
-      </section>
+        <form className="note-form" onSubmit={handleSubmit}>
+          <input
+            className="title-input"
+            placeholder="Title"
+            value={currentNote.title}
+            onChange={(e) => setCurrentNote(prev => ({ ...prev, title: e.target.value }))}
+          />
 
-    </>
-  )
+          <MarkdownEditor
+            markdownValue={currentNote.desc}
+            onMarkdownChange={(val) => setCurrentNote(prev => ({ ...prev, desc: val }))}
+            scriptValue={currentNote.script}
+            onScriptChange={(val) => setCurrentNote(prev => ({ ...prev, script: val }))}
+          />
+
+          <button className="save-btn" type="submit">
+            {isEditing ? "Update Note" : "Save Note"}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
 }
 
-export default App
+export default App;
