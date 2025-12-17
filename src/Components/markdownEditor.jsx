@@ -63,7 +63,7 @@ export default function MarkdownEditor({
     <div className="editor-container">
       {/* Tabs */}
       <div className="tabs">
-        {["Markdown", "HTML Preview", "Script"].map(tab => (
+        {["Markdown", "Preview", "Script"].map(tab => (
           <button
             key={tab}
             type="button"

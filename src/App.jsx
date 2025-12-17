@@ -11,6 +11,9 @@ function App() {
     return savedNotes ? JSON.parse(savedNotes) : [];
   });
 
+
+
+
   const [currentNote, setCurrentNote] = useState({ title: "", desc: "", script: "", id: null, parentId: "" });
   const [isEditing, setIsEditing] = useState(false);
 
@@ -28,7 +31,7 @@ function App() {
   // Save or update note
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!currentNote.title) return;
+    if (!currentNote.title.trim()) return;
 
     if (isEditing) {
       const updatedNotes = notes.map(n =>
@@ -61,6 +64,35 @@ function App() {
     setIsEditing(true);
   };
 
+
+
+
+const getEditorHeaderText = () => {
+  if (isEditing) {
+    return `Editing: ${currentNote.title || "Untitled"}`;
+  }
+
+  if (currentNote.parentId) {
+    const parent = notes.find(n => n.id === currentNote.parentId);
+    return parent
+      ? `Create Child of "${parent.title}"`
+      : "Create Child Note";
+  }
+
+  return "Create New Note";
+};
+
+
+
+
+
+
+
+
+
+
+
+
   return (
     <div className="app-layout">
       <Sidebar
@@ -72,9 +104,10 @@ function App() {
       />
 
       <div className="note-editor">
-        <div className="editor-header">
-          {isEditing ? "Update Note" : "Create New Note"}
-        </div>
+       <div className="editor-header">
+  {getEditorHeaderText()}
+</div>
+
 
         <form className="note-form" onSubmit={handleSubmit}>
           <input
