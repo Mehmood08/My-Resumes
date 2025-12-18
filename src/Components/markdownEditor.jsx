@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import MarkdownToolbar from "./MarkdownToolbar";
 import "./professionalEditor.css";
-import { marked } from "marked";
-
+import CVPreview from "./CVPreview";
+import html2pdf from 'html2pdf.js';
 
 export default function MarkdownEditor({
   markdownValue,
@@ -13,6 +13,7 @@ export default function MarkdownEditor({
   const [activeTab, setActiveTab] = useState("Markdown");
   const [localMarkdown, setLocalMarkdown] = useState(markdownValue);
   const [localScript, setLocalScript] = useState(scriptValue);
+  const [cvFormat, setCvFormat] = useState("European");
   const textareaRef = useRef();
 
   // Sync with parent props
@@ -59,6 +60,22 @@ export default function MarkdownEditor({
     }, 0);
   };
 
+  const handleDownloadPDF = () => {
+    const element = document.querySelector('.cv-preview');
+    if (!element) return;
+
+    // We want to clone it to remove any height restrictions for the PDF
+    const opt = {
+      margin: 0.5,
+      filename: 'my-cv.pdf',
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+    };
+
+    html2pdf().set(opt).from(element).save();
+  };
+
   return (
     <div className="editor-container">
       {/* Tabs */}
@@ -82,6 +99,28 @@ export default function MarkdownEditor({
         </div>
       )}
 
+      {activeTab === "Preview" && (
+        <div className="toolbar-container" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+          <button
+            onClick={handleDownloadPDF}
+            className="save-btn"
+            style={{ width: 'auto', padding: '6px 12px', fontSize: '14px' }}
+            type="button"
+          >
+            Export PDF
+          </button>
+          <select
+            value={cvFormat}
+            onChange={(e) => setCvFormat(e.target.value)}
+            className="format-selector"
+          >
+            <option value="European">European</option>
+            <option value="Gulf">Gulf</option>
+            <option value="Plain">Plain HTML</option>
+          </select>
+        </div>
+      )}
+
       {/* Editor Content */}
       <div className="editor-content">
         {activeTab === "Markdown" && (
@@ -94,12 +133,9 @@ export default function MarkdownEditor({
           />
         )}
 
-       {activeTab === "HTML Preview" && (
-  <div
-    className="html-preview large-scroll"
-    dangerouslySetInnerHTML={{ __html: marked(localMarkdown) }}
-  />
-)}
+        {activeTab === "Preview" && (
+          <CVPreview markdown={localMarkdown} format={cvFormat} />
+        )}
 
         {activeTab === "Script" && (
           <textarea

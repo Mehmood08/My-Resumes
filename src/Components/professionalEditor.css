@@ -6,10 +6,10 @@
   flex-direction: column;
   width: 100%;
   height: 100%;
-  background: #ffffff;
-  border-radius: 10px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-  overflow: hidden;
+  background: var(--surface);
+  border-radius: 0;
+  box-shadow: none;
+  border: none;
 }
 
 /* =========================
@@ -17,68 +17,107 @@
 ========================= */
 .tabs {
   display: flex;
-  background: #f3f4f6;
-  border-bottom: 1px solid #ddd;
+  background: #f8fafc;
+  border-bottom: 1px solid var(--border);
+  padding: 0 20px;
+  flex-shrink: 0;
+  position: relative;
 }
 
 .tabs button {
-  flex: 1;
-  padding: 12px;
+  padding: 14px 24px;
   background: transparent;
   border: none;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
-  color: #555;
-  transition: 0.2s;
+  color: var(--text-muted);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 13px;
+  position: relative;
+  overflow: hidden;
 }
 
 .tabs button:hover {
-  background: #e5e7eb;
+  color: var(--text-main);
+  background: rgba(0, 0, 0, 0.02);
 }
 
 .tabs button.active {
-  background: #ffffff;
-  color: #4f46e5;
-  border-bottom: 3px solid #4f46e5;
+  color: var(--primary);
+  font-weight: 600;
+  background: white;
 }
+
+/* Animated Underline Effect via Pseudo-element */
+.tabs button::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: var(--primary);
+  transform: scaleX(0);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center;
+}
+
+.tabs button.active::after {
+  transform: scaleX(1);
+}
+
 
 /* =========================
    TOOLBAR
 ========================= */
 .toolbar-container {
   display: flex;
-  padding: 8px;
-  background: #fafafa;
-  border-bottom: 1px solid #ddd;
+  padding: 10px 24px;
+  /* More breathing room */
+  background: #ffffff;
+  border-bottom: 1px solid var(--border);
+  gap: 12px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+  min-height: 52px;
+  align-items: center;
 }
 
 .markdown-toolbar {
   display: flex;
   gap: 6px;
-  flex-wrap: wrap;
 }
 
-.markdown-toolbar button {
-  min-width: 36px;
+.markdown-toolbar button,
+.toolbar-container button.save-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   height: 36px;
-  background: #ffffff;
-  border: 1px solid #d1d5db;
+  min-width: 36px;
+  padding: 0 8px;
+  background: white;
+  border: 1px solid #e2e8f0;
   border-radius: 6px;
+  color: var(--text-main);
+  font-weight: 500;
   cursor: pointer;
-  font-weight: 600;
-  font-size: 14px;
-  color: #333;
-  transition: all 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
-.markdown-toolbar button:hover {
-  background: #4f46e5;
-  color: #ffffff;
-  border-color: #4f46e5;
+.markdown-toolbar button:hover,
+.toolbar-container button.save-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
   transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  color: var(--primary);
+  /* Highlight icon */
 }
 
-.markdown-toolbar button:active {
+.markdown-toolbar button:active,
+.toolbar-container button.save-btn:active {
   transform: scale(0.95);
 }
 
@@ -87,8 +126,10 @@
 ========================= */
 .editor-content {
   flex: 1;
-  padding: 12px;
+  display: flex;
   background: #ffffff;
+  overflow: hidden;
+  position: relative;
 }
 
 /* =========================
@@ -98,135 +139,83 @@
   width: 100%;
   height: 100%;
   resize: none;
-  padding: 14px;
-  font-size: 15px;
-  font-family: "Inter", monospace;
+  padding: 30px;
+  font-size: 16px;
+  font-family: 'Inter', sans-serif;
   line-height: 1.6;
   border: none;
   outline: none;
-  background: #fafafa;
-  border-radius: 8px;
+  color: var(--text-main);
+  background: #ffffff;
+  overflow-y: auto;
+  transition: background-color 0.2s;
 }
 
 .editor-textarea:focus {
-  background: #ffffff;
+  /* Subtle focus state if desired, maybe unwanted for clean look */
+  /* background: #fafbfc; */
 }
 
-/* =========================
-   LARGE SCROLL AREA
-========================= */
-.large-scroll {
-  height: 100%;
-  overflow-y: auto;
+.editor-textarea::placeholder {
+  color: #cbd5e1;
 }
 
-/* =========================
-   HTML PREVIEW
-========================= */
-.html-preview {
-  padding: 16px;
-  background: #f9fafb;
-  border-radius: 8px;
-  height: 100%;
-  overflow-y: auto;
-  font-family: "Inter", sans-serif;
-  line-height: 1.7;
-
-}
-
-.html-preview h1,
-.html-preview h2,
-.html-preview h3 {
-  color: #4f46e5;
-}
-
-.html-preview code {
-  background: #e5e7eb;
-  padding: 2px 6px;
-  border-radius: 4px;
-   overflow-y: auto;
-}
-
-/* =========================
-   SCROLLBAR
-========================= */
+/* SCROLLBARS */
 .editor-textarea::-webkit-scrollbar,
-.html-preview::-webkit-scrollbar {
+.html-preview::-webkit-scrollbar,
+.cv-preview::-webkit-scrollbar {
   width: 8px;
+  height: 8px;
+}
+
+.editor-textarea::-webkit-scrollbar-track,
+.html-preview::-webkit-scrollbar-track,
+.cv-preview::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .editor-textarea::-webkit-scrollbar-thumb,
-.html-preview::-webkit-scrollbar-thumb {
-  background: #c7c9d1;
+.html-preview::-webkit-scrollbar-thumb,
+.cv-preview::-webkit-scrollbar-thumb {
+  background: #94a3b8;
   border-radius: 4px;
+}
+
+.editor-textarea::-webkit-scrollbar-thumb:hover,
+.html-preview::-webkit-scrollbar-thumb:hover,
+.cv-preview::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
 }
 
 /* =========================
-   MOBILE SAFETY
+   HTML PREVIEW OVERRIDE
 ========================= */
-@media (max-width: 768px) {
-  .markdown-toolbar {
-    gap: 4px;
-  }
-
-  .tabs button {
-    font-size: 13px;
-  }
+.html-preview {
+  padding: 40px;
+  height: 100%;
+  overflow-y: auto;
 }
 
+/* =========================
+   CV PREVIEW OVERRIDE
+========================= */
+/* Ensure CV preview fills the space properly */
+.cv-preview {
+  height: 100%;
+  overflow-y: auto;
+  background: #f8fafc;
+  padding: 0;
+  /* Wrapper handles padding/margin via child */
+}
 
-
-/* Toolbar container */
-.toolbar-container {
-  display: flex;
-  gap: 10px;
-  background-color: #f3f4f6;
-  padding: 8px 12px;
+.format-selector {
+  padding: 6px 12px;
+  font-size: 13px;
   border-radius: 6px;
-  border: 1px solid #ddd;
-  margin-bottom: 10px;
-  flex-wrap: wrap;
-}
-
-/* Toolbar buttons */
-.toolbar-container button {
-  background-color: #ffffff;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  padding: 6px 10px;
-  cursor: pointer;
-  font-size: 14px;
-  color: #333;
+  border: 1px solid #e2e8f0;
   transition: all 0.2s;
 }
 
-.toolbar-container button:hover {
-  background-color: #4f46e5;
-  color: #fff;
-  border-color: #4338ca;
-  transform: scale(1.05);
-}
-
-.toolbar-container button:active {
-  transform: scale(0.95);
-}
-
-/* Active button styling (if you want to show toggle) */
-.toolbar-container button.active {
-  background-color: #4f46e5;
-  color: #fff;
-  border-color: #4338ca;
-}
-
-.editor-content {
-  flex: 1;
-  display: flex;        /* ensures textarea and HTML preview share space */
-  gap: 12px;            /* optional, for spacing */
-  overflow: hidden;     /* prevent parent overflow issues */
-}
-
-.editor-textarea,
-.html-preview {
-  flex: 1;              /* both take equal space */
-  height: 100%;         /* required for scrolling */
+.format-selector:hover {
+  border-color: var(--primary);
 }

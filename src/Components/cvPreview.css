@@ -1,0 +1,223 @@
+/* =========================
+   Format Selector
+========================= */
+.format-selector {
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    font-size: 14px;
+    color: var(--text-main);
+    cursor: pointer;
+    background-color: var(--surface);
+    outline: none;
+    transition: all 0.2s;
+}
+
+.format-selector:hover {
+    border-color: var(--primary);
+}
+
+/* =========================
+   CV PREVIEW - SHARED
+========================= */
+.cv-preview {
+    font-family: 'Inter', sans-serif;
+    color: var(--text-main);
+    height: 100%;
+    overflow-y: auto;
+    padding: 30px;
+    background: var(--surface);
+}
+
+.cv-section {
+    margin-bottom: 24px;
+}
+
+.section-title {
+    margin-bottom: 12px;
+    font-weight: 700;
+}
+
+/* =========================
+   CV PREVIEW - GULF
+========================= */
+.cv-gulf {
+    max-width: 800px;
+    margin: 0 auto;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+    padding: 40px;
+}
+
+.cv-gulf .cv-header {
+    text-align: center;
+    border-bottom: 2px solid #000;
+    padding-bottom: 20px;
+    margin-bottom: 30px;
+}
+
+.cv-gulf .cv-header h1 {
+    font-size: 2.2rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 0 0 10px 0;
+    color: #000;
+}
+
+.cv-gulf .contact-info {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    flex-wrap: wrap;
+}
+
+.cv-gulf .section-title {
+    font-size: 1.2rem;
+    text-transform: uppercase;
+    border-bottom: 1px solid #cbd5e1;
+    padding-bottom: 5px;
+    margin-bottom: 12px;
+    color: #1e293b;
+}
+
+.cv-gulf .section-content {
+    font-size: 1rem;
+    line-height: 1.6;
+}
+
+.cv-gulf .section-content ul {
+    margin-left: 20px;
+}
+
+
+/* =========================
+   CV PREVIEW - EUROPEAN
+========================= */
+.cv-european {
+    display: flex;
+    max-width: 900px;
+    margin: 0 auto;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.cv-european .cv-sidebar {
+    width: 32%;
+    background: var(--primary);
+    color: #fff;
+    padding: 40px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.cv-european .user-initials {
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  
+}
+
+.cv-european .sidebar-contact h3 {
+    font-size: 1.1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+    padding-bottom: 8px;
+    margin-bottom: 16px;
+    font-weight: 600;
+}
+
+.cv-european .sidebar-contact p {
+    font-size: 0.95rem;
+    margin-bottom: 8px;
+    word-break: break-word;
+    opacity: 0.9;
+}
+
+.cv-european .cv-main {
+    width: 68%;
+    padding: 40px;
+}
+
+.cv-european .main-header {
+    margin-bottom: 40px;
+}
+
+.cv-european .main-header h1 {
+    font-size: 2.5rem;
+    color: var(--primary);
+    margin: 0;
+    line-height: 1.2;
+    font-weight: 800;
+}
+
+.cv-european .main-header hr {
+    border: none;
+    height: 2px;
+    background: var(--border);
+    margin-top: 20px;
+}
+
+.cv-european .section-title {
+    color: var(--primary);
+    font-size: 1.3rem;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    font-weight: 700;
+}
+
+.cv-european .section-content {
+    color: var(--text-main);
+    font-size: 0.95rem;
+    line-height: 1.7;
+}
+
+/* Force marked content to look decent */
+.section-content h3 {
+    font-size: 1.1rem;
+    margin-top: 16px;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.section-content ul {
+    margin-left: 20px;
+    margin-bottom: 12px;
+    color: var(--text-muted);
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .cv-european {
+        flex-direction: column;
+    }
+
+    .cv-european .cv-sidebar {
+        width: 100%;
+        flex-direction: row;
+        justify-content: space-around;
+        padding: 20px;
+    }
+
+    .cv-european .user-initials {
+        margin-bottom: 0;
+    }
+
+    .cv-european .cv-main {
+        width: 100%;
+    }
+}

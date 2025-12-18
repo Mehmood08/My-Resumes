@@ -1,6 +1,6 @@
 import './App.css';
 import Sidebar from './Components/sidebar';
-import MarkdownEditor from './Components/MarkdownEditor';
+import MarkdownEditor from './Components/markdownEditor';
 import { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -10,9 +10,6 @@ function App() {
     const savedNotes = localStorage.getItem("notes");
     return savedNotes ? JSON.parse(savedNotes) : [];
   });
-
-
-
 
   const [currentNote, setCurrentNote] = useState({ title: "", desc: "", script: "", id: null, parentId: "" });
   const [isEditing, setIsEditing] = useState(false);
@@ -30,7 +27,9 @@ function App() {
 
   // Save or update note
   const handleSubmit = (e) => {
-    e.preventDefault();
+    // e might be present if clicked, but we don't depend on form submit anymore
+    if (e && e.preventDefault) e.preventDefault();
+
     if (!currentNote.title.trim()) return;
 
     if (isEditing) {
@@ -64,34 +63,20 @@ function App() {
     setIsEditing(true);
   };
 
+  const getEditorHeaderText = () => {
+    if (isEditing) {
+      return `Editing: ${currentNote.title || "Untitled"}`;
+    }
 
+    if (currentNote.parentId) {
+      const parent = notes.find(n => n.id === currentNote.parentId);
+      return parent
+        ? `Create Child of "${parent.title}"`
+        : "Create Child Note";
+    }
 
-
-const getEditorHeaderText = () => {
-  if (isEditing) {
-    return `Editing: ${currentNote.title || "Untitled"}`;
-  }
-
-  if (currentNote.parentId) {
-    const parent = notes.find(n => n.id === currentNote.parentId);
-    return parent
-      ? `Create Child of "${parent.title}"`
-      : "Create Child Note";
-  }
-
-  return "Create New Note";
-};
-
-
-
-
-
-
-
-
-
-
-
+    return "Create New Note";
+  };
 
   return (
     <div className="app-layout">
@@ -103,32 +88,35 @@ const getEditorHeaderText = () => {
         activeNoteId={currentNote.id}
       />
 
-      <div className="note-editor">
-       <div className="editor-header">
-  {getEditorHeaderText()}
-</div>
+      <main className="main-content">
+        <header className="top-bar">
+          <div className="top-bar-left">
+            <span className="editor-status">{getEditorHeaderText()}</span>
+            <div className="divider-vertical"></div>
+            <input
+              className="title-input-flat"
+              placeholder="Note Title"
+              value={currentNote.title}
+              onChange={(e) => setCurrentNote(prev => ({ ...prev, title: e.target.value }))}
+            />
+          </div>
 
+          <div className="top-bar-right">
+            <button className="save-btn-primary" onClick={handleSubmit}>
+              {isEditing ? "Update" : "Save"}
+            </button>
+          </div>
+        </header>
 
-        <form className="note-form" onSubmit={handleSubmit}>
-          <input
-            className="title-input"
-            placeholder="Title"
-            value={currentNote.title}
-            onChange={(e) => setCurrentNote(prev => ({ ...prev, title: e.target.value }))}
-          />
-
+        <div className="editor-workspace">
           <MarkdownEditor
             markdownValue={currentNote.desc}
             onMarkdownChange={(val) => setCurrentNote(prev => ({ ...prev, desc: val }))}
             scriptValue={currentNote.script}
             onScriptChange={(val) => setCurrentNote(prev => ({ ...prev, script: val }))}
           />
-
-          <button className="save-btn" type="submit">
-            {isEditing ? "Update Note" : "Save Note"}
-          </button>
-        </form>
-      </div>
+        </div>
+      </main>
     </div>
   );
 }

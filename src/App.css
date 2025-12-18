@@ -2,256 +2,254 @@
 .app-layout {
   display: flex;
   height: 100vh;
-  background-color: #fefefe;
+  width: 100vw;
+  background-color: var(--bg-main);
   font-family: 'Inter', sans-serif;
+  overflow: hidden;
+  /* No window scroll */
 }
 
 /* ------------------ Sidebar ------------------ */
 .sidebar {
-  width: 280px;
-  background-color: #ffffff;
-  color: #333;
+  width: 260px;
+  background-color: var(--sidebar-bg);
+  color: var(--sidebar-text);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  border-right: 1px solid #ddd;
+  border-right: 1px solid #1e293b;
+  flex-shrink: 0;
+  z-index: 10;
 }
 
 .sidebar-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 15px;
-  border-bottom: 1px solid #eee;
+  padding: 24px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  /* Softer border */
   font-size: 18px;
-  font-weight: 600;
+  font-weight: 700;
+  color: #fff;
 }
 
 .add-btn {
-  background-color: #4f46e5;
+  background-color: var(--primary);
   border: none;
-  border-radius: 50%;
-  width: 36px;
-  height: 36px;
-  font-size: 22px;
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  font-size: 18px;
   color: white;
   cursor: pointer;
-  transition: 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
 .add-btn:hover {
-  background-color: #4338ca;
-  transform: scale(1.1);
+  background-color: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.add-btn:active {
+  transform: scale(0.95);
 }
 
 .notes-list {
   flex-grow: 1;
-  padding: 10px 0;
+  padding: 12px 10px;
 }
 
 .note-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 15px;
-  margin: 5px 10px;
+  padding: 12px 14px;
+  margin-bottom: 4px;
   border-radius: 8px;
-  background-color: #f5f5f5;
   cursor: pointer;
-}
-.note-item:hover {
-  background-color: #e8e8e8;
-}
-.note-item.active {
-  background-color: #4f46e5;
-  color: white;
+  color: var(--sidebar-muted);
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
 }
 
-.note-info {
-  display: flex;
-  flex-direction: column;
+/* Sidebar Animation: Slide Right + Glow */
+.note-item:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  transform: translateX(4px);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.note-item.active {
+  background-color: var(--primary);
+  color: white;
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
 }
 
 .parent-note .note-title {
-  font-weight: 700; /* Bold for parent */
-  font-size: 16px;
+  font-weight: 600;
+  font-size: 14px;
 }
 
 .child-note .note-title {
-  font-weight: 500; /* Normal for child */
-  font-size: 14px;  /* smaller */
-  margin-left: 15px; /* indent to show it's a child */
+  font-size: 13px;
+  margin-left: 10px;
 }
 
 .note-date {
-  font-size: 12px;
-  color: #666;
+  font-size: 10px;
+  opacity: 0.6;
 }
 
-.child-msg {
-  font-size: 11px;
-  color: #888;
-  margin-top: 2px;
-  font-style: italic;
-}
-
-.note-buttons {
-  display: flex;
-  align-items: center;
-}
-
-.child-btn {
-  background-color: #10b981;
-  border: none;
-  border-radius: 50%;
-  width: 28px;
-  height: 28px;
-  font-size: 18px;
-  color: white;
-  cursor: pointer;
-  margin-right: 5px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-}
-.child-btn:hover {
-  background-color: #059669;
-  transform: scale(1.1);
-}
-
+.child-btn,
 .delete-btn {
-  background-color: #dc2626;
+  background: transparent;
   border: none;
-  border-radius: 50%;
-  width: 28px;
-  height: 28px;
-  color: white;
-  font-size: 16px;
+  color: inherit;
+  opacity: 0.5;
   cursor: pointer;
-  transition: 0.2s;
+  padding: 6px;
+  border-radius: 4px;
+  transition: all 0.2s;
 }
+
+.child-btn:hover,
 .delete-btn:hover {
+  opacity: 1;
+  background-color: rgba(255, 255, 255, 0.2);
   transform: scale(1.1);
 }
 
-/* Child notes animation */
 .child-notes-container {
   max-height: 0;
   overflow: hidden;
-  transition: max-height 0.3s ease, padding 0.3s ease;
-  padding-left: 15px;
+  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  padding-left: 12px;
 }
+
 .child-notes-container.open {
-  max-height: 500px;
-  padding-top: 5px;
-  padding-bottom: 5px;
+  max-height: 800px;
 }
 
-.child-note {
-  background-color: #f0f0f0;
-  border-left: 3px solid #10b981;
-  padding-left: 10px;
-  font-size: 14px;
-  margin-top: 5px;
-  border-radius: 6px;
+
+/* ------------------ Main Content Area ------------------ */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: var(--surface);
+  overflow: hidden;
+  position: relative;
+}
+
+/* Top Bar */
+.top-bar {
+  height: 64px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 24px;
+  border-bottom: 1px solid var(--border);
+  background-color: rgba(255, 255, 255, 0.95);
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.top-bar-left {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.editor-status {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-muted);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.divider-vertical {
+  width: 1px;
+  height: 24px;
+  background-color: var(--border);
+  margin: 0 20px;
+}
+
+.title-input-flat {
+  flex: 1;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-main);
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 8px 0;
+  min-width: 0;
+  transition: color 0.2s;
+}
+
+.title-input-flat:focus {
+  color: var(--primary);
+}
+
+.title-input-flat::placeholder {
+  color: #cbd5e1;
+  font-weight: 500;
+}
+
+/* Save Button (Flat) */
+.save-btn-primary {
+  background-color: var(--primary);
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
   cursor: pointer;
-  opacity: 0;
-  transform: translateY(-10px);
-  animation: slideDown 0.3s forwards;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);
 }
 
-@keyframes slideDown {
+.save-btn-primary:hover {
+  background-color: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(79, 70, 229, 0.3);
+}
+
+.save-btn-primary:active {
+  transform: scale(0.96);
+}
+
+
+/* Editor Workspace */
+.editor-workspace {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  /* Entry Animation */
+  opacity: 0;
+  animation: slideUpFade 0.4s ease-out forwards;
+}
+
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
-
-/* ------------------ Editor ------------------ */
-/* ------------------ Editor ------------------ */
-.note-editor {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center; /* center horizontally */
-  justify-content: flex-start; /* top alignment */
-  background-color: #f9f9f9;
-  animation: fadeIn 0.3s;
-  padding: 30px 20px;
-}
-
-.editor-header {
-  font-size: 22px;
-  font-weight: 700;
-  color: #4f46e5;
-  margin-bottom: 25px;
-  text-align: center;
-  border-bottom: 2px solid #4f46e5;
-  padding-bottom: 12px;
-  width: 80%;
-  border-radius: 6px;
-  background-color: #e0e7ff;
-}
-
-
-.note-form {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  width: 80%; 
-  height: 70%;
-}
-
-.title-input {
-  width: 40%;
-  padding: 12px;
-  font-size: 16px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  outline: none;
-  transition: border 0.2s;
-}
-.title-input:focus {
-  border-color: #4f46e5;
-}
-
-.desc-input {
-  width: 80%;
-  padding: 12px;
-  font-size: 14px;
-  height: 200px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  resize: vertical;
-  outline: none;
-  transition: border 0.2s;
-}
-.desc-input:focus {
-  border-color: #4f46e5;
-}
-
-.save-btn {
-  width: 30%;
-  padding: 12px 15px;
-  background-color: #4f46e5;
-  color: white;
-  font-weight: 600;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  
-}
-.save-btn:hover {
-  background-color: #2c1af3;
-  transform: scale(1.05);
-}
-
-/* Fade in for editor */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(5px);}
-  to { opacity: 1; transform: translateY(0);}
-}
-
-
-
-
