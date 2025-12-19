@@ -1,0 +1,52 @@
+.cv-gulf {
+    width: 100%;
+    max-width: 950px;
+    margin: 0 auto;
+    background: white;
+    padding: 70px 80px;
+    box-shadow: 0 12px 45px rgba(0, 0, 0, 0.1);
+    color: #1e293b;
+    line-height: 1.6;
+    min-height: 1000px;
+}
+
+.cv-gulf .cv-header {
+    text-align: center;
+    border-bottom: 2px solid #1e293b;
+    padding-bottom: 20px;
+    margin-bottom: 30px;
+}
+
+.cv-gulf .cv-header h1 {
+    font-size: 32px;
+    font-weight: 800;
+    margin-bottom: 8px;
+    letter-spacing: -0.5px;
+}
+
+.cv-gulf .contact-info {
+    font-size: 14px;
+    color: #64748b;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+.cv-gulf .cv-section {
+    margin-bottom: 24px;
+}
+
+.cv-gulf .section-title {
+    font-size: 16px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #334155;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 6px;
+    margin-bottom: 12px;
+}
+
+.cv-gulf .section-content {
+    font-size: 14px;
+}

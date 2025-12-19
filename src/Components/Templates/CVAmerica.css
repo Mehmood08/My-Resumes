@@ -1,0 +1,56 @@
+.cv-america {
+    width: 100%;
+    max-width: 950px;
+    margin: 0 auto;
+    background: white;
+    padding: 60px 80px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    font-family: 'Times New Roman', Times, serif;
+    color: #111;
+    line-height: 1.6;
+    min-height: 1000px;
+}
+
+.cv-america .cv-header {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.cv-america .cv-header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+}
+
+.cv-america .contact-info {
+    font-size: 14px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.cv-america .dot {
+    width: 4px;
+    height: 4px;
+    background: #444;
+    border-radius: 50%;
+    margin: 0 10px;
+}
+
+.cv-america .cv-section {
+    margin-bottom: 18px;
+}
+
+.cv-america .section-title {
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    border-bottom: 1px solid #111;
+    margin-bottom: 8px;
+    padding-bottom: 2px;
+}
+
+.cv-america .section-content {
+    font-size: 14px;
+}
