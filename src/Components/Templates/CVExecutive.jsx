@@ -1,12 +1,9 @@
+import React from 'react';
 import { marked } from 'marked';
 import { LuMail, LuPhone, LuMapPin, LuLink } from "react-icons/lu";
-import './CVGulf.css';
+import './CVExecutive.css';
 
-const CVGulf = ({ data }) => {
-    const renderSectionContent = (content) => {
-        return <div dangerouslySetInnerHTML={{ __html: marked(content) }} />;
-    };
-
+const CVExecutive = ({ data }) => {
     const getDisplayUrl = (url) => {
         try {
             return url.replace(/^https?:\/\//, '').replace(/\/$/, '');
@@ -14,27 +11,28 @@ const CVGulf = ({ data }) => {
             return url;
         }
     };
-
     return (
-        <div className="cv-gulf">
-            <header className="cv-header">
-                <h1>{data.name || "Your Name"}</h1>
-                <p className="cv-profession">{data.profession}</p>
-                <div className="contact-info">
+        <div className="cv-executive">
+            <header className="exec-header">
+                <div className="title-block">
+                    <h1>{data.name}</h1>
+                    <p className="subtitle">{data.profession}</p>
+                </div>
+                <div className="info-block">
                     {data.email && (
-                        <div className="contact-item">
+                        <span className="contact-item">
                             <LuMail size={14} /> {data.email}
-                        </div>
+                        </span>
                     )}
                     {data.phone && (
-                        <div className="contact-item">
+                        <span className="contact-item">
                             <LuPhone size={14} /> {data.phone}
-                        </div>
+                        </span>
                     )}
                     {data.city && (
-                        <div className="contact-item">
+                        <span className="contact-item">
                             <LuMapPin size={14} /> {data.city}, {data.province}
-                        </div>
+                        </span>
                     )}
                     {data.link1 && (
                         <a href={data.link1} target="_blank" rel="noopener noreferrer" className="contact-item contact-link">
@@ -48,18 +46,12 @@ const CVGulf = ({ data }) => {
                     )}
                 </div>
             </header>
-            <div className="cv-body">
-                {data.intro && (
-                    <div className="cv-intro" style={{ marginBottom: '20px', fontSize: '14px' }}>
-                        <div dangerouslySetInnerHTML={{ __html: marked(data.intro) }} />
-                    </div>
-                )}
+
+            <div className="exec-content">
                 {data.sections.map((sec, idx) => (
-                    <section key={idx} className="cv-section">
-                        <h2 className="section-title">{sec.title}</h2>
-                        <div className="section-content">
-                            {renderSectionContent(sec.content)}
-                        </div>
+                    <section key={idx} className="exec-section">
+                        <h2>{sec.title}</h2>
+                        <div dangerouslySetInnerHTML={{ __html: marked(sec.content) }} />
                     </section>
                 ))}
             </div>
@@ -67,4 +59,4 @@ const CVGulf = ({ data }) => {
     );
 };
 
-export default CVGulf;
+export default CVExecutive;

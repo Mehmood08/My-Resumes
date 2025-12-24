@@ -1,8 +1,9 @@
+import React from 'react';
 import { marked } from 'marked';
 import { LuMail, LuPhone, LuMapPin, LuLink } from "react-icons/lu";
-import './CVGulf.css';
+import './CVProfessional.css';
 
-const CVGulf = ({ data }) => {
+const CVProfessional = ({ data }) => {
     const renderSectionContent = (content) => {
         return <div dangerouslySetInnerHTML={{ __html: marked(content) }} />;
     };
@@ -16,10 +17,12 @@ const CVGulf = ({ data }) => {
     };
 
     return (
-        <div className="cv-gulf">
+        <div className="cv-professional">
             <header className="cv-header">
-                <h1>{data.name || "Your Name"}</h1>
-                <p className="cv-profession">{data.profession}</p>
+                <div className="header-center">
+                    <h1>{data.name || "Your Name"}</h1>
+                    <p className="cv-profession">{data.profession}</p>
+                </div>
                 <div className="contact-info">
                     {data.email && (
                         <div className="contact-item">
@@ -48,12 +51,8 @@ const CVGulf = ({ data }) => {
                     )}
                 </div>
             </header>
-            <div className="cv-body">
-                {data.intro && (
-                    <div className="cv-intro" style={{ marginBottom: '20px', fontSize: '14px' }}>
-                        <div dangerouslySetInnerHTML={{ __html: marked(data.intro) }} />
-                    </div>
-                )}
+
+            <div className="cv-main-content">
                 {data.sections.map((sec, idx) => (
                     <section key={idx} className="cv-section">
                         <h2 className="section-title">{sec.title}</h2>
@@ -67,4 +66,4 @@ const CVGulf = ({ data }) => {
     );
 };
 
-export default CVGulf;
+export default CVProfessional;

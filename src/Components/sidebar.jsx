@@ -2,10 +2,8 @@ import React, { useState, useEffect, memo, useMemo } from "react";
 import { cvTemplates } from "../data/cvTemplates";
 import { LuPlus, LuTrash2, LuChevronDown, LuChevronRight } from "react-icons/lu";
 
-function Sidebar({ notes, onSelectNote, onDeleteNote, onCreateNote, activeNoteId, openParentId }) {
+function Sidebar({ notes, onSelectNote, onDeleteNote, onStartWizard, activeNoteId, openParentId }) {
   const [openParents, setOpenParents] = useState({});
-  const [selectedRole, setSelectedRole] = useState("Blank Note");
-  const [showGuide, setShowGuide] = useState(false);
 
   const parents = useMemo(() => notes.filter(n => !n.parentId), [notes]);
   const childrenByParent = useMemo(() => {
@@ -31,11 +29,7 @@ function Sidebar({ notes, onSelectNote, onDeleteNote, onCreateNote, activeNoteId
   };
 
   const handleCreateNew = () => {
-    if (selectedRole === "Blank Note") {
-      setShowGuide(true);
-      setTimeout(() => setShowGuide(false), 4000);
-    }
-    onCreateNote(null, selectedRole);
+    onStartWizard();
   };
 
   return (
@@ -48,24 +42,6 @@ function Sidebar({ notes, onSelectNote, onDeleteNote, onCreateNote, activeNoteId
           </button>
         </div>
 
-        {showGuide && (
-          <div className="guide-hint">
-            💡 <strong>Tip:</strong> Select a <strong>Field</strong> then click Create New Note to get a ready-made structure!
-          </div>
-        )}
-
-        <div className="role-selector-container">
-          <label className="role-selector-label">Primary Field</label>
-          <select
-            className="role-selector"
-            value={selectedRole}
-            onChange={(e) => setSelectedRole(e.target.value)}
-          >
-            {Object.keys(cvTemplates).map(role => (
-              <option key={role} value={role}>{role}</option>
-            ))}
-          </select>
-        </div>
       </div>
 
       <div className="section-label">History / Resumes</div>

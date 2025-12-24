@@ -4,6 +4,8 @@ import "./professionalEditor.css";
 import CVPreview from "./CVPreview";
 import GuidedEditor from "./GuidedEditor";
 
+const TemplateSelection = React.lazy(() => import("./TemplateSelection"));
+
 export default function MarkdownEditor({
   markdownValue,
   onMarkdownChange,
@@ -11,7 +13,9 @@ export default function MarkdownEditor({
   onScriptChange,
   activeTab,
   onTabChange,
-  cvFormat
+  cvFormat,
+  onFormatChange,
+  onSave
 }) {
   const [localMarkdown, setLocalMarkdown] = useState(markdownValue);
   const [localScript, setLocalScript] = useState(scriptValue);
@@ -60,7 +64,7 @@ export default function MarkdownEditor({
     <div className="editor-container">
       {/* Tabs */}
       <div className="tabs">
-        {["Guided", "Markdown", "Preview",].map(tab => (
+        {["Templates", "Guided", "Preview"].map(tab => (
           <button
             key={tab}
             type="button"
@@ -81,6 +85,17 @@ export default function MarkdownEditor({
 
       {/* Editor Content */}
       <div className="editor-content">
+        {activeTab === "Templates" && (
+          <React.Suspense fallback={<div className="loading-templates">Loading Templates...</div>}>
+            <TemplateSelection
+              currentFormat={cvFormat}
+              onFormatChange={onFormatChange}
+              markdown={localMarkdown}
+              onSave={onSave}
+            />
+          </React.Suspense>
+        )}
+
         {activeTab === "Guided" && (
           <GuidedEditor
             markdown={localMarkdown}

@@ -14,7 +14,9 @@ const GuidedEditor = ({ markdown, onChange }) => {
         province: '',
         zip: '',
         phone: '',
-        email: ''
+        email: '',
+        link1: '',
+        link2: ''
     });
 
     const [sections, setSections] = useState([]);
@@ -23,70 +25,93 @@ const GuidedEditor = ({ markdown, onChange }) => {
         { id: 'heading', label: 'Heading', emoji: '👤' },
         { id: 'summary', label: 'Summary', emoji: '📝' },
         { id: 'experience', label: 'Experience', emoji: '💼' },
+        { id: 'projects', label: 'Projects', emoji: '🚀' },
         { id: 'education', label: 'Education', emoji: '🎓' },
         { id: 'skills', label: 'Skills', emoji: '⚡' },
         { id: 'languages', label: 'Languages', emoji: '🌐' },
-        { id: 'finalize', label: 'Finalize', emoji: '✔️' }
+        { id: 'certifications', label: 'Certifications', emoji: '🏆' }
     ];
 
     // Parse Markdown into state
     useEffect(() => {
+        if (!markdown) return;
         const lines = markdown.split('\n');
         const parsedSections = [];
         let currentSec = null;
-        let foundHeading = false;
+        let isParsingHeader = true;
 
         lines.forEach(line => {
-            if (line.startsWith('# ') && !foundHeading) {
-                foundHeading = true;
+            const trimmed = line.trim();
+            if (!trimmed && isParsingHeader) return;
+
+            if (line.startsWith('# ') && isParsingHeader) {
                 const titleLine = line.replace('# ', '').trim();
                 const [namePart, professionPart] = titleLine.split('|').map(s => s.trim());
-                const nameWords = (namePart || '').split(' ');
-
-                setPersonalInfo(prev => ({
-                    ...prev,
-                    firstName: nameWords[0] || '',
-                    lastName: nameWords.slice(1).join(' ') || '',
-                    profession: professionPart || ''
-                }));
-
-                currentSec = 'contact';
-            } else if (line.startsWith('## ')) {
-                if (currentSec && typeof currentSec === 'object') parsedSections.push(currentSec);
-                const title = line.replace('## ', '').trim();
-                currentSec = {
-                    title: title,
-                    content: []
-                };
-            } else if (currentSec === 'contact') {
-                // Parse contact line: "City, Province, Zip | Email | Phone"
-                const parts = line.split('|').map(s => s.trim());
-                if (parts.length >= 1) {
-                    const localParts = parts[0].split(',').map(s => s.trim());
+                if (namePart) {
+                    const nameWords = namePart.split(' ');
                     setPersonalInfo(prev => ({
                         ...prev,
-                        city: localParts[0] || '',
-                        province: localParts[1] || '',
-                        zip: localParts[2] || '',
+                        firstName: nameWords[0] || '',
+                        lastName: nameWords.slice(1).join(' ') || '',
+                        profession: professionPart || ''
+                    }));
+                }
+            } else if (isParsingHeader && line.includes('|') && (line.includes('@') || line.match(/\d/) || line.includes('http') || line.includes('www'))) {
+                // Header contact line or links line
+                const parts = line.split('|').map(s => s.trim());
+
+                // Check if this is a links line (contains http or www)
+                if (parts.length >= 2 && (parts[0].includes('http') || parts[0].includes('www'))) {
+                    setPersonalInfo(prev => ({
+                        ...prev,
+                        link1: parts[0] || '',
+                        link2: parts[1] || ''
+                    }));
+                    // Don't set isParsingHeader = false here, in case there are more header lines
+                } else if (parts.length >= 1) {
+                    // Contact info line: "City, Province, Zip | Email | Phone"
+                    const locParts = parts[0].split(',').map(s => s.trim());
+                    setPersonalInfo(prev => ({
+                        ...prev,
+                        city: locParts[0] || '',
+                        province: locParts[1] || '',
+                        zip: locParts[2] || '',
                         email: parts[1] || '',
                         phone: parts[2] || ''
                     }));
+                    // Don't set isParsingHeader = false here, continue parsing for links
                 }
-                currentSec = null;
-            } else if (currentSec && typeof currentSec === 'object') {
+            } else if (line.startsWith('## ')) {
+                isParsingHeader = false;
+                if (currentSec) parsedSections.push(currentSec);
+                const title = line.replace('## ', '').trim();
+                currentSec = { title, content: [] };
+            } else if (currentSec) {
                 currentSec.content.push(line);
             }
         });
-        if (currentSec && typeof currentSec === 'object') parsedSections.push(currentSec);
-        setSections(parsedSections);
+        if (currentSec) parsedSections.push(currentSec);
+
+        // Final cleanup for sections: join lines and trim
+        const finalSections = parsedSections.map(s => ({
+            ...s,
+            content: s.content.join('\n').trim()
+        }));
+        setSections(finalSections);
     }, [markdown]);
 
     const updateMarkdown = (newPersonalInfo, newSections) => {
         let md = `# ${newPersonalInfo.firstName} ${newPersonalInfo.lastName} | ${newPersonalInfo.profession}\n`;
-        md += `${newPersonalInfo.city}, ${newPersonalInfo.province}, ${newPersonalInfo.zip} | ${newPersonalInfo.email} | ${newPersonalInfo.phone}\n\n`;
+        md += `${newPersonalInfo.city}, ${newPersonalInfo.province}, ${newPersonalInfo.zip} | ${newPersonalInfo.email} | ${newPersonalInfo.phone}\n`;
+
+        // Add social links if they exist
+        if (newPersonalInfo.link1 || newPersonalInfo.link2) {
+            md += `${newPersonalInfo.link1 || ''} | ${newPersonalInfo.link2 || ''}\n`;
+        }
+        md += '\n';
 
         newSections.forEach(sec => {
-            md += `## ${sec.title}\n${sec.content.join('\n').trim()}\n\n`;
+            md += `## ${sec.title}\n${sec.content}\n\n`;
         });
 
         onChange(md.trim());
@@ -100,7 +125,7 @@ const GuidedEditor = ({ markdown, onChange }) => {
 
     const handleSectionChange = (index, value) => {
         const updated = [...sections];
-        updated[index].content = value.split('\n');
+        updated[index].content = value;
         setSections(updated);
         updateMarkdown(personalInfo, updated);
     };
@@ -122,7 +147,7 @@ const GuidedEditor = ({ markdown, onChange }) => {
                                 type="text"
                                 value={personalInfo.firstName}
                                 onChange={(e) => handleInfoChange('firstName', e.target.value)}
-                                placeholder="e.g. MEER"
+                                placeholder="e.g Mehmood"
                             />
                         </div>
                         <div className="form-group">
@@ -131,7 +156,7 @@ const GuidedEditor = ({ markdown, onChange }) => {
                                 type="text"
                                 value={personalInfo.lastName}
                                 onChange={(e) => handleInfoChange('lastName', e.target.value)}
-                                placeholder="e.g. MEHMOOD"
+                                placeholder="e.g. Shah"
                             />
                         </div>
                         <div className="form-group full-width">
@@ -140,7 +165,7 @@ const GuidedEditor = ({ markdown, onChange }) => {
                                 type="text"
                                 value={personalInfo.profession}
                                 onChange={(e) => handleInfoChange('profession', e.target.value)}
-                                placeholder="e.g. Senior Sales Manager"
+                                placeholder="e.g. Software Engineering"
                             />
                         </div>
                         <div className="form-group">
@@ -158,7 +183,7 @@ const GuidedEditor = ({ markdown, onChange }) => {
                                 type="text"
                                 value={personalInfo.zip}
                                 onChange={(e) => handleInfoChange('zip', e.target.value)}
-                                placeholder="e.g. 25000"
+                                placeholder="e.g. 23200"
                             />
                         </div>
                         <div className="form-group">
@@ -180,12 +205,30 @@ const GuidedEditor = ({ markdown, onChange }) => {
                             />
                         </div>
                         <div className="form-group full-width">
-                            <label>Email address</label>
+                            <label>Email </label>
                             <input
                                 type="email"
                                 value={personalInfo.email}
                                 onChange={(e) => handleInfoChange('email', e.target.value)}
-                                placeholder="e.g. example@gmail.com"
+                                placeholder="e.g example@gmail.com"
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label>LinkedIn URL (Optional)</label>
+                            <input
+                                type="url"
+                                value={personalInfo.link1}
+                                onChange={(e) => handleInfoChange('link1', e.target.value)}
+                                placeholder="https://linkedin.com/in/yourprofile"
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label>GitHub/Portfolio URL (Optional)</label>
+                            <input
+                                type="url"
+                                value={personalInfo.link2}
+                                onChange={(e) => handleInfoChange('link2', e.target.value)}
+                                placeholder="https://github.com/yourusername"
                             />
                         </div>
                     </div>
@@ -194,8 +237,16 @@ const GuidedEditor = ({ markdown, onChange }) => {
         }
 
         // Generic section step (Summary, Experience, etc.)
-        const activeSection = sections.find(s => s.title.toLowerCase().includes(step.id));
-        const sectionIndex = sections.findIndex(s => s.title.toLowerCase().includes(step.id));
+        const matchTitle = step.id === 'summary' ? 'PROFESSIONAL SUMMARY' :
+            step.id === 'experience' ? 'EXPERIENCE' :
+                step.id === 'projects' ? 'PROJECTS' :
+                    step.id === 'education' ? 'EDUCATION' :
+                        step.id === 'skills' ? 'SKILLS' :
+                            step.id === 'languages' ? 'LANGUAGES' :
+                                step.id === 'certifications' ? 'CERTIFICATIONS' : step.label.toUpperCase();
+
+        const sectionIndex = sections.findIndex(s => s.title.toUpperCase().includes(step.id.toUpperCase()));
+        const activeSection = sectionIndex !== -1 ? sections[sectionIndex] : null;
 
         return (
             <div className="wizard-form">
@@ -205,13 +256,13 @@ const GuidedEditor = ({ markdown, onChange }) => {
                 </div>
                 <textarea
                     className="wizard-textarea"
-                    value={activeSection ? activeSection.content.join('\n') : ''}
+                    value={activeSection ? activeSection.content : ''}
                     onChange={(e) => {
                         if (sectionIndex !== -1) {
                             handleSectionChange(sectionIndex, e.target.value);
                         } else {
                             // Create new section if it doesn't exist
-                            const updated = [...sections, { title: step.label.toUpperCase(), content: [e.target.value] }];
+                            const updated = [...sections, { title: matchTitle, content: e.target.value }];
                             setSections(updated);
                             updateMarkdown(personalInfo, updated);
                         }
@@ -257,15 +308,18 @@ const GuidedEditor = ({ markdown, onChange }) => {
             </aside>
 
             <main className="wizard-main">
-                <button className="go-back-link" onClick={() => currentStep > 0 && setCurrentStep(currentStep - 1)}>
-                    ← Go Back
-                </button>
-
                 <div className="wizard-content-scroll">
                     {renderStepContent()}
                 </div>
 
                 <div className="wizard-actions">
+                    <button
+                        className={`go-back-link-footer ${currentStep === 0 ? 'hidden' : ''}`}
+                        onClick={() => currentStep > 0 && setCurrentStep(currentStep - 1)}
+                    >
+                        ← Go Back
+                    </button>
+
                     {currentStep < steps.length - 1 && (
                         <button className="continue-btn" onClick={() => setCurrentStep(currentStep + 1)}>
                             Next: {steps[currentStep + 1].label} →

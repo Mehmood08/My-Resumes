@@ -1,0 +1,103 @@
+.cv-executive {
+    padding: 60px 70px;
+    font-family: 'Garamond', serif;
+    color: #1a202c;
+}
+
+.exec-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #2d3748;
+    padding-bottom: 20px;
+    margin-bottom: 30px;
+}
+
+.exec-header h1 {
+    font-size: 2.2rem;
+    margin: 0;
+    color: #1a202c;
+}
+
+.exec-header .subtitle {
+    font-size: 1.1rem;
+    font-style: italic;
+    color: #4a5568;
+}
+
+.cv-executive .info-block {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-end;
+}
+
+.cv-academic .contact-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.cv-academic .contact-link {
+    color: #1e40af;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.cv-academic .contact-link:hover {
+    color: #1e3a8a;
+    text-decoration: underline;
+}
+
+.cv-service .contact-item svg {
+    color: #334155;
+    opacity: 0.7;
+}
+
+.cv-service .contact-link {
+    color: #334155;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.cv-service .contact-link:hover {
+    color: #1e293b;
+    text-decoration: underline;
+}
+
+.cv-executive .contact-item {
+    font-size: 14px;
+    color: #4b5563;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cv-executive .contact-item svg {
+    color: #1e293b;
+    opacity: 0.7;
+}
+
+.cv-executive .contact-link {
+    color: #1e293b;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.cv-executive .contact-link:hover {
+    color: #0f172a;
+    text-decoration: underline;
+}
+
+.exec-section {
+    margin-bottom: 25px;
+}
+
+.exec-section h2 {
+    font-size: 1.2rem;
+    text-transform: uppercase;
+    border-bottom: 1px solid #cbd5e0;
+    margin-bottom: 10px;
+    color: #2d3748;
+}
