@@ -1,0 +1,46 @@
+.cv-academic {
+    padding: 80px 100px;
+    font-family: 'Times New Roman', serif;
+    line-height: 1.5;
+    color: black;
+}
+
+.name-center {
+    text-align: center;
+    font-size: 1.8rem;
+    margin-bottom: 5px;
+}
+
+.cv-academic .contact-center {
+    font-size: 13px;
+    color: #444;
+    text-align: center;
+    margin-bottom: 30px;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    border-bottom: 1px solid black;
+    padding-bottom: 10px;
+}
+
+.cv-academic .contact-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.acad-section {
+    margin-bottom: 25px;
+}
+
+.acad-section h3 {
+    text-transform: uppercase;
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+    text-decoration: underline;
+}
+
+.acad-body {
+    font-size: 1rem;
+    text-align: justify;
+}

@@ -1,35 +1,81 @@
 .cv-gulf {
-    width: 100%;
-    max-width: 950px;
-    margin: 0 auto;
     background: white;
-    padding: 70px 80px;
-    box-shadow: 0 12px 45px rgba(0, 0, 0, 0.1);
+    padding: 80px 90px;
     color: #1e293b;
     line-height: 1.6;
-    min-height: 1000px;
 }
 
 .cv-gulf .cv-header {
     text-align: center;
-    border-bottom: 2px solid #1e293b;
-    padding-bottom: 20px;
-    margin-bottom: 30px;
+    background: #1e293b;
+    /* Matches tmplt-Gulf mini-preview */
+    color: white;
+    padding: 60px 40px;
+    margin: -80px -90px 40px -90px;
+    border-radius: 0;
 }
 
 .cv-gulf .cv-header h1 {
-    font-size: 32px;
+    font-size: 38px;
     font-weight: 800;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
     letter-spacing: -0.5px;
+    color: white;
+}
+
+.cv-gulf .cv-profession {
+    font-size: 18px;
+    color: #94a3b8;
+    font-weight: 600;
+    margin-bottom: 20px;
 }
 
 .cv-gulf .contact-info {
     font-size: 14px;
-    color: #64748b;
+    color: #cbd5e1;
     display: flex;
     justify-content: center;
+    flex-wrap: wrap;
     gap: 20px;
+}
+
+.cv-gulf .contact-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cv-professional .contact-item svg {
+    color: #2563eb;
+    opacity: 0.8;
+}
+
+.cv-professional .contact-link {
+    color: #2563eb;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.cv-professional .contact-link:hover {
+    color: #1d4ed8;
+    text-decoration: underline;
+}
+
+.cv-gulf .contact-item svg {
+    color: #94a3b8;
+}
+
+.cv-gulf .contact-link {
+    color: #cbd5e1;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    font-size: 12px;
+    word-break: break-all;
+}
+
+.cv-gulf .contact-link:hover {
+    color: #f8fafc;
+    text-decoration: underline;
 }
 
 .cv-gulf .cv-section {

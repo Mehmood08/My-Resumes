@@ -1,5 +1,6 @@
 import React from 'react';
 import { marked } from 'marked';
+import { LuMail, LuPhone, LuMapPin, LuLink } from "react-icons/lu";
 import './CVEuropean.css';
 
 const CVEuropean = ({ data }) => {
@@ -9,20 +10,58 @@ const CVEuropean = ({ data }) => {
 
     const initials = data.name ? data.name.substring(0, 2).toUpperCase() : "ME";
 
+    const getDisplayUrl = (url) => {
+        try {
+            return url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+        } catch {
+            return url;
+        }
+    };
+
     return (
         <div className="cv-european">
             <aside className="cv-sidebar">
                 <div className="user-initials">{initials}</div>
                 <div className="sidebar-contact">
                     <h3>Contact</h3>
-                    {data.email && <p className="contact-item"><strong>Email:</strong> {data.email}</p>}
-                    {data.phone && <p className="contact-item"><strong>Phone:</strong> {data.phone}</p>}
+                    {data.email && (
+                        <p className="contact-item">
+                            <LuMail size={14} /> {data.email}
+                        </p>
+                    )}
+                    {data.phone && (
+                        <p className="contact-item">
+                            <LuPhone size={14} /> {data.phone}
+                        </p>
+                    )}
+                    {data.city && (
+                        <p className="contact-item">
+                            <LuMapPin size={14} /> {data.city}, {data.province} {data.zip}
+                        </p>
+                    )}
+                    {data.link1 && (
+                        <p className="contact-item">
+                            <LuLink size={14} />
+                            <a href={data.link1} target="_blank" rel="noopener noreferrer" className="contact-link">
+                                {getDisplayUrl(data.link1)}
+                            </a>
+                        </p>
+                    )}
+                    {data.link2 && (
+                        <p className="contact-item">
+                            <LuLink size={14} />
+                            <a href={data.link2} target="_blank" rel="noopener noreferrer" className="contact-link">
+                                {getDisplayUrl(data.link2)}
+                            </a>
+                        </p>
+                    )}
                 </div>
             </aside>
 
             <main className="cv-main">
                 <header className="main-header">
                     <h1>{data.name || "Your Name"}</h1>
+                    <p className="cv-profession">{data.profession}</p>
                     <div className="header-decoration"></div>
                 </header>
                 {data.intro && (

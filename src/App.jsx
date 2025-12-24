@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Sidebar from "./Components/sidebar";
 import MarkdownEditor from "./Components/markdownEditor";
+import TemplateWizard from "./Components/TemplateWizard";
 import "./App.css";
 import { v4 as uuidv4 } from 'uuid';
 import html2pdf from 'html2pdf.js';
@@ -17,14 +18,32 @@ function App() {
 
   const [activeTab, setActiveTab] = useState("Guided");
   const [cvFormat, setCvFormat] = useState("European");
+  const [isWizardOpen, setIsWizardOpen] = useState(false);
 
   useEffect(() => {
     localStorage.setItem("notes", JSON.stringify(notes));
   }, [notes]);
 
-  const handleCreateNote = (parentId = "", templateKey = "Blank Note") => {
+  const handleCreateNote = (parentId = "", selections = null) => {
+    let templateKey = "Blank Note";
+    let format = "America"; // Default
+
+    if (selections) {
+      // Map occupation selection to template if possible
+      const occ = selections.occupation;
+      if (occ.includes("Software") || occ.includes("IT")) templateKey = "Software Engineer";
+      else if (occ.includes("Management")) templateKey = "Project Manager";
+      else if (occ.includes("Healthcare")) templateKey = "Blank Note"; // Add more if needed
+      else templateKey = "Blank Note";
+
+      // Map layout
+      if (selections.layout === "American") format = "America";
+      else if (selections.layout === "European") format = "European";
+      else if (selections.layout === "Gulf") format = "Gulf";
+    }
+
     const templateContent = cvTemplates[templateKey] || "";
-    const newTitle = templateKey !== "Blank Note" ? `${templateKey} CV` : "";
+    const newTitle = templateKey !== "Blank Note" ? `${templateKey} CV` : "New CV";
 
     setCurrentNote({
       title: newTitle,
@@ -33,8 +52,9 @@ function App() {
       id: null,
       parentId
     });
+    setCvFormat(format);
     setIsEditing(false);
-    setActiveTab("Markdown");
+    setActiveTab("Guided");
   };
 
   const handleSaveNote = () => {
@@ -92,7 +112,7 @@ function App() {
         notes={notes}
         onSelectNote={(note) => { setCurrentNote(note); setIsEditing(true); }}
         onDeleteNote={handleDeleteNote}
-        onCreateNote={handleCreateNote}
+        onStartWizard={() => setIsWizardOpen(true)}
         activeNoteId={currentNote.id}
       />
 
@@ -115,16 +135,6 @@ function App() {
           <div className="top-bar-right">
             {activeTab === "Preview" && (
               <div className="preview-controls">
-                <select
-                  value={cvFormat}
-                  onChange={(e) => setCvFormat(e.target.value)}
-                  className="format-selector-top"
-                >
-                  <option value="European">European</option>
-                  <option value="Gulf">Gulf</option>
-                  <option value="America">America</option>
-                  <option value="Plain">Plain HTML</option>
-                </select>
                 <button className="icon-btn-top" onClick={handleDownloadPDF} title="Export PDF">
                   Export PDF
                 </button>
@@ -145,9 +155,17 @@ function App() {
             activeTab={activeTab}
             onTabChange={setActiveTab}
             cvFormat={cvFormat}
+            onFormatChange={setCvFormat}
+            onSave={handleSaveNote}
           />
         </div>
       </main>
+
+      <TemplateWizard
+        isOpen={isWizardOpen}
+        onClose={() => setIsWizardOpen(false)}
+        onCreate={(selections) => handleCreateNote("", selections)}
+      />
     </div>
   );
 }
