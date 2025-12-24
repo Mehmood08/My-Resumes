@@ -1,0 +1,99 @@
+.cv-creative {
+    background: #f8fafc;
+    font-family: 'Outfit', sans-serif;
+    color: #1e293b;
+    position: relative;
+}
+
+.creative-header {
+    background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+    padding: 50px 40px;
+    color: white;
+    position: relative;
+}
+
+.header-content h1 {
+    font-size: 3rem;
+    margin: 0;
+    font-weight: 800;
+}
+
+.header-content .cv-creative .contact-block p {
+    font-size: 13px;
+    margin-bottom: 12px;
+    opacity: 0.9;
+    padding-left: 0;
+}
+
+.cv-creative .contact-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    margin-bottom: 12px;
+}
+
+.cv-creative .contact-item svg {
+    color: white;
+    opacity: 0.7;
+    flex-shrink: 0;
+}
+
+.header-content .cv-profession {
+    font-size: 1.5rem;
+    opacity: 0.9;
+    margin-top: 5px;
+}
+
+.creative-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 40px;
+    padding: 40px;
+}
+
+.creative-sidebar {
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    height: fit-content;
+}
+
+.creative-sidebar h3 {
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 2px;
+    color: #6366f1;
+    margin-bottom: 15px;
+}
+
+.creative-main .cv-section {
+    margin-bottom: 35px;
+}
+
+.creative-main .section-title {
+    font-size: 1.5rem;
+    color: #1e293b;
+    margin-bottom: 15px;
+    position: relative;
+    display: inline-block;
+}
+
+.creative-main .section-title::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 0;
+    width: 40px;
+    height: 4px;
+    background: #6366f1;
+    border-radius: 2px;
+}
+
+.creative-main .section-content {
+    background: white;
+    padding: 25px;
+    border-radius: 20px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}

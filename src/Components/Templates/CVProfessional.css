@@ -1,0 +1,96 @@
+.cv-professional {
+    background: white;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    color: #333;
+    line-height: 1.6;
+    padding: 60px 80px;
+}
+
+.cv-professional .cv-header {
+    border-bottom: 3px solid #1a365d;
+    padding-bottom: 24px;
+    margin-bottom: 35px;
+    text-align: center;
+}
+
+.cv-professional .header-center {
+    margin-bottom: 20px;
+}
+
+.cv-professional h1 {
+    font-size: 2.5rem;
+    margin: 0;
+    color: #1a365d;
+    text-transform: uppercase;
+    letter-spacing: -1px;
+    font-weight: 700;
+}
+
+.cv-professional .cv-profession {
+    font-size: 1.2rem;
+    color: #4a5568;
+    margin: 8px 0 0 0;
+    font-weight: 500;
+}
+
+.cv-professional .contact-info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+    align-items: center;
+}
+
+.cv-professional .contact-item {
+    font-size: 13px;
+    color: #4b5563;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cv-professional .contact-item svg {
+    color: #2563eb;
+    opacity: 0.8;
+    flex-shrink: 0;
+}
+
+.cv-professional .contact-link {
+    color: #2563eb;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    font-size: 12px;
+}
+
+.cv-professional .contact-link:hover {
+    color: #1d4ed8;
+    text-decoration: underline;
+}
+
+.cv-professional .cv-section {
+    margin-bottom: 25px;
+}
+
+.cv-professional .section-title {
+    font-size: 1.1rem;
+    color: #1a365d;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 5px;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 700;
+}
+
+.cv-professional .section-content {
+    font-size: 0.95rem;
+}
+
+.cv-professional .section-content ul {
+    padding-left: 20px;
+    margin: 10px 0;
+}
+
+.cv-professional .section-content li {
+    margin-bottom: 5px;
+}

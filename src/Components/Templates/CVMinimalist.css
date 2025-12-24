@@ -1,0 +1,120 @@
+.cv-minimalist {
+    padding: 60px 80px;
+    background: #fff;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    color: #333;
+    line-height: 1.6;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+/* Header */
+.mini-header {
+    text-align: center;
+    margin-bottom: 50px;
+    padding-top: 20px;
+}
+
+.mini-header h1 {
+    font-size: 1.8rem;
+    font-weight: 300;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin: 0 0 10px 0;
+    color: #1a1a1a;
+}
+
+.mini-profession {
+    font-size: 0.9rem;
+    color: #666;
+    margin: 0;
+}
+
+/* Contact Section - Completely Separate */
+.mini-contact-section {
+    text-align: center;
+    margin: 50px 0 60px 0;
+    padding: 30px 0;
+}
+
+.contact-line {
+    font-size: 10px;
+    color: #666;
+    margin: 0 12px;
+    display: inline-block;
+    white-space: nowrap;
+}
+
+.contact-line svg {
+    vertical-align: middle;
+    margin-right: 4px;
+    color: #999;
+}
+
+.contact-link {
+    color: #0066cc;
+    text-decoration: none;
+}
+
+.contact-link:hover {
+    text-decoration: underline;
+}
+
+/* Divider */
+.mini-divider {
+    width: 60px;
+    height: 1px;
+    background: #ddd;
+    margin: 50px auto;
+}
+
+/* Content */
+.mini-content {
+    margin-top: 50px;
+}
+
+.mini-section {
+    margin-bottom: 40px;
+}
+
+.section-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #555;
+    margin: 0 0 15px 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #eee;
+}
+
+.section-body {
+    font-size: 0.85rem;
+    color: #333;
+    line-height: 1.7;
+}
+
+.section-body h3 {
+    font-size: 0.95rem;
+    margin: 0 0 5px 0;
+    font-weight: 600;
+    color: #1a1a1a;
+}
+
+.section-body p {
+    margin: 10px 0;
+}
+
+.section-body ul {
+    margin: 10px 0;
+    padding-left: 20px;
+}
+
+.section-body li {
+    margin-bottom: 6px;
+}
+
+.section-body strong {
+    font-weight: 600;
+    color: #1a1a1a;
+}
