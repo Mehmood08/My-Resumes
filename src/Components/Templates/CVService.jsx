@@ -1,5 +1,6 @@
 import React from 'react';
 import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 import { LuMail, LuPhone, LuMapPin, LuLink } from "react-icons/lu";
 import './CVService.css';
 
@@ -38,7 +39,7 @@ const CVService = ({ data }) => {
                 {data.sections.map((sec, idx) => (
                     <section key={idx} className="service-section">
                         <h4>{sec.title}</h4>
-                        <div dangerouslySetInnerHTML={{ __html: marked(sec.content) }} />
+                        <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked(sec.content)) }} />
                     </section>
                 ))}
             </div>

@@ -1,11 +1,12 @@
 import React from 'react';
 import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 import { LuMail, LuPhone, LuMapPin, LuLink } from "react-icons/lu";
 import './CVMinimalist.css';
 
 const CVMinimalist = ({ data }) => {
     const renderSectionContent = (content) => {
-        return <div dangerouslySetInnerHTML={{ __html: marked(content) }} />;
+        return <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked(content)) }} />;
     };
 
     const getDisplayUrl = (url) => {
@@ -22,29 +23,23 @@ const CVMinimalist = ({ data }) => {
             <div className="mini-header">
                 <h1>{data.name || "Your Name"}</h1>
                 {data.profession && <div className="mini-profession">{data.profession}</div>}
-            </div>
 
-            {/* Contact Section - Separate Block */}
-            <div className="mini-contact-section">
-                {data.email && <div className="contact-line"><LuMail size={10} /> {data.email}</div>}
-                {data.phone && <div className="contact-line"><LuPhone size={10} /> {data.phone}</div>}
-                {data.city && <div className="contact-line"><LuMapPin size={10} /> {data.city}, {data.province}</div>}
-                {data.link1 && (
-                    <div className="contact-line">
-                        <LuLink size={10} />
-                        <a href={data.link1} target="_blank" rel="noopener noreferrer" className="contact-link">
+                {/* Contact Sub-line (Integrated) */}
+                <div className="mini-contact-row">
+                    {data.email && <span>{data.email}</span>}
+                    {data.phone && <span>{data.phone}</span>}
+                    {data.city && <span>{data.city}, {data.province}</span>}
+                    {data.link1 && (
+                        <a href={data.link1} target="_blank" rel="noopener noreferrer">
                             {getDisplayUrl(data.link1)}
                         </a>
-                    </div>
-                )}
-                {data.link2 && (
-                    <div className="contact-line">
-                        <LuLink size={10} />
-                        <a href={data.link2} target="_blank" rel="noopener noreferrer" className="contact-link">
+                    )}
+                    {data.link2 && (
+                        <a href={data.link2} target="_blank" rel="noopener noreferrer">
                             {getDisplayUrl(data.link2)}
                         </a>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
 
             {/* Divider */}

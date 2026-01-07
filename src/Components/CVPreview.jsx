@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { marked } from 'marked';
 import "./cvPreview.css";
+import DOMPurify from 'dompurify';
 
 // Templates
 import CVGulf from './Templates/CVGulf';
@@ -98,7 +99,7 @@ const CVPreview = ({ markdown, format }) => {
             case 'Service': return <CVService data={parsedData} />;
             case 'Plain':
             default:
-                return <div className="html-preview large-scroll" dangerouslySetInnerHTML={{ __html: marked(markdown) }} />;
+                return <div className="html-preview large-scroll" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked(markdown)) }} />;
         }
     };
 

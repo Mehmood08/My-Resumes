@@ -1,11 +1,23 @@
 import React, { useState, useEffect } from 'react';
+import GuidedHelper from './GuidedHelper';
+import { LuPlus, LuInfo, LuLightbulb, LuTrash2, LuChevronLeft, LuCheck } from "react-icons/lu";
 
-/**
- * A Zety-inspired Wizard Editor for CVs.
- * Breaks down the CV creation process into manageable steps.
- */
-const GuidedEditor = ({ markdown, onChange }) => {
-    const [currentStep, setCurrentStep] = useState(0);
+const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard }) => {
+    const [currentStep, setCurrentStep] = useState(markdown ? 0 : -1);
+    const [showHelper, setShowHelper] = useState(false);
+
+    // Only reset to step 0 if we are currently at the welcome screen (-1) and markdown is provided.
+    // This prevents jumping back to step 0 on every keystroke.
+    useEffect(() => {
+        if (markdown && currentStep === -1) {
+            setCurrentStep(0);
+            setWelcomeStep(0);
+        } else if (!markdown && currentStep !== -1) {
+            setCurrentStep(-1);
+            setWelcomeStep(0);
+        }
+    }, [markdown]);
+
     const [personalInfo, setPersonalInfo] = useState({
         firstName: '',
         lastName: '',
@@ -23,13 +35,13 @@ const GuidedEditor = ({ markdown, onChange }) => {
 
     const steps = [
         { id: 'heading', label: 'Heading', emoji: '👤' },
-        { id: 'summary', label: 'Summary', emoji: '📝' },
-        { id: 'experience', label: 'Experience', emoji: '💼' },
-        { id: 'projects', label: 'Projects', emoji: '🚀' },
-        { id: 'education', label: 'Education', emoji: '🎓' },
-        { id: 'skills', label: 'Skills', emoji: '⚡' },
-        { id: 'languages', label: 'Languages', emoji: '🌐' },
-        { id: 'certifications', label: 'Certifications', emoji: '🏆' }
+        { id: 'summary', label: 'Summary', emoji: '📝', tip: "Keep it brief (3-4 sentences). Focus on your biggest achievements." },
+        { id: 'experience', label: 'Experience', emoji: '💼', helper: 'experience', tip: "Use action verbs (e.g., 'Led', 'Developed'). Quantify results where possible." },
+        { id: 'projects', label: 'Projects', emoji: '🚀', helper: 'projects', tip: "Highlight the tech stack and the problem you solved." },
+        { id: 'education', label: 'Education', emoji: '🎓', helper: 'education', tip: "List your most recent degree first." },
+        { id: 'skills', label: 'Skills', emoji: '⚡', helper: 'skills', tip: "Mix hard skills (e.g., Python) and soft skills (e.g., Leadership)." },
+        { id: 'languages', label: 'Languages', emoji: '🌐', helper: 'languages' },
+        { id: 'certifications', label: 'Certifications', emoji: '🏆', helper: 'certifications' }
     ];
 
     // Parse Markdown into state
@@ -67,9 +79,8 @@ const GuidedEditor = ({ markdown, onChange }) => {
                         link1: parts[0] || '',
                         link2: parts[1] || ''
                     }));
-                    // Don't set isParsingHeader = false here, in case there are more header lines
                 } else if (parts.length >= 1) {
-                    // Contact info line: "City, Province, Zip | Email | Phone"
+                    // Contact info line
                     const locParts = parts[0].split(',').map(s => s.trim());
                     setPersonalInfo(prev => ({
                         ...prev,
@@ -79,7 +90,6 @@ const GuidedEditor = ({ markdown, onChange }) => {
                         email: parts[1] || '',
                         phone: parts[2] || ''
                     }));
-                    // Don't set isParsingHeader = false here, continue parsing for links
                 }
             } else if (line.startsWith('## ')) {
                 isParsingHeader = false;
@@ -92,7 +102,7 @@ const GuidedEditor = ({ markdown, onChange }) => {
         });
         if (currentSec) parsedSections.push(currentSec);
 
-        // Final cleanup for sections: join lines and trim
+        // Final cleanup
         const finalSections = parsedSections.map(s => ({
             ...s,
             content: s.content.join('\n').trim()
@@ -104,7 +114,6 @@ const GuidedEditor = ({ markdown, onChange }) => {
         let md = `# ${newPersonalInfo.firstName} ${newPersonalInfo.lastName} | ${newPersonalInfo.profession}\n`;
         md += `${newPersonalInfo.city}, ${newPersonalInfo.province}, ${newPersonalInfo.zip} | ${newPersonalInfo.email} | ${newPersonalInfo.phone}\n`;
 
-        // Add social links if they exist
         if (newPersonalInfo.link1 || newPersonalInfo.link2) {
             md += `${newPersonalInfo.link1 || ''} | ${newPersonalInfo.link2 || ''}\n`;
         }
@@ -130,15 +139,118 @@ const GuidedEditor = ({ markdown, onChange }) => {
         updateMarkdown(personalInfo, updated);
     };
 
+    const handleHelperSave = (content) => {
+        const step = steps[currentStep];
+        const matchTitle = step.id === 'summary' ? 'PROFESSIONAL SUMMARY' :
+            step.id === 'experience' ? 'EXPERIENCE' :
+                step.id === 'projects' ? 'PROJECTS' :
+                    step.id === 'education' ? 'EDUCATION' :
+                        step.id === 'skills' ? 'SKILLS' :
+                            step.id === 'languages' ? 'LANGUAGES' :
+                                step.id === 'certifications' ? 'CERTIFICATIONS' : step.label.toUpperCase();
+
+        const sectionIndex = sections.findIndex(s => s.title.toUpperCase().includes(step.id.toUpperCase()));
+
+        let newContent = "";
+        let updatedSections = [...sections];
+
+        if (sectionIndex !== -1) {
+            // Append to existing
+            const existing = sections[sectionIndex].content;
+            newContent = existing ? `${existing}\n\n${content}` : content;
+            updatedSections[sectionIndex].content = newContent;
+        } else {
+            // Create new
+            updatedSections.push({ title: matchTitle, content: content });
+        }
+
+        setSections(updatedSections);
+        updateMarkdown(personalInfo, updatedSections);
+        setShowHelper(false);
+    };
+
+    // --- Renderers ---
+
+    const [welcomeStep, setWelcomeStep] = useState(0); // 0: Hero, 1: Experience Selection
+    const [experienceLevel, setExperienceLevel] = useState(null);
+
+    const renderWelcome = () => {
+        if (welcomeStep === 0) {
+            return (
+                <div className="welcome-step fadeIn">
+                    <div className="welcome-hero">
+                        <h1>How do you want to start?</h1>
+                        <p>We'll guide you through the process of creating a professional CV.</p>
+
+                        <div className="welcome-options">
+                            <div className="welcome-card" onClick={onStartWizard}>
+                                <div className="card-icon">🚀</div>
+                                <h3>Create a New CV</h3>
+                                <p>Start building your professional resume immediately.</p>
+                            </div>
+
+                            <div className="welcome-card secondary">
+                                <div className="card-icon">📂</div>
+                                <h3>I already have a CV</h3>
+                                <p>Upload your existing CV to edit and improve it.</p>
+                                <span className="coming-soon">Coming Soon</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        if (welcomeStep === 1) {
+            return (
+                <div className="welcome-step fadeIn">
+                    <div className="welcome-hero">
+                        <h1>What is your experience level?</h1>
+                        <p>This helps us recommend the right sections for you.</p>
+
+                        <div className="experience-options">
+                            <button className="exp-card" onClick={() => { setExperienceLevel('entry'); setCurrentStep(0); }}>
+                                <span className="exp-icon">🎓</span>
+                                <div className="exp-info">
+                                    <h3>No Experience / Student</h3>
+                                    <p>I'm looking for my first job or internship.</p>
+                                </div>
+                            </button>
+
+                            <button className="exp-card" onClick={() => { setExperienceLevel('junior'); setCurrentStep(0); }}>
+                                <span className="exp-icon">💼</span>
+                                <div className="exp-info">
+                                    <h3>Entry-Level</h3>
+                                    <p>I have 0-3 years of work experience.</p>
+                                </div>
+                            </button>
+
+                            <button className="exp-card" onClick={() => { setExperienceLevel('senior'); setCurrentStep(0); }}>
+                                <span className="exp-icon">👔</span>
+                                <div className="exp-info">
+                                    <h3>Experienced</h3>
+                                    <p>I have 3+ years of work experience.</p>
+                                </div>
+                            </button>
+                        </div>
+
+                        <button className="back-link-center" onClick={() => setWelcomeStep(0)}>Back</button>
+                    </div>
+                </div>
+            );
+        }
+    };
+
     const renderStepContent = () => {
+        if (currentStep === -1) return renderWelcome();
+
         const step = steps[currentStep];
 
         if (step.id === 'heading') {
             return (
-                <div className="wizard-form">
+                <div className="wizard-form fadeIn">
                     <div className="wizard-header">
-                        <h2>What's the best way for employers to contact you?</h2>
-                        <p>We suggest including an email and phone number.</p>
+                        <h2>Let's start with your header</h2>
                     </div>
                     <div className="form-grid">
                         <div className="form-group">
@@ -192,7 +304,7 @@ const GuidedEditor = ({ markdown, onChange }) => {
                                 type="text"
                                 value={personalInfo.province}
                                 onChange={(e) => handleInfoChange('province', e.target.value)}
-                                placeholder="e.g. Balochistan"
+                                placeholder="e.g. KPK"
                             />
                         </div>
                         <div className="form-group">
@@ -214,21 +326,21 @@ const GuidedEditor = ({ markdown, onChange }) => {
                             />
                         </div>
                         <div className="form-group">
-                            <label>LinkedIn URL (Optional)</label>
+                            <label>LinkedIn URL</label>
                             <input
                                 type="url"
                                 value={personalInfo.link1}
                                 onChange={(e) => handleInfoChange('link1', e.target.value)}
-                                placeholder="https://linkedin.com/in/yourprofile"
+                                placeholder="https://linkedin.com/in/..."
                             />
                         </div>
                         <div className="form-group">
-                            <label>GitHub/Portfolio URL (Optional)</label>
+                            <label>Portfolio URL</label>
                             <input
                                 type="url"
                                 value={personalInfo.link2}
                                 onChange={(e) => handleInfoChange('link2', e.target.value)}
-                                placeholder="https://github.com/yourusername"
+                                placeholder="https://github.com/..."
                             />
                         </div>
                     </div>
@@ -236,49 +348,106 @@ const GuidedEditor = ({ markdown, onChange }) => {
             );
         }
 
-        // Generic section step (Summary, Experience, etc.)
-        const matchTitle = step.id === 'summary' ? 'PROFESSIONAL SUMMARY' :
-            step.id === 'experience' ? 'EXPERIENCE' :
-                step.id === 'projects' ? 'PROJECTS' :
-                    step.id === 'education' ? 'EDUCATION' :
-                        step.id === 'skills' ? 'SKILLS' :
-                            step.id === 'languages' ? 'LANGUAGES' :
-                                step.id === 'certifications' ? 'CERTIFICATIONS' : step.label.toUpperCase();
+        // Generic section
+        const sectionIndex = sections.findIndex(s => {
+            const title = s.title.toUpperCase();
+            const id = step.id.toUpperCase();
+            // Match if title contains id (e.g. "SOFTDEV SUMMARY" matches "SUMMARY")
+            // OR if it's one of our hardcoded variants
+            return title.includes(id) || (id === 'SUMMARY' && title.includes('PROFESSIONAL'));
+        });
 
-        const sectionIndex = sections.findIndex(s => s.title.toUpperCase().includes(step.id.toUpperCase()));
         const activeSection = sectionIndex !== -1 ? sections[sectionIndex] : null;
 
+        // Dynamic suggested title
+        const suggestedTitle = personalInfo.profession
+            ? `${personalInfo.profession.toUpperCase()} ${step.label.toUpperCase()}`
+            : step.label.toUpperCase();
+
         return (
-            <div className="wizard-form">
+            <div className="wizard-form fadeIn">
                 <div className="wizard-header">
-                    <h2>{step.label}</h2>
-                    <p>Tell us about your {step.label.toLowerCase()}.</p>
+                    <div className="header-row">
+                        <div className="section-title-edit">
+                            <label className="field-label-small">Section Heading</label>
+                            <input
+                                type="text"
+                                className="section-title-input"
+                                value={activeSection ? activeSection.title : suggestedTitle}
+                                onChange={(e) => {
+                                    if (sectionIndex !== -1) {
+                                        const updated = [...sections];
+                                        updated[sectionIndex].title = e.target.value;
+                                        setSections(updated);
+                                        updateMarkdown(personalInfo, updated);
+                                    } else {
+                                        const updated = [...sections, { title: e.target.value, content: '' }];
+                                        setSections(updated);
+                                        updateMarkdown(personalInfo, updated);
+                                    }
+                                }}
+                                placeholder={suggestedTitle}
+                            />
+                        </div>
+                        {step.helper && (
+                            <button className="add-item-btn" onClick={() => setShowHelper(true)}>
+                                <LuPlus /> Add {step.label.slice(0, -1)}
+                            </button>
+                        )}
+                    </div>
                 </div>
-                <textarea
-                    className="wizard-textarea"
-                    value={activeSection ? activeSection.content : ''}
-                    onChange={(e) => {
-                        if (sectionIndex !== -1) {
-                            handleSectionChange(sectionIndex, e.target.value);
-                        } else {
-                            // Create new section if it doesn't exist
-                            const updated = [...sections, { title: matchTitle, content: e.target.value }];
-                            setSections(updated);
-                            updateMarkdown(personalInfo, updated);
-                        }
-                    }}
-                    placeholder={`Enter your ${step.label.toLowerCase()} here... (Markdown supported)`}
-                />
+
+                {step.tip && (
+                    <div className="wizard-tip">
+                        <LuLightbulb className="tip-icon" />
+                        <p>{step.tip}</p>
+                    </div>
+                )}
+
+                <div className="form-group full-width">
+                    <label>Section Content</label>
+                    <textarea
+                        className="wizard-textarea"
+                        value={activeSection ? activeSection.content : ''}
+                        onChange={(e) => {
+                            if (sectionIndex !== -1) {
+                                handleSectionChange(sectionIndex, e.target.value);
+                            } else {
+                                const currentTitle = activeSection ? activeSection.title : suggestedTitle;
+                                const updated = [...sections, { title: currentTitle, content: e.target.value }];
+                                setSections(updated);
+                                updateMarkdown(personalInfo, updated);
+                            }
+                        }}
+                        placeholder={`Enter details here... \n\nTips:\n- Use **bold** for emphasis\n- Use - for bullet points`}
+                    />
+                </div>
+
+                {showHelper && (
+                    <GuidedHelper
+                        type={step.helper}
+                        onSave={handleHelperSave}
+                        onClose={() => setShowHelper(false)}
+                    />
+                )}
             </div>
         );
     };
 
-    const completionPercent = Math.round(((currentStep + 1) / steps.length) * 100);
+    const completionPercent = currentStep === -1 ? 0 : Math.round(((currentStep + 1) / steps.length) * 100);
 
     return (
         <div className="wizard-container">
             <aside className="wizard-sidebar">
                 <div className="wizard-steps-list">
+                    <div
+                        className={`wizard-step-item ${currentStep === -1 ? 'active' : 'completed'}`}
+                        onClick={() => setCurrentStep(-1)}
+                    >
+                        <div className="step-number">🏠</div>
+                        <span className="step-label">Welcome</span>
+                    </div>
+
                     {steps.map((step, idx) => (
                         <div
                             key={step.id}
@@ -298,13 +467,6 @@ const GuidedEditor = ({ markdown, onChange }) => {
                     </div>
                     <div className="percent-text">{completionPercent}%</div>
                 </div>
-
-                <div className="wizard-sidebar-footer">
-                    <a href="#">Terms And Conditions</a>
-                    <a href="#">Privacy Policy</a>
-                    <a href="#">Accessibility</a>
-                    <a href="#">Contact Us</a>
-                </div>
             </aside>
 
             <main className="wizard-main">
@@ -312,23 +474,32 @@ const GuidedEditor = ({ markdown, onChange }) => {
                     {renderStepContent()}
                 </div>
 
-                <div className="wizard-actions">
-                    <button
-                        className={`go-back-link-footer ${currentStep === 0 ? 'hidden' : ''}`}
-                        onClick={() => currentStep > 0 && setCurrentStep(currentStep - 1)}
-                    >
-                        ← Go Back
-                    </button>
-
-                    {currentStep < steps.length - 1 && (
-                        <button className="continue-btn" onClick={() => setCurrentStep(currentStep + 1)}>
-                            Next: {steps[currentStep + 1].label} →
+                {currentStep !== -1 && (
+                    <div className="wizard-actions">
+                        <button
+                            className={`go-back-link-footer ${currentStep === 0 ? 'hidden' : ''}`}
+                            onClick={() => currentStep > 0 && setCurrentStep(currentStep - 1)}
+                        >
+                            ← Go Back
                         </button>
-                    )}
-                </div>
+
+                        {currentStep < steps.length - 1 && (
+                            <button className="continue-btn" onClick={() => setCurrentStep(currentStep + 1)}>
+                                Next: {steps[currentStep + 1].label} →
+                            </button>
+                        )}
+                        {currentStep === steps.length - 1 && (
+                            <button className="continue-btn" onClick={() => { onSave(); alert("Resume Saved Successfully! ✨"); }}>
+                                Finish ✨
+                            </button>
+                        )}
+                    </div>
+                )}
             </main>
         </div>
     );
 };
 
 export default GuidedEditor;
+
+

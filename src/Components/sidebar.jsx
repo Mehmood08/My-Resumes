@@ -1,13 +1,15 @@
 import React, { useState, useEffect, memo, useMemo } from "react";
-import { cvTemplates } from "../data/cvTemplates";
-import { LuPlus, LuTrash2, LuChevronDown, LuChevronRight } from "react-icons/lu";
+import { useAuth } from '../context/AuthContext'; // Import Auth
+import { LuPlus, LuTrash2, LuChevronDown, LuChevronRight, LuLogOut } from "react-icons/lu";
 
-function Sidebar({ notes, onSelectNote, onDeleteNote, onStartWizard, activeNoteId, openParentId }) {
+function Sidebar({ notes, onSelectNote, onDeleteNote, onCreateNote, activeNoteId, openParentId }) {
+  const { user, logout } = useAuth(); // Get User
   const [openParents, setOpenParents] = useState({});
 
-  const parents = useMemo(() => notes.filter(n => !n.parentId), [notes]);
+  const parents = useMemo(() => Array.isArray(notes) ? notes.filter(n => !n.parentId) : [], [notes]);
   const childrenByParent = useMemo(() => {
     const map = {};
+    if (!Array.isArray(notes)) return map;
     notes.forEach(n => {
       if (n.parentId) {
         if (!map[n.parentId]) map[n.parentId] = [];
@@ -28,26 +30,59 @@ function Sidebar({ notes, onSelectNote, onDeleteNote, onStartWizard, activeNoteI
     setOpenParents(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const handleCreateNew = () => {
-    onStartWizard();
-  };
-
   return (
     <aside className="sidebar">
+      {/* PROFESSIONAL USER PROFILE HEADER */}
+      {user && (
+        <div className="sidebar-profile" style={{
+          padding: '20px 16px', display: 'flex', alignItems: 'center', gap: '15px',
+          borderBottom: '1px solid #e2e8f0', marginBottom: '15px', background: 'linear-gradient(to right, #f8fafc, #f1f5f9)'
+        }}>
+          <div style={{ position: 'relative' }}>
+            <img
+              src={user.picture}
+              alt="Profile"
+              style={{ width: '48px', height: '48px', borderRadius: '50%', border: '2px solid #fff', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', objectFit: 'cover' }}
+            />
+            <div style={{ position: 'absolute', bottom: '2px', right: '0', width: '12px', height: '12px', background: '#10b981', borderRadius: '50%', border: '2px solid #fff' }}></div>
+          </div>
+
+          <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <div style={{ fontWeight: '700', fontSize: '0.95rem', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {user.name}
+            </div>
+            <div style={{ fontSize: '0.8rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span style={{ width: '6px', height: '6px', background: '#3b82f6', borderRadius: '50%', display: 'inline-block' }}></span>
+              Pro Member
+            </div>
+          </div>
+
+          <button
+            onClick={logout}
+            className="logout-btn-hover"
+            style={{
+              background: '#fee2e2', border: 'none', color: '#ef4444',
+              borderRadius: '8px', padding: '8px', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'all 0.2s ease'
+            }}
+            title="Sign Out"
+          >
+            <LuLogOut size={18} />
+          </button>
+        </div>
+      )}
+
       <div className="sidebar-header">
         <div className="header-top">
           <h3>My Resumes</h3>
-          <button className="add-btn" onClick={handleCreateNew} title="Create New">
-            <LuPlus size={18} />
-          </button>
         </div>
-
       </div>
 
       <div className="section-label">History / Resumes</div>
       <div className="notes-list large-scroll">
-        {parents.map(parent => (
-          <div key={parent.id} className="parent-container">
+        {parents.map((parent, pIdx) => (
+          <div key={parent.id || `parent-${pIdx}`} className="parent-container">
             <div
               className={`note-item parent-note ${activeNoteId === parent.id ? "active" : ""}`}
               onClick={() => { onSelectNote(parent); toggleParent(parent.id); }}
@@ -61,9 +96,6 @@ function Sidebar({ notes, onSelectNote, onDeleteNote, onStartWizard, activeNoteI
               </div>
 
               <div className="note-buttons" onClick={e => e.stopPropagation()}>
-                <button className="child-btn" onClick={() => onCreateNote(parent.id)} title="Add Sub-note">
-                  <LuPlus size={14} />
-                </button>
                 <button className="delete-btn" onClick={() => onDeleteNote(parent.id)} title="Delete">
                   <LuTrash2 size={14} />
                 </button>
@@ -72,9 +104,9 @@ function Sidebar({ notes, onSelectNote, onDeleteNote, onStartWizard, activeNoteI
 
             {openParents[parent.id] && childrenByParent[parent.id] && (
               <div className="child-notes-container open">
-                {childrenByParent[parent.id].map(child => (
+                {childrenByParent[parent.id].map((child, cIdx) => (
                   <div
-                    key={child.id}
+                    key={child.id || `child-${cIdx}`}
                     className={`note-item child-note ${activeNoteId === child.id ? "active" : ""}`}
                     onClick={() => onSelectNote(child)}
                   >

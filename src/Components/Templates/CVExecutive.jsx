@@ -1,5 +1,6 @@
 import React from 'react';
 import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 import { LuMail, LuPhone, LuMapPin, LuLink } from "react-icons/lu";
 import './CVExecutive.css';
 
@@ -51,7 +52,7 @@ const CVExecutive = ({ data }) => {
                 {data.sections.map((sec, idx) => (
                     <section key={idx} className="exec-section">
                         <h2>{sec.title}</h2>
-                        <div dangerouslySetInnerHTML={{ __html: marked(sec.content) }} />
+                        <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked(sec.content)) }} />
                     </section>
                 ))}
             </div>

@@ -1,11 +1,12 @@
 import React from 'react';
 import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 import { LuMail, LuPhone, LuMapPin, LuLink } from "react-icons/lu";
 import './CVProfessional.css';
 
 const CVProfessional = ({ data }) => {
     const renderSectionContent = (content) => {
-        return <div dangerouslySetInnerHTML={{ __html: marked(content) }} />;
+        return <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked(content)) }} />;
     };
 
     const getDisplayUrl = (url) => {

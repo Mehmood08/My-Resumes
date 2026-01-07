@@ -1,50 +1,61 @@
 import React, { useState } from "react";
 import { LuX, LuChevronLeft, LuCheck } from "react-icons/lu";
-import cvPreviewImg from "../assets/templates/cv_preview.png";
-import "./professionalEditor.css";
+import americaPreview from "../assets/templates/america_preview.png";
+import europeanPreview from "../assets/templates/european_preview.png";
+import gulfPreview from "../assets/templates/gulf_preview.png";
+import professionalPreview from "../assets/templates/professional_preview.png";
+import creativePreview from "../assets/templates/creative_preview.png";
+import minimalistPreview from "../assets/templates/minimalist_preview.png";
 
 const steps = [
-    { id: "occupation", title: "What is your occupation?" },
     { id: "layout", title: "What layout suits you best?" },
-    { id: "style", title: "What style do you prefer?" },
+    { id: "occupation", title: "What is your occupation?" },
     { id: "photo", title: "Will you be adding a photo?" },
 ];
 
 const occupations = [
-    "Management & Executive",
     "Software & IT Services",
     "Business & Finance",
-    "Retail & Sales",
+    "Management & Executive",
+    "HR & Recruitment",
+    "Marketing & PR",
+    "Sales & Business Development",
+    "Engineering & Manufacturing",
     "Healthcare & Medical",
     "Education & Training",
+    "Retail & Customer Service",
     "Creative & Design",
+    "Logistics & Supply Chain",
+    "Legal & Compliance",
+    "Government & Public Sector",
     "Other / Student",
 ];
 
 const layouts = [
-    { id: "America", name: "American", description: "Standard US Style", img: cvPreviewImg },
-    { id: "European", name: "European", description: "Modern EU Style", img: cvPreviewImg },
-    { id: "Gulf", name: "Gulf Style", description: "Middle East Standard", img: cvPreviewImg },
-    { id: "Professional", name: "Professional", description: "Classic Professional", img: cvPreviewImg },
-    { id: "Creative", name: "Creative", description: "Modern & Colorful", img: cvPreviewImg },
-    { id: "Minimalist", name: "Minimalist", description: "Clean & Simple", img: cvPreviewImg },
-    { id: "Executive", name: "Executive", description: "Senior Management", img: cvPreviewImg },
-    { id: "Academic", name: "Academic", description: "Research & Edu", img: cvPreviewImg },
-    { id: "Tech", name: "Tech", description: "Developer Focused", img: cvPreviewImg },
-    { id: "Service", name: "Service", description: "Functional Layout", img: cvPreviewImg },
+    { id: "America", name: "American Standard", description: "Clean, traditional & results-focused.", img: americaPreview },
+    { id: "European", name: "European Modern", description: "Sleek, organized & structured.", img: europeanPreview },
+    { id: "Gulf", name: "Gulf Professional", description: "Refined & optimized for the Gulf region.", img: gulfPreview },
+    { id: "Professional", name: "Classic Professional", description: "Timeless business-standard layout.", img: professionalPreview },
+    { id: "Creative", name: "Creative Edge", description: "Bold design for modern industries.", img: creativePreview },
+    { id: "Minimalist", name: "Clean Minimalist", description: "Simple, easy to read & distraction-free.", img: minimalistPreview },
+    { id: "Executive", name: "Senior Executive", description: "Sophisticated for top-tier roles.", img: professionalPreview },
+    { id: "Academic", name: "Academic / Research", description: "Detailed structure for scholars.", img: professionalPreview },
+    { id: "Tech", name: "Technical Specialist", description: "Optimized for skills & tech stack.", img: creativePreview },
+    { id: "Service", name: "Customer Service", description: "Practical & experience-heavy.", img: professionalPreview },
 ];
 
 const styles = [
-    { id: "classic", name: "Simple & Classic", img: "/cv-classic.png" },
-    { id: "modern", name: "Modern & Subtle", img: "/cv-modern.png" },
-    { id: "bold", name: "Bold & Striking", img: "/cv-creative.png" },
+    { id: "classic", name: "Clean & Simple", img: "/cv-classic.png" },
+    { id: "modern", name: "Modern & Sleek", img: "/cv-modern.png" },
+    { id: "bold", name: "Bold & Professional", img: "/cv-creative.png" },
 ];
 
 export default function TemplateWizard({ isOpen, onClose, onCreate }) {
     const [currentStep, setCurrentStep] = useState(0);
+    const [showGuidance, setShowGuidance] = useState(true);
     const [selections, setSelections] = useState({
         occupation: "",
-        layout: "American",
+        layout: "America",
         style: "classic",
         photo: "no",
     });
@@ -52,11 +63,14 @@ export default function TemplateWizard({ isOpen, onClose, onCreate }) {
     if (!isOpen) return null;
 
     const handleNext = () => {
+        if (currentStep === 0) setShowGuidance(false);
         if (currentStep < steps.length - 1) {
             setCurrentStep(currentStep + 1);
         } else {
             onCreate(selections);
             onClose();
+            // Reset for next time
+            setTimeout(() => setCurrentStep(0), 300);
         }
     };
 
@@ -68,13 +82,46 @@ export default function TemplateWizard({ isOpen, onClose, onCreate }) {
 
     const updateSelection = (key, value) => {
         setSelections((prev) => ({ ...prev, [key]: value }));
+        // Auto-next for single-selection steps to feel faster (except Layout since it has many options)
+        if (key === "occupation" || key === "photo") {
+            // Give user a split second to see the selection checkmark
+            setTimeout(() => handleNext(), 200);
+        }
     };
 
     const renderStepContent = () => {
         switch (currentStep) {
             case 0:
                 return (
-                    <div className="occupation-list">
+                    <div className="selection-grid large-scroll" style={{ maxHeight: '450px', overflowY: 'auto', paddingRight: '10px' }}>
+                        {layouts.map((layout) => (
+                            <div
+                                key={layout.id}
+                                className={`selection-card large ${selections.layout === layout.id ? "selected" : ""}`}
+                                onClick={() => updateSelection("layout", layout.id)}
+                            >
+                                <div className="cv-thumbnail-container" style={{ position: 'relative', overflow: 'hidden' }}>
+                                    <img
+                                        src={layout.img}
+                                        alt={layout.name}
+                                        style={{
+                                            width: '100%',
+                                            height: '100%',
+                                            objectFit: 'cover',
+                                            transition: 'transform 0.3s ease'
+                                        }}
+                                        className="cv-thumb-img"
+                                    />
+                                </div>
+                                <h4>{layout.name}</h4>
+                                <p style={{ fontSize: '12px' }}>{layout.description}</p>
+                            </div>
+                        ))}
+                    </div>
+                );
+            case 1:
+                return (
+                    <div className="occupation-list large-scroll" style={{ maxHeight: '450px', overflowY: 'auto' }}>
                         {occupations.map((occ) => (
                             <div
                                 key={occ}
@@ -82,71 +129,14 @@ export default function TemplateWizard({ isOpen, onClose, onCreate }) {
                                 onClick={() => updateSelection("occupation", occ)}
                             >
                                 {occ}
-                                {selections.occupation === occ && <LuCheck />}
-                            </div>
-                        ))}
-                    </div>
-                );
-            case 1:
-                return (
-                    <div className="selection-grid">
-                        {layouts.map((layout) => (
-                            <div
-                                key={layout.id}
-                                className={`selection-card large ${selections.layout === layout.id ? "selected" : ""}`}
-                                onClick={() => updateSelection("layout", layout.id)}
-                            >
-                                <div className={`cv-thumbnail-container tmplt-mini-preview tmplt-${layout.id}`}>
-                                    <div className="mini-sidebar">
-                                        <div className="mini-text-block" style={{ padding: '0 4px' }}>
-                                            <div className="mini-text-line" style={{ width: '80%' }}></div>
-                                            <div className="mini-text-line" style={{ width: '60%' }}></div>
-                                            <div className="mini-text-line" style={{ width: '70%' }}></div>
-                                        </div>
-                                    </div>
-                                    <div className="mini-content">
-                                        <div className="mini-header"></div>
-                                        <div className="mini-body">
-                                            <div className="mini-line med"></div>
-                                            <div className="mini-text-block">
-                                                <div className="mini-text-line"></div>
-                                                <div className="mini-text-line" style={{ width: '90%' }}></div>
-                                                <div className="mini-text-line" style={{ width: '95%' }}></div>
-                                            </div>
-                                            <div className="mini-line"></div>
-                                            <div className="mini-text-block">
-                                                <div className="mini-text-line" style={{ width: '85%' }}></div>
-                                                <div className="mini-text-line" style={{ width: ' boards%' }}></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <h4>{layout.name}</h4>
-                                <p>{layout.description}</p>
+                                {selections.occupation === occ && <LuCheck className="check-icon" />}
                             </div>
                         ))}
                     </div>
                 );
             case 2:
                 return (
-                    <div className="selection-grid">
-                        {styles.map((style) => (
-                            <div
-                                key={style.id}
-                                className={`selection-card large ${selections.style === style.id ? "selected" : ""}`}
-                                onClick={() => updateSelection("style", style.id)}
-                            >
-                                <div className="cv-thumbnail-container">
-                                    <img src={style.img} alt={style.name} className="cv-thumbnail" />
-                                </div>
-                                <h4>{style.name}</h4>
-                            </div>
-                        ))}
-                    </div>
-                );
-            case 3:
-                return (
-                    <div className="selection-grid">
+                    <div className="selection-grid photo-step">
                         <div
                             className={`selection-card large ${selections.photo === "yes" ? "selected" : ""}`}
                             onClick={() => updateSelection("photo", "yes")}
@@ -156,6 +146,7 @@ export default function TemplateWizard({ isOpen, onClose, onCreate }) {
                                 <div className="p-lines"><span></span><span></span><span></span></div>
                             </div>
                             <h4>With Photo</h4>
+                            <p>Recommended for European.</p>
                         </div>
                         <div
                             className={`selection-card large ${selections.photo === "no" ? "selected" : ""}`}
@@ -164,7 +155,8 @@ export default function TemplateWizard({ isOpen, onClose, onCreate }) {
                             <div className="photo-preview no-photo">
                                 <div className="p-lines"><span></span><span></span><span></span></div>
                             </div>
-                            <h4>Without Photo</h4>
+                            <h4>No Photo</h4>
+                            <p>Standard for  Tech roles.</p>
                         </div>
                     </div>
                 );
@@ -177,10 +169,13 @@ export default function TemplateWizard({ isOpen, onClose, onCreate }) {
         <div className="template-wizard-overlay">
             <div className="template-wizard-modal">
                 <div className="wizard-modal-header">
-                    <div className="progress-dots">
-                        {steps.map((_, idx) => (
-                            <div key={idx} className={`dot ${idx === currentStep ? "active" : ""}`} />
-                        ))}
+                    <div className="progress-container">
+                        <div className="progress-label">Step {currentStep + 1} of {steps.length}: {steps[currentStep].title}</div>
+                        <div className="progress-dots">
+                            {steps.map((_, idx) => (
+                                <div key={idx} className={`dot ${idx === currentStep ? "active" : ""} ${idx < currentStep ? "completed" : ""}`} />
+                            ))}
+                        </div>
                     </div>
                     <button className="wizard-close-btn" onClick={onClose}>
                         <LuX size={24} />
@@ -188,31 +183,44 @@ export default function TemplateWizard({ isOpen, onClose, onCreate }) {
                 </div>
 
                 <div className="wizard-modal-content">
-                    <h2>{steps[currentStep].title}</h2>
-                    <p>
-                        {currentStep === 0 && "Choose your industry to get the best content recommendations."}
-                        {currentStep === 1 && "Select the layout that best organizes your information."}
-                        {currentStep === 2 && "Pick a style that matches your personal brand."}
-                        {currentStep === 3 && "Some regions or industries prefer photos. What's your choice?"}
-                    </p>
-                    {renderStepContent()}
+                    {currentStep === 0 && showGuidance && (
+                        <div className="guidance-popup fadeIn">
+                            <div className="guidance-content">
+                                <span className="guidance-icon">💡</span>
+                                <div className="guidance-text">
+                                    <strong>Template Selection</strong>
+                                    <p>Choose a base format. You can customize details later!</p>
+                                </div>
+
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="wizard-step-body animate-slide">
+                        <h2>{steps[currentStep].title}</h2>
+                        <div className="wizard-main-selection">
+                            {renderStepContent()}
+                        </div>
+                    </div>
                 </div>
 
                 <div className="wizard-modal-footer">
-                    {currentStep > 0 ? (
-                        <button className="back-text-btn" onClick={handleBack}>
-                            <LuChevronLeft size={20} /> Back
-                        </button>
-                    ) : (
-                        <div />
-                    )}
                     <button
-                        className="continue-btn"
-                        disabled={currentStep === 0 && !selections.occupation}
-                        onClick={handleNext}
+                        className={`back-text-btn ${currentStep === 0 ? "hidden" : ""}`}
+                        onClick={handleBack}
                     >
-                        {currentStep === steps.length - 1 ? "Create CV" : "Next"}
+                        <LuChevronLeft size={20} /> Back
                     </button>
+
+                    <div className="footer-actions">
+                        <button
+                            className="continue-btn premium"
+                            disabled={currentStep === 1 && !selections.occupation}
+                            onClick={handleNext}
+                        >
+                            {currentStep === steps.length - 1 ? "Finish & Create ✨" : "Continue"}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

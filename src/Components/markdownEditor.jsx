@@ -15,7 +15,8 @@ export default function MarkdownEditor({
   onTabChange,
   cvFormat,
   onFormatChange,
-  onSave
+  onSave,
+  onStartWizard
 }) {
   const [localMarkdown, setLocalMarkdown] = useState(markdownValue);
   const [localScript, setLocalScript] = useState(scriptValue);
@@ -64,7 +65,7 @@ export default function MarkdownEditor({
     <div className="editor-container">
       {/* Tabs */}
       <div className="tabs">
-        {["Templates", "Guided", "Preview"].map(tab => (
+        {["Cv Templates", "Guided", "Preview"].map(tab => (
           <button
             key={tab}
             type="button"
@@ -85,7 +86,7 @@ export default function MarkdownEditor({
 
       {/* Editor Content */}
       <div className="editor-content">
-        {activeTab === "Templates" && (
+        {activeTab === "Cv Templates" && (
           <React.Suspense fallback={<div className="loading-templates">Loading Templates...</div>}>
             <TemplateSelection
               currentFormat={cvFormat}
@@ -100,6 +101,8 @@ export default function MarkdownEditor({
           <GuidedEditor
             markdown={localMarkdown}
             onChange={setLocalMarkdown}
+            onSave={onSave}
+            onStartWizard={onStartWizard}
           />
         )}
 

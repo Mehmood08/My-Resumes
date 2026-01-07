@@ -1,11 +1,12 @@
 import React from 'react';
 import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 import { LuMail, LuPhone, LuMapPin, LuLink } from "react-icons/lu";
 import './CVAmerica.css';
 
 const CVAmerica = ({ data }) => {
     const renderSectionContent = (content) => {
-        return <div dangerouslySetInnerHTML={{ __html: marked(content) }} />;
+        return <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked(content)) }} />;
     };
 
     // Helper to extract domain from URL for display
@@ -58,7 +59,7 @@ const CVAmerica = ({ data }) => {
 
             {data.intro && (
                 <div className="cv-intro" style={{ marginBottom: '15px' }}>
-                    <div dangerouslySetInnerHTML={{ __html: marked(data.intro) }} />
+                    <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked(data.intro)) }} />
                 </div>
             )}
 

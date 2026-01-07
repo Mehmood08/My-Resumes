@@ -1,79 +1,111 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { LuCheck } from "react-icons/lu";
-import cvPreviewImg from "../assets/templates/cv_preview.png";
 import CVPreview from "./CVPreview";
 
+import americaPreview from "../assets/templates/america_preview.png";
+import europeanPreview from "../assets/templates/european_preview.png";
+import gulfPreview from "../assets/templates/gulf_preview.png";
+import professionalPreview from "../assets/templates/professional_preview.png";
+import creativePreview from "../assets/templates/creative_preview.png";
+import minimalistPreview from "../assets/templates/minimalist_preview.png";
+
 const templateList = [
-    { id: "America", name: "American", description: "Standard US Style", img: cvPreviewImg },
-    { id: "European", name: "European", description: "Modern EU Style", img: cvPreviewImg },
-    { id: "Gulf", name: "Gulf", description: "Middle East Standard", img: cvPreviewImg },
-    { id: "Professional", name: "Professional", description: "Classic Professional", img: cvPreviewImg },
-    { id: "Creative", name: "Creative", description: "Modern & Colorful", img: cvPreviewImg },
-    { id: "Minimalist", name: "Minimalist", description: "Clean & Simple", img: cvPreviewImg },
-    { id: "Executive", name: "Executive", description: "Senior Management", img: cvPreviewImg },
-    { id: "Academic", name: "Academic", description: "Research & Edu", img: cvPreviewImg },
-    { id: "Tech", name: "Tech", description: "Developer Focused", img: cvPreviewImg },
-    { id: "Service", name: "Service", description: "Functional Layout", img: cvPreviewImg },
+    { id: "America", name: "American", description: "Standard US Style", img: americaPreview },
+    { id: "European", name: "European", description: "Modern EU Style", img: europeanPreview },
+    { id: "Gulf", name: "Gulf", description: "Middle East Standard", img: gulfPreview },
+    { id: "Professional", name: "Professional", description: "Classic Professional", img: professionalPreview },
+    { id: "Creative", name: "Creative", description: "Modern & Colorful", img: creativePreview },
+    { id: "Minimalist", name: "Minimalist", description: "Clean & Simple", img: minimalistPreview },
+    { id: "Executive", name: "Executive", description: "Senior Management", img: professionalPreview },
+    { id: "Academic", name: "Academic", description: "Research & Edu", img: professionalPreview },
+    { id: "Tech", name: "Tech", description: "Developer Focused", img: creativePreview },
+    { id: "Service", name: "Service", description: "Functional Layout", img: professionalPreview },
 ];
 
+// Dummy data for the thumbnail to look populated and real
+const dummyMarkdown = `
+# John Doe | Software Engineer
+New York, NY | email@example.com | 123-456-7890
+
+## Experience
+### Senior Developer | Tech Co
+_2020 - Present_
+Led a team of 5 developers.
+
+## Education
+### BS Computer Science | University of Tech
+_2016 - 2020_
+
+## Skills
+- JavaScript
+- React
+- Node.js
+`;
+
 export default function TemplateSelection({ currentFormat, onFormatChange, markdown, onSave }) {
+
+    // Memoize the thumbnail list to prevent expensive re-renders of 10x CVPreviews
+    const renderedThumbnails = useMemo(() => {
+        return templateList.map((tmplt) => (
+            <div
+                key={tmplt.id}
+                className={`selection-card-item ${currentFormat === tmplt.id ? "selected" : ""}`}
+                onClick={() => onFormatChange(tmplt.id)}
+            >
+                <div className="real-thumbnail-container" style={{ position: 'relative', overflow: 'hidden' }}>
+                    <img
+                        src={tmplt.img}
+                        alt={tmplt.name}
+                        style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            transition: 'transform 0.3s ease'
+                        }}
+                    />
+
+                    {currentFormat === tmplt.id && (
+                        <div className="selection-badge-overlay">
+                            <LuCheck size={20} />
+                        </div>
+                    )}
+                </div>
+
+                <div className="tmplt-info">
+                    <h4>{tmplt.name}</h4>
+                    <p>{tmplt.description}</p>
+                </div>
+            </div>
+        ));
+    }, [currentFormat, onFormatChange]);
+
     return (
         <div className="template-selection-container">
-            {/* Left Pane: Template Selection List */}
-            <div className="template-selection-left">
-                <div className="selection-list-wrapper large-scroll">
-                    <h3>Select CV Format</h3>
-                    <p>Choose a format that best represents your professional profile.</p>
-
-                    <div className="selection-list">
-                        {templateList.map((tmplt) => (
-                            <div
-                                key={tmplt.id}
-                                className={`selection-card-horizontal ${currentFormat === tmplt.id ? "selected" : ""}`}
-                                onClick={() => onFormatChange(tmplt.id)}
-                            >
-                                <div className={`thumb-mini tmplt-mini-preview tmplt-${tmplt.id}`}>
-                                    <div className="mini-sidebar"></div>
-                                    <div className="mini-content">
-                                        <div className="mini-header" style={{ height: '4px', marginBottom: '4px' }}></div>
-                                        <div className="mini-body">
-                                            <div className="mini-line med" style={{ height: '1px' }}></div>
-                                            <div className="mini-text-block">
-                                                <div className="mini-text-line" style={{ height: '0.5px' }}></div>
-                                                <div className="mini-text-line" style={{ width: '80%', height: '0.5px' }}></div>
-                                            </div>
-                                            <div className="mini-line" style={{ height: '1px', marginTop: '2px' }}></div>
-                                        </div>
-                                    </div>
-                                    {currentFormat === tmplt.id && (
-                                        <div className="selection-badge-mini">
-                                            <LuCheck size={12} />
-                                        </div>
-                                    )}
-                                </div>
-                                <div className="tmplt-details">
-                                    <h4>{tmplt.name}</h4>
-                                    <p>{tmplt.description}</p>
-                                </div>
-                            </div>
-                        ))}
+            <div className="selection-split-layout">
+                {/* Left Panel: Grid */}
+                <div className="left-panel-grid large-scroll">
+                    <div className="template-header">
+                        <h3>Choose Template</h3>
+                        <p>Select a design.</p>
+                    </div>
+                    <div className="template-grid-container">
+                        {renderedThumbnails}
                     </div>
                 </div>
 
-                {/* Sticky Footer */}
-                <div className="selection-footer">
-                    <button className="footer-save-btn" onClick={onSave}>
-                        Save & Continue
-                    </button>
+                {/* Right Panel: Preview */}
+                <div className="right-panel-preview">
+                    <div className="preview-label">Live Preview</div>
+                    <div className="preview-stage large-scroll">
+                        <CVPreview markdown={markdown} format={currentFormat} />
+                    </div>
                 </div>
             </div>
 
-            {/* Right Pane: Live Preview */}
-            <div className="template-selection-right">
-                <div className="preview-label">Live Preview</div>
-                <div className="preview-wrapper large-scroll">
-                    <CVPreview markdown={markdown} format={currentFormat} />
-                </div>
+            <div className="selection-footer-floating">
+                <button className="footer-save-btn" onClick={onSave}>
+                    Save & Continue
+                </button>
             </div>
         </div>
     );

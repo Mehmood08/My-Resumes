@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Secrets and Noise
+.env
+*.pdf
+lint_report.txt

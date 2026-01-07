@@ -1,5 +1,6 @@
 import React from 'react';
 import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 import { LuMail, LuPhone, LuMapPin, LuLink } from "react-icons/lu";
 import './CVTech.css';
 
@@ -60,7 +61,7 @@ const CVTech = ({ data }) => {
                 {data.sections.map((sec, idx) => (
                     <section key={idx} className="tech-module">
                         <div className="module-header">// {sec.title}</div>
-                        <div className="module-body" dangerouslySetInnerHTML={{ __html: marked(sec.content) }} />
+                        <div className="module-body" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked(sec.content)) }} />
                     </section>
                 ))}
             </div>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 import { LuMail, LuPhone, LuMapPin, LuLink } from "react-icons/lu";
 import './CVAcademic.css';
 
@@ -33,7 +34,7 @@ const CVAcademic = ({ data }) => {
             {data.sections.map((sec, idx) => (
                 <section key={idx} className="acad-section">
                     <h3>{sec.title}</h3>
-                    <div className="acad-body" dangerouslySetInnerHTML={{ __html: marked(sec.content) }} />
+                    <div className="acad-body" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked(sec.content)) }} />
                 </section>
             ))}
         </div>

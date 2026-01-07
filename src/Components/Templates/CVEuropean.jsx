@@ -1,11 +1,12 @@
 import React from 'react';
 import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 import { LuMail, LuPhone, LuMapPin, LuLink } from "react-icons/lu";
 import './CVEuropean.css';
 
 const CVEuropean = ({ data }) => {
     const renderSectionContent = (content) => {
-        return <div dangerouslySetInnerHTML={{ __html: marked(content) }} />;
+        return <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked(content)) }} />;
     };
 
     const initials = data.name ? data.name.substring(0, 2).toUpperCase() : "ME";
@@ -66,7 +67,7 @@ const CVEuropean = ({ data }) => {
                 </header>
                 {data.intro && (
                     <div className="cv-intro" style={{ marginBottom: '25px', opacity: 0.8 }}>
-                        <div dangerouslySetInnerHTML={{ __html: marked(data.intro) }} />
+                        <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked(data.intro)) }} />
                     </div>
                 )}
                 {data.sections.map((sec, idx) => (

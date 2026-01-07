@@ -1,10 +1,11 @@
 import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 import { LuMail, LuPhone, LuMapPin, LuLink } from "react-icons/lu";
 import './CVGulf.css';
 
 const CVGulf = ({ data }) => {
     const renderSectionContent = (content) => {
-        return <div dangerouslySetInnerHTML={{ __html: marked(content) }} />;
+        return <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked(content)) }} />;
     };
 
     const getDisplayUrl = (url) => {
@@ -51,7 +52,7 @@ const CVGulf = ({ data }) => {
             <div className="cv-body">
                 {data.intro && (
                     <div className="cv-intro" style={{ marginBottom: '20px', fontSize: '14px' }}>
-                        <div dangerouslySetInnerHTML={{ __html: marked(data.intro) }} />
+                        <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked(data.intro)) }} />
                     </div>
                 )}
                 {data.sections.map((sec, idx) => (
