@@ -1,0 +1,104 @@
+.cv-european {
+    display: flex;
+    min-height: 29.7cm;
+    background: #fff;
+}
+
+.cv-european .cv-sidebar {
+    width: 250px;
+    background: #0f172a;
+    color: #fff;
+    padding: 40px 25px;
+}
+
+.cv-european .user-initials {
+    width: 60px;
+    height: 60px;
+    background: #3498db;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 30px;
+}
+
+.cv-european .sidebar-contact h3 {
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 10px;
+}
+
+.cv-european .contact-item {
+    font-size: 12px;
+    margin-bottom: 15px;
+    opacity: 0.9;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    word-break: break-word;
+}
+
+.cv-european .contact-item svg {
+    color: #3498db;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.cv-european .contact-link {
+    color: #3498db;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    word-break: break-all;
+}
+
+.cv-european .contact-link:hover {
+    color: #5dade2;
+    text-decoration: underline;
+}
+
+.cv-european .cv-main {
+    flex: 1;
+    padding: 50px 60px;
+    background: #fff;
+}
+
+.cv-european h1 {
+    font-size: 36px;
+    margin: 0;
+    color: #1e293b;
+}
+
+.cv-european .cv-profession {
+    font-size: 18px;
+    color: #64748b;
+    margin: 5px 0 20px 0;
+}
+
+.cv-european .header-decoration {
+    width: 50px;
+    height: 4px;
+    background: #3498db;
+    margin-bottom: 40px;
+}
+
+.cv-european .section-title {
+    font-size: 20px;
+    color: #1e293b;
+    border-bottom: 2px solid #f1f5f9;
+    padding-bottom: 8px;
+    margin-bottom: 20px;
+}
+
+.cv-european .cv-section {
+    margin-bottom: 35px;
+}
+
+.cv-european .section-content {
+    font-size: 14px;
+    color: #334155;
+}

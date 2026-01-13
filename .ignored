@@ -1,0 +1,7 @@
+# Custom ignored files
+node_modules/
+dist/
+.env
+*.local
+*.pdf
+lint_report.txt
