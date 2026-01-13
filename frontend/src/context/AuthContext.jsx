@@ -84,6 +84,21 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    // 2d. Guest Login (Local Only)
+    const loginAsGuest = () => {
+        const guestUser = {
+            _id: 'guest_user_id',
+            googleId: 'guest_user_id',
+            name: 'Guest User',
+            email: 'guest@example.com',
+            picture: null,
+            isGuest: true
+        };
+        localStorage.setItem('user', JSON.stringify(guestUser));
+        localStorage.setItem('token', 'guest-token');
+        setUser(guestUser);
+    };
+
     // 3. Logout Function
     const logout = () => {
         googleLogout();
@@ -100,7 +115,7 @@ export const AuthProvider = ({ children }) => {
     }, [user]);
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, loginWithEmail, registerWithEmail, getUserId }}>
+        <AuthContext.Provider value={{ user, login, logout, loginWithEmail, registerWithEmail, loginAsGuest, getUserId }}>
             {children}
         </AuthContext.Provider>
     );
