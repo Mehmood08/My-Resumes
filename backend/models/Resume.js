@@ -1,10 +1,15 @@
-const mongoose = require("mongoose");
+import mongoose from 'mongoose';
 
 const resumeSchema = new mongoose.Schema({
-  name: { type: String, required: true, trim: true },
-  email: { type: String, required: true, lowercase: true },
-  skills: { type: [String], default: [] },
-  experience: { type: String }
+    id: { type: String, required: true, unique: true }, // Client-side UUID for now
+
+    title: String,
+    desc: String, // Markdown content
+    script: String,
+    date: String,
+    parentId: String,
+    cvFormat: String,
+    userId: { type: String } // Link to User model (optional for now to allow legacy data)
 }, { timestamps: true });
 
-module.exports = mongoose.model("Resume", resumeSchema);
+export default mongoose.model('Resume', resumeSchema);

@@ -32,23 +32,60 @@ const occupations = [
 ];
 
 const layouts = [
-    { id: "America", name: "American Standard", description: "Clean, traditional & results-focused.", img: americaPreview },
-    { id: "European", name: "European Modern", description: "Sleek, organized & structured.", img: europeanPreview },
-    { id: "Gulf", name: "Gulf Professional", description: "Refined & optimized for the Gulf region.", img: gulfPreview },
-    { id: "Professional", name: "Classic Professional", description: "Timeless business-standard layout.", img: professionalPreview },
-    { id: "Creative", name: "Creative Edge", description: "Bold design for modern industries.", img: creativePreview },
-    { id: "Minimalist", name: "Clean Minimalist", description: "Simple, easy to read & distraction-free.", img: minimalistPreview },
-    { id: "Executive", name: "Senior Executive", description: "Sophisticated for top-tier roles.", img: professionalPreview },
-    { id: "Academic", name: "Academic / Research", description: "Detailed structure for scholars.", img: professionalPreview },
-    { id: "Tech", name: "Technical Specialist", description: "Optimized for skills & tech stack.", img: creativePreview },
-    { id: "Service", name: "Customer Service", description: "Practical & experience-heavy.", img: professionalPreview },
+    { id: "America", name: "American Standard", description: "Clean, traditional & results-focused.", img: americaPreview, type: 'standard' },
+    { id: "European", name: "European Modern", description: "Sleek, organized & structured.", img: europeanPreview, type: 'sidebar' },
+    { id: "Gulf", name: "Gulf Professional", description: "Refined & optimized for the Gulf region.", img: gulfPreview, type: 'standard' },
+    { id: "Professional", name: "Classic Professional", description: "Timeless business-standard layout.", img: professionalPreview, type: 'standard' },
+    { id: "Creative", name: "Creative Edge", description: "Bold design for modern industries.", img: creativePreview, type: 'standard' },
+    { id: "Minimalist", name: "Clean Minimalist", description: "Simple, easy to read & distraction-free.", img: minimalistPreview, type: 'standard' },
+    { id: "Executive", name: "Senior Executive", description: "Sophisticated for top-tier roles.", img: professionalPreview, type: 'standard', filter: 'filter-executive' },
+    { id: "Academic", name: "Academic / Research", description: "Detailed structure for scholars.", img: professionalPreview, type: 'compact', filter: 'filter-academic' },
+    { id: "Tech", name: "Technical Specialist", description: "Optimized for skills & tech stack.", img: creativePreview, type: 'standard', filter: 'filter-tech' },
+    { id: "Service", name: "Customer Service", description: "Practical & experience-heavy.", img: professionalPreview, type: 'standard', filter: 'filter-service' },
 ];
 
-const styles = [
-    { id: "classic", name: "Clean & Simple", img: "/cv-classic.png" },
-    { id: "modern", name: "Modern & Sleek", img: "/cv-modern.png" },
-    { id: "bold", name: "Bold & Professional", img: "/cv-creative.png" },
-];
+const SkeletonOverlay = ({ type }) => {
+    if (type === 'sidebar') {
+        return (
+            <div className="skeleton-overlay" style={{ padding: '15px' }}>
+                <div className="skeleton-sidebar">
+                    <div className="skel-side">
+                        <div className="skel-sub" style={{ width: '80%', height: '18px', background: '#3b82f6' }}></div>
+                        {[1, 2, 3].map(i => <div key={i} className="skel-line" style={{ height: '2px' }} />)}
+                    </div>
+                    <div className="skel-main">
+                        <div className="skel-header" style={{ height: '10px' }}></div>
+                        {[1, 2, 3, 4].map(i => <div key={i} className="skel-line" />)}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+    if (type === 'compact') {
+        return (
+            <div className="skeleton-overlay" style={{ padding: '20px' }}>
+                <div className="skel-centered-header">
+                    <div className="skel-header" style={{ width: '50%', height: '12px' }}></div>
+                    <div className="skel-sub" style={{ width: '30%' }}></div>
+                </div>
+                <div className="skel-section-block" style={{ marginTop: '10px' }}>
+                    {[1, 2, 3, 4, 5, 6].map(i => (
+                        <div key={i} className={`skel-line ${i % 3 === 0 ? 'mid' : ''}`} />
+                    ))}
+                </div>
+            </div>
+        );
+    }
+    return (
+        <div className="skeleton-overlay" style={{ padding: '15px' }}>
+            <div className="skel-header" style={{ height: '12px' }}></div>
+            <div className="skel-sub"></div>
+            <div className="skel-section-block" style={{ marginTop: '10px' }}>
+                {[1, 2, 3, 4].map(i => <div key={i} className={`skel-line ${i % 2 === 0 ? 'mid' : ''}`} />)}
+            </div>
+        </div>
+    );
+};
 
 export default function TemplateWizard({ isOpen, onClose, onCreate }) {
     const [currentStep, setCurrentStep] = useState(0);
@@ -100,7 +137,7 @@ export default function TemplateWizard({ isOpen, onClose, onCreate }) {
                                 className={`selection-card large ${selections.layout === layout.id ? "selected" : ""}`}
                                 onClick={() => updateSelection("layout", layout.id)}
                             >
-                                <div className="cv-thumbnail-container" style={{ position: 'relative', overflow: 'hidden' }}>
+                                <div className={`cv-thumbnail-container ${layout.filter || ''}`} style={{ position: 'relative', overflow: 'hidden' }}>
                                     <img
                                         src={layout.img}
                                         alt={layout.name}
@@ -108,13 +145,15 @@ export default function TemplateWizard({ isOpen, onClose, onCreate }) {
                                             width: '100%',
                                             height: '100%',
                                             objectFit: 'cover',
-                                            transition: 'transform 0.3s ease'
+                                            objectPosition: 'top',
+                                            transition: 'transform 0.5s ease'
                                         }}
                                         className="cv-thumb-img"
                                     />
+                                    {/* <SkeletonOverlay type={layout.type} /> */}
                                 </div>
                                 <h4>{layout.name}</h4>
-                                <p style={{ fontSize: '12px' }}>{layout.description}</p>
+                                <p style={{ fontSize: '11px' }}>{layout.description}</p>
                             </div>
                         ))}
                     </div>

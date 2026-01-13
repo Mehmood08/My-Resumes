@@ -1,79 +1,45 @@
-// Required modules
-require("dotenv").config();       // .env file load karne ke liye
-const express = require("express");
-const mongoose = require("mongoose");
-const cors = require("cors");
+import express from 'express';
+import cors from 'cors';
+import mongoose from 'mongoose';
+import dotenv from 'dotenv';
+import authRoutes from './api/auth.js';
+import resumeRoutes from './api/resumes.js';
+import aiRoutes from './api/ai.js';
 
-const Resume = require("./models/Resume"); // Resume model import
+dotenv.config();
 
 const app = express();
+const PORT = process.env.PORT || 3001;
 
-// Middleware
-app.use(cors());                 // Different origin se requests allow karne ke liye
-app.use(express.json());         // JSON body parse karne ke liye
+app.use(cors());
+app.use(express.json());
 
-// MongoDB connection
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB Connected"))
-  .catch(err => console.error(err));
+// Connect to MongoDB
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/notes-app')
+    .then(() => console.log('Connected to MongoDB'))
+    .catch(err => console.error('Could not connect to MongoDB:', err));
 
-// ------------------- ROUTES -------------------
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/resumes', resumeRoutes);
+app.use('/api/ai', aiRoutes);
 
-// 1️⃣ POST API - Add new resume
-app.post("/api/resume", async (req, res) => {
-  try {
-    const resume = new Resume(req.body);   // Request body se data lo
-    const savedResume = await resume.save(); // MongoDB me save karo
-    res.status(201).json(savedResume);      // Response me saved resume bhejo
-  } catch (error) {
-    res.status(500).json({ message: "Error saving resume" });
-  }
+// Root route
+app.get('/', (req, res) => {
+    res.send(`
+        <div style="font-family: sans-serif; text-align: center; padding: 50px;">
+            <h1 style="color: #2563eb;">🚀 Backend is running!</h1>
+            <p>This is the server side of your CV Builder.</p>
+            <p><strong>To see your website, please go to:</strong></p>
+            <a href="http://localhost:5173" style="font-size: 20px; color: #10b981; font-weight: bold;">http://localhost:5173</a>
+        </div>
+    `);
 });
 
-// 2️⃣ GET all resumes
-app.get("/api/resume", async (req, res) => {
-  try {
-    const resumes = await Resume.find();   // Sab resumes fetch karo
-    res.json(resumes);
-  } catch (error) {
-    res.status(500).json({ message: "Error fetching resumes" });
-  }
+app.get('/api/test', (req, res) => {
+    res.json({ message: 'Backend is working!', status: 'success' });
 });
 
-// 3️⃣ GET resume by ID
-app.get("/api/resume/:id", async (req, res) => {
-  const { id } = req.params;  // URL se ID lo
-  try {
-    const resume = await Resume.findById(id);
-    if (!resume) {
-      return res.status(404).json({ message: "Resume not found" });
-    }
-    res.json(resume);  // Specific resume bhejo
-  } catch (error) {
-    res.status(500).json({ message: "Error fetching resume" });
-  }
+app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
 });
-
-// 4️⃣ PUT resume by ID (update)
-app.put("/api/resume/:id", async (req, res) => {
-  const { id } = req.params;
-  try {
-    const updatedResume = await Resume.findByIdAndUpdate(
-      id,
-      req.body,
-      { new: true }  // Updated document return kare
-    );
-
-    if (!updatedResume) {
-      return res.status(404).json({ message: "Resume not found" });
-    }
-
-    res.json(updatedResume); // Updated resume response me bhejo
-  } catch (error) {
-    res.status(500).json({ message: "Error updating resume" });
-  }
-});
-
-// ------------------- SERVER -------------------
-const PORT = 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

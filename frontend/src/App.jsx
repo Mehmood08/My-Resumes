@@ -12,7 +12,7 @@ import { useAuth } from './context/AuthContext';
 import Login from './Components/Login';
 
 function App() {
-  const { user } = useAuth();
+  const { user, getUserId } = useAuth();
   const [notes, setNotes] = useState([]);
 
   const [currentNote, setCurrentNote] = useState({ title: "", desc: "", script: "", id: null, parentId: "" });
@@ -44,7 +44,9 @@ function App() {
       });
 
     // Fetch resumes only for this user
-    fetch(`/api/resumes?userId=${user.googleId}`)
+    const userId = getUserId();
+    if (!userId) return;
+    fetch(`/api/resumes?userId=${userId}`)
       .then(res => {
         if (!res.ok) throw new Error("Network response was not ok");
         return res.json();
@@ -58,7 +60,7 @@ function App() {
         }
       })
       .catch(err => console.error("Failed to fetch resumes", err));
-  }, [user?.googleId]);
+  }, [user]);
 
   const handleCreateNote = (parentId = "", selections = null) => {
     let templateKey = "Blank Note";
@@ -114,10 +116,16 @@ function App() {
       return;
     }
 
+    const userId = getUserId();
+    if (!userId) {
+      alert("User not authenticated. Please log in again.");
+      return;
+    }
+
     const noteToSave = {
       ...currentNote,
       date: new Date().toLocaleDateString(),
-      userId: user.googleId // Attach owner ID
+      userId: userId // Attach owner ID
     };
 
     if (currentNote.id) {
@@ -153,8 +161,13 @@ function App() {
   };
 
   const handleDeleteNote = (id) => {
+    const userId = getUserId();
+    if (!userId) {
+      alert("User not authenticated. Please log in again.");
+      return;
+    }
     if (window.confirm("Are you sure you want to delete this resume?")) {
-      fetch(`/api/resumes/${id}?userId=${user.googleId}`, { method: 'DELETE' })
+      fetch(`/api/resumes/${id}?userId=${userId}`, { method: 'DELETE' })
         .then(res => {
           if (res.ok) {
             setNotes(notes.filter(n => n.id !== id));

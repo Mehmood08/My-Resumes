@@ -4,14 +4,24 @@ import { useAuth } from '../context/AuthContext';
 import { LuMail, LuLock, LuGlobe, LuShieldCheck, LuSparkles } from "react-icons/lu";
 
 function Login() {
-    const { login } = useAuth();
+    const { login, loginWithEmail, registerWithEmail } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [isRegistering, setIsRegistering] = useState(false);
+    const [error, setError] = useState('');
 
-    const handleEmailLogin = (e) => {
+    const handleEmailAuth = async (e) => {
         e.preventDefault();
-        console.log('Email login attempt:', { email, password });
-        alert('Email login is not yet configured on the backend. Please use Google Login for now.');
+        setError('');
+        try {
+            if (isRegistering) {
+                await registerWithEmail(email, password, email.split('@')[0]);
+            } else {
+                await loginWithEmail(email, password);
+            }
+        } catch (err) {
+            setError(err.message || 'Authentication failed');
+        }
     };
 
     return (
@@ -91,7 +101,8 @@ function Login() {
                                 textTransform: 'uppercase'
                             }}>User Authentication</h2>
 
-                            <form onSubmit={handleEmailLogin} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                            <form onSubmit={handleEmailAuth} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                {error && <div style={{ color: '#ef4444', fontSize: '13px', background: '#fef2f2', padding: '10px', borderRadius: '4px', border: '1px solid #fee2e2' }}>{error}</div>}
                                 <div style={{ position: 'relative' }}>
                                     <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>
                                         Email Address
@@ -137,7 +148,18 @@ function Login() {
                                     fontWeight: '600', border: 'none', cursor: 'pointer', fontSize: '14px',
                                     marginTop: '10px'
                                 }}>
-                                    Sign In to Dashboard
+                                    {isRegistering ? 'Create Account' : 'Sign In to Dashboard'}
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={() => setIsRegistering(!isRegistering)}
+                                    style={{
+                                        background: 'none', border: 'none', color: '#64748b', fontSize: '13px',
+                                        cursor: 'pointer', textDecoration: 'underline'
+                                    }}
+                                >
+                                    {isRegistering ? 'Already have an account? Sign In' : 'Need an account? Register'}
                                 </button>
                             </form>
 
@@ -158,7 +180,7 @@ function Login() {
                                     }}
                                     theme="filled_black"
                                     shape="rectangular"
-                                    width="100%"
+                                    width="350px"
                                 />
                             </div>
                         </section>
