@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { LuMail, LuLock, LuGlobe, LuShieldCheck, LuSparkles } from "react-icons/lu";
 
 function Login() {
-    const { login, loginWithEmail, registerWithEmail } = useAuth();
+    const { login, loginWithEmail, registerWithEmail, loginAsGuest } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isRegistering, setIsRegistering] = useState(false);
@@ -183,6 +183,19 @@ function Login() {
                                     width="350px"
                                 />
                             </div>
+
+                            <button
+                                type="button"
+                                onClick={loginAsGuest}
+                                style={{
+                                    display: 'block', margin: '20px auto 0',
+                                    background: 'none', border: '1px solid #cbd5e1', borderRadius: '6px',
+                                    padding: '10px 20px', fontSize: '12px', fontWeight: '600', color: '#475569',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                Continue as Guest (Skip Login)
+                            </button>
                         </section>
                     </div>
 
