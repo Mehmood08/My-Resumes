@@ -1,13 +1,13 @@
 import axios from "axios";
 
 // Base URL of your backend
-const API_URL = "http://localhost:5000/api/resume";
+const API_URL = import.meta.env.VITE_API_URL + "/api/resume";
 
 // POST - save resume
 export const saveResume = async (resumeData) => {
   try {
     const response = await axios.post(API_URL, resumeData);
-    return response.data; 
+    return response.data;
   } catch (error) {
     console.error("Error saving resume:", error);
     throw error;

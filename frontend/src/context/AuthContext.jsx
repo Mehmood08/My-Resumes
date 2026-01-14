@@ -18,7 +18,7 @@ export const AuthProvider = ({ children }) => {
     const login = async (googleCredential) => {
         try {
             // A. Send the Google Token to OUR Backend
-            const res = await fetch('/api/auth/google', {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/google`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ token: googleCredential })
@@ -45,7 +45,7 @@ export const AuthProvider = ({ children }) => {
     // 2b. Email/Password Login
     const loginWithEmail = async (email, password) => {
         try {
-            const res = await fetch('/api/auth/login', {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password })
@@ -66,7 +66,7 @@ export const AuthProvider = ({ children }) => {
     // 2c. Email/Password Register
     const registerWithEmail = async (email, password, name) => {
         try {
-            const res = await fetch('/api/auth/register', {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password, name })

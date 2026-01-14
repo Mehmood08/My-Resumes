@@ -33,7 +33,7 @@ function App() {
     }
 
     // Check backend connection
-    fetch('/api/test')
+    fetch(`${import.meta.env.VITE_API_URL}/api/test`)
       .then(res => res.json())
       .then(data => {
         if (data.status === 'success') setBackendStatus("connected");
@@ -46,7 +46,7 @@ function App() {
     // Fetch resumes only for this user
     const userId = getUserId();
     if (!userId) return;
-    fetch(`/api/resumes?userId=${userId}`)
+    fetch(`${import.meta.env.VITE_API_URL}/api/resumes?userId=${userId}`)
       .then(res => {
         if (!res.ok) throw new Error("Network response was not ok");
         return res.json();
@@ -130,7 +130,7 @@ function App() {
 
     if (currentNote.id) {
       // Update existing
-      fetch(`/api/resumes/${currentNote.id}`, {
+      fetch(`${import.meta.env.VITE_API_URL}/api/resumes/${currentNote.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(noteToSave)
@@ -145,7 +145,7 @@ function App() {
       // Create new
       const newNote = { ...noteToSave, id: uuidv4() };
       console.log("Saving NEW note:", newNote); // DEBUG
-      fetch('/api/resumes', {
+      fetch(`${import.meta.env.VITE_API_URL}/api/resumes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newNote)
@@ -167,7 +167,7 @@ function App() {
       return;
     }
     if (window.confirm("Are you sure you want to delete this resume?")) {
-      fetch(`/api/resumes/${id}?userId=${userId}`, { method: 'DELETE' })
+      fetch(`${import.meta.env.VITE_API_URL}/api/resumes/${id}?userId=${userId}`, { method: 'DELETE' })
         .then(res => {
           if (res.ok) {
             setNotes(notes.filter(n => n.id !== id));
