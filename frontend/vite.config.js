@@ -9,10 +9,7 @@ export default defineConfig({
     strictPort: true,
     allowedHosts: true,
     cors: true,
-    hmr: {
-      protocol: 'wss',
-      clientPort: 443,
-    },
+    hmr: false,
     proxy: {
       '/api': {
         target: 'http://localhost:3001',
