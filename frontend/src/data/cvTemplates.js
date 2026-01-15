@@ -1,6 +1,6 @@
 export const cvTemplates = {
     "Blank Note": "",
-    "Software Engineer": `# [Name]
+    "Software Engineer": `# Name
 [Email] | [Phone] | [LinkedIn/Portfolio]
 
 ## Professional Summary
@@ -26,7 +26,7 @@ Experienced Software Engineer with a strong background in [Core Tech Stack]. Pro
 
 ## Education
 - **B.S. Computer Science** | [University Name]
-- [Certifications]
+
 
 ## Projects
 - **[Project Name]**: Brief description of the project and your role.
