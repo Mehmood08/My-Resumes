@@ -228,7 +228,7 @@ export default function TemplateWizard({ isOpen, onClose, onCreate }) {
                                 <span className="guidance-icon">💡</span>
                                 <div className="guidance-text">
                                     <strong>Template Selection</strong>
-                                    <p>Choose a base format. You can customize details later!</p>
+                                    
                                 </div>
 
                             </div>
