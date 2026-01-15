@@ -1,11 +1,6 @@
 import React, { useState } from "react";
 import { LuX, LuChevronLeft, LuCheck } from "react-icons/lu";
-import americaPreview from "../assets/templates/america_preview.png";
-import europeanPreview from "../assets/templates/european_preview.png";
-import gulfPreview from "../assets/templates/gulf_preview.png";
-import professionalPreview from "../assets/templates/professional_preview.png";
-import creativePreview from "../assets/templates/creative_preview.png";
-import minimalistPreview from "../assets/templates/minimalist_preview.png";
+import { LiveThumbnail } from "./SharedLiveThumbnail";
 
 const steps = [
     { id: "layout", title: "What layout suits you best?" },
@@ -32,60 +27,17 @@ const occupations = [
 ];
 
 const layouts = [
-    { id: "America", name: "American Standard", description: "Clean, traditional & results-focused.", img: americaPreview, type: 'standard' },
-    { id: "European", name: "European Modern", description: "Sleek, organized & structured.", img: europeanPreview, type: 'sidebar' },
-    { id: "Gulf", name: "Gulf Professional", description: "Refined & optimized for the Gulf region.", img: gulfPreview, type: 'standard' },
-    { id: "Professional", name: "Classic Professional", description: "Timeless business-standard layout.", img: professionalPreview, type: 'standard' },
-    { id: "Creative", name: "Creative Edge", description: "Bold design for modern industries.", img: creativePreview, type: 'standard' },
-    { id: "Minimalist", name: "Clean Minimalist", description: "Simple, easy to read & distraction-free.", img: minimalistPreview, type: 'standard' },
-    { id: "Executive", name: "Senior Executive", description: "Sophisticated for top-tier roles.", img: professionalPreview, type: 'standard', filter: 'filter-executive' },
-    { id: "Academic", name: "Academic / Research", description: "Detailed structure for scholars.", img: professionalPreview, type: 'compact', filter: 'filter-academic' },
-    { id: "Tech", name: "Technical Specialist", description: "Optimized for skills & tech stack.", img: creativePreview, type: 'standard', filter: 'filter-tech' },
-    { id: "Service", name: "Customer Service", description: "Practical & experience-heavy.", img: professionalPreview, type: 'standard', filter: 'filter-service' },
+    { id: "America", name: "American Standard", description: "Clean, traditional & results-focused.", type: 'standard' },
+    { id: "European", name: "European Modern", description: "Sleek, organized & structured.", type: 'sidebar' },
+    { id: "Gulf", name: "Gulf Professional", description: "Refined & optimized for the Gulf region.", type: 'standard' },
+    { id: "Professional", name: "Classic Professional", description: "Timeless business-standard layout.", type: 'standard' },
+    { id: "Creative", name: "Creative Edge", description: "Bold design for modern industries.", type: 'standard' },
+    { id: "Minimalist", name: "Clean Minimalist", description: "Simple, easy to read & distraction-free.", type: 'standard' },
+    { id: "Executive", name: "Senior Executive", description: "Sophisticated for top-tier roles.", type: 'standard', filter: 'filter-executive' },
+    { id: "Academic", name: "Academic / Research", description: "Detailed structure for scholars.", type: 'compact', filter: 'filter-academic' },
+    { id: "Tech", name: "Technical Specialist", description: "Optimized for skills & tech stack.", type: 'standard', filter: 'filter-tech' },
+    { id: "Service", name: "Customer Service", description: "Practical & experience-heavy.", type: 'standard', filter: 'filter-service' },
 ];
-
-const SkeletonOverlay = ({ type }) => {
-    if (type === 'sidebar') {
-        return (
-            <div className="skeleton-overlay" style={{ padding: '15px' }}>
-                <div className="skeleton-sidebar">
-                    <div className="skel-side">
-                        <div className="skel-sub" style={{ width: '80%', height: '18px', background: '#3b82f6' }}></div>
-                        {[1, 2, 3].map(i => <div key={i} className="skel-line" style={{ height: '2px' }} />)}
-                    </div>
-                    <div className="skel-main">
-                        <div className="skel-header" style={{ height: '10px' }}></div>
-                        {[1, 2, 3, 4].map(i => <div key={i} className="skel-line" />)}
-                    </div>
-                </div>
-            </div>
-        );
-    }
-    if (type === 'compact') {
-        return (
-            <div className="skeleton-overlay" style={{ padding: '20px' }}>
-                <div className="skel-centered-header">
-                    <div className="skel-header" style={{ width: '50%', height: '12px' }}></div>
-                    <div className="skel-sub" style={{ width: '30%' }}></div>
-                </div>
-                <div className="skel-section-block" style={{ marginTop: '10px' }}>
-                    {[1, 2, 3, 4, 5, 6].map(i => (
-                        <div key={i} className={`skel-line ${i % 3 === 0 ? 'mid' : ''}`} />
-                    ))}
-                </div>
-            </div>
-        );
-    }
-    return (
-        <div className="skeleton-overlay" style={{ padding: '15px' }}>
-            <div className="skel-header" style={{ height: '12px' }}></div>
-            <div className="skel-sub"></div>
-            <div className="skel-section-block" style={{ marginTop: '10px' }}>
-                {[1, 2, 3, 4].map(i => <div key={i} className={`skel-line ${i % 2 === 0 ? 'mid' : ''}`} />)}
-            </div>
-        </div>
-    );
-};
 
 export default function TemplateWizard({ isOpen, onClose, onCreate }) {
     const [currentStep, setCurrentStep] = useState(0);
@@ -137,20 +89,11 @@ export default function TemplateWizard({ isOpen, onClose, onCreate }) {
                                 className={`selection-card large ${selections.layout === layout.id ? "selected" : ""}`}
                                 onClick={() => updateSelection("layout", layout.id)}
                             >
-                                <div className={`cv-thumbnail-container ${layout.filter || ''}`} style={{ position: 'relative', overflow: 'hidden' }}>
-                                    <img
-                                        src={layout.img}
-                                        alt={layout.name}
-                                        style={{
-                                            width: '100%',
-                                            height: '100%',
-                                            objectFit: 'cover',
-                                            objectPosition: 'top',
-                                            transition: 'transform 0.5s ease'
-                                        }}
-                                        className="cv-thumb-img"
+                                <div className={`cv-thumbnail-container ${layout.filter || ''}`} style={{ position: 'relative', overflow: 'hidden', height: '180px' }}>
+                                    <LiveThumbnail
+                                        formatId={layout.id}
+                                        markdown={""} /* Use demo data in wizard */
                                     />
-                                    {/* <SkeletonOverlay type={layout.type} /> */}
                                 </div>
                                 <h4>{layout.name}</h4>
                                 <p style={{ fontSize: '11px' }}>{layout.description}</p>
@@ -228,7 +171,7 @@ export default function TemplateWizard({ isOpen, onClose, onCreate }) {
                                 <span className="guidance-icon">💡</span>
                                 <div className="guidance-text">
                                     <strong>Template Selection</strong>
-                                    
+
                                 </div>
 
                             </div>

@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { marked } from 'marked';
-import "./cvPreview.css";
+import "./CVPreview.css";
 import DOMPurify from 'dompurify';
 
 // Templates

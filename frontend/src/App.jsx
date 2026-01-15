@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import Sidebar from "./Components/sidebar";
-import MarkdownEditor from "./Components/markdownEditor";
+import Sidebar from "./Components/Sidebar";
+import MarkdownEditor from "./Components/MarkdownEditor";
 import TemplateWizard from "./Components/TemplateWizard";
 import "./App.css";
 import { v4 as uuidv4 } from 'uuid';
