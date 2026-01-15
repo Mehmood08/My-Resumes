@@ -2,6 +2,8 @@
     display: flex;
     min-height: 29.7cm;
     background: #fff;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .cv-european .cv-sidebar {
