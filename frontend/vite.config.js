@@ -19,11 +19,17 @@ export default defineConfig({
     }
   },
   build: {
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 1200,
     rollupOptions: {
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
+            if (id.includes('html2pdf.js') || id.includes('jspdf') || id.includes('html2canvas')) {
+              return 'pdf-generator';
+            }
+            if (id.includes('react-icons')) {
+              return 'icons';
+            }
             return 'vendor';
           }
         }
