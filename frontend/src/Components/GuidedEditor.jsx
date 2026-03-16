@@ -149,7 +149,11 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard }) => {
                             step.id === 'languages' ? 'LANGUAGES' :
                                 step.id === 'certifications' ? 'CERTIFICATIONS' : step.label.toUpperCase();
 
-        const sectionIndex = sections.findIndex(s => s.title.toUpperCase().includes(step.id.toUpperCase()));
+        const sectionIndex = sections.findIndex(s => {
+            const title = s.title.toUpperCase();
+            const id = step.id.toUpperCase();
+            return title.includes(id) || (id === 'SUMMARY' && title.includes('PROFESSIONAL'));
+        });
 
         let newContent = "";
         let updatedSections = [...sections];
@@ -360,9 +364,7 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard }) => {
         const activeSection = sectionIndex !== -1 ? sections[sectionIndex] : null;
 
         // Dynamic suggested title
-        const suggestedTitle = personalInfo.profession
-            ? `${personalInfo.profession.toUpperCase()} ${step.label.toUpperCase()}`
-            : step.label.toUpperCase();
+        const suggestedTitle = step.label.toUpperCase();
 
         return (
             <div className="wizard-form fadeIn">

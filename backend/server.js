@@ -4,25 +4,37 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import authRoutes from './api/auth.js';
 import resumeRoutes from './api/resumes.js';
-import aiRoutes from './api/ai.js';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(cors());
+app.use(cors({
+    origin: [
+        'http://localhost:5173', 
+        'https://notes-app-five-kappa.vercel.app', 
+        'https://notes-app-frontend-production.vercel.app'
+    ],
+    credentials: true
+}));
 app.use(express.json());
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/notes-app')
-    .then(() => console.log('Connected to MongoDB'))
-    .catch(err => console.error('Could not connect to MongoDB:', err));
+    .then(() => console.log('✅ Connected to MongoDB'))
+    .catch(err => {
+        if (err.code === 'ENOTFOUND') {
+            console.error('❌ MongoDB Connection Error: DNS address not found (ENOTFOUND).');
+            console.error('👉 Please check your internet connection or the MONGODB_URI in your .env file.');
+        } else {
+            console.error('❌ Could not connect to MongoDB:', err);
+        }
+    });
 
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/resumes', resumeRoutes);
-app.use('/api/ai', aiRoutes);
 
 // Root route
 app.get('/', (req, res) => {
@@ -37,7 +49,12 @@ app.get('/', (req, res) => {
 });
 
 app.get('/api/test', (req, res) => {
-    res.json({ message: 'Backend is working!', status: 'success' });
+    const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+    res.json({ 
+        message: 'Backend is working!', 
+        status: dbStatus === 'connected' ? 'success' : 'error',
+        database: dbStatus 
+    });
 });
 
 app.listen(PORT, () => {

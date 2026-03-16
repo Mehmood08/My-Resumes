@@ -24,7 +24,6 @@ function App() {
   const [backendStatus, setBackendStatus] = useState("disconnected");
 
   useEffect(() => {
-    // If no user, reset the local state so previous records don't linger
     if (!user) {
       setNotes([]);
       setCurrentNote({ title: "", desc: "", script: "", id: null, parentId: "" });
@@ -32,18 +31,20 @@ function App() {
       return;
     }
 
-    // Check backend connection
     fetch(`${import.meta.env.VITE_API_URL}/api/test`)
       .then(res => res.json())
       .then(data => {
-        if (data.status === 'success') setBackendStatus("connected");
+        if (data.status === 'success') {
+          setBackendStatus("connected");
+        } else {
+          setBackendStatus("disconnected");
+        }
       })
       .catch((err) => {
         console.error("Backend offline", err);
         setBackendStatus("disconnected");
       });
 
-    // Fetch resumes only for this user
     const userId = getUserId();
     if (!userId) return;
     fetch(`${import.meta.env.VITE_API_URL}/api/resumes?userId=${userId}`)
@@ -55,59 +56,47 @@ function App() {
         if (Array.isArray(data)) {
           setNotes(data);
         } else {
-          console.error("API returned non-array:", data);
           setNotes([]);
         }
       })
       .catch(err => console.error("Failed to fetch resumes", err));
   }, [user]);
 
-  const handleCreateNote = (parentId = "", selections = null) => {
+  const handleCreateNote = async (parentId = "", selections = null) => {
     let templateKey = "Blank Note";
-    let format = "America"; // Default
-    let occupationVal = "";
+    let format = "America";
+    let templateContent = "";
 
     if (selections) {
-      occupationVal = selections.occupation;
-      // Map occupation selection to template if possible
-      const occ = selections.occupation;
-      if (occ.includes("Software") || occ.includes("IT")) templateKey = "Software Engineer";
-      else if (occ.includes("Management")) templateKey = "Project Manager";
-      else if (occ.includes("Healthcare")) templateKey = "Blank Note"; // Add more if needed
-      else templateKey = "Blank Note";
+      // Direct Creation Flow (Using Selections)
+      const { occupation, layout } = selections;
+      const format = layout || "America";
+      const templateContent = cvTemplates[occupation] || cvTemplates["Blank Note"];
+      const newTitle = occupation ? `${occupation} CV` : "New CV";
 
-      // Map layout
-      if (selections.layout === "America" || selections.layout === "American") format = "America";
-      else if (selections.layout === "European") format = "European";
-      else if (selections.layout === "Gulf") format = "Gulf";
-      else format = selections.layout; // Fallback to direct ID if it exists in data
+      setCurrentNote({
+        title: newTitle,
+        desc: templateContent,
+        script: "",
+        id: null,
+        parentId
+      });
+      setCvFormat(format);
+      setIsEditing(false);
+    } else {
+      // Manual creation (Initial state or empty)
+      templateContent = cvTemplates["Blank Note"];
+      setCurrentNote({
+        title: "New CV",
+        desc: templateContent,
+        script: "",
+        id: null,
+        parentId: ""
+      });
+      setCvFormat("America");
+      setIsEditing(false);
+      setIsWizardOpen(true);
     }
-
-    let templateContent = cvTemplates[templateKey] || "";
-
-    // If we have an occupation but used a blank template or the template doesn't have it,
-    // ensure the header is initialized with the occupation
-    if (occupationVal && (!templateContent || !templateContent.includes("|"))) {
-      if (!templateContent) {
-        templateContent = `# [Name] | ${occupationVal}\n[Email] | [Phone]\n\n## SUMMARY\n\n`;
-      } else {
-        // Replace the first line with one that includes the occupation if it's just # [Name]
-        templateContent = templateContent.replace(/^# (.*?)(\n)/, `# $1 | ${occupationVal}$2`);
-      }
-    }
-
-    const newTitle = templateKey !== "Blank Note" ? `${templateKey} CV` : "New CV";
-
-    setCurrentNote({
-      title: newTitle,
-      desc: templateContent,
-      script: "",
-      id: null,
-      parentId
-    });
-    setCvFormat(format);
-    setIsEditing(false);
-    setActiveTab("Guided");
   };
 
   const handleSaveNote = () => {
@@ -117,19 +106,15 @@ function App() {
     }
 
     const userId = getUserId();
-    if (!userId) {
-      alert("User not authenticated. Please log in again.");
-      return;
-    }
+    if (!userId) return;
 
     const noteToSave = {
       ...currentNote,
       date: new Date().toLocaleDateString(),
-      userId: userId // Attach owner ID
+      userId: userId
     };
 
     if (currentNote.id) {
-      // Update existing
       fetch(`${import.meta.env.VITE_API_URL}/api/resumes/${currentNote.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -142,9 +127,7 @@ function App() {
         })
         .catch(err => alert("Failed to save changes"));
     } else {
-      // Create new
       const newNote = { ...noteToSave, id: uuidv4() };
-      console.log("Saving NEW note:", newNote); // DEBUG
       fetch(`${import.meta.env.VITE_API_URL}/api/resumes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -162,10 +145,7 @@ function App() {
 
   const handleDeleteNote = (id) => {
     const userId = getUserId();
-    if (!userId) {
-      alert("User not authenticated. Please log in again.");
-      return;
-    }
+    if (!userId) return;
     if (window.confirm("Are you sure you want to delete this resume?")) {
       fetch(`${import.meta.env.VITE_API_URL}/api/resumes/${id}?userId=${userId}`, { method: 'DELETE' })
         .then(res => {
@@ -194,16 +174,14 @@ function App() {
     html2pdf().set(opt).from(element).save();
   };
 
-  if (!user) {
-    return <Login />;
-  }
+  if (!user) return <Login />;
 
   return (
     <div className="app-layout">
       <ErrorBoundary>
         <Sidebar
           notes={notes}
-          onCreateNote={handleCreateNote}
+          onCreateNote={() => handleCreateNote()}
           onSelectNote={(note) => { setCurrentNote({ ...note, title: note.title || "", desc: note.desc || "", script: note.script || "" }); setIsEditing(true); }}
           onDeleteNote={handleDeleteNote}
           activeNoteId={currentNote.id}
