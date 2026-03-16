@@ -1872,3 +1872,164 @@
   font-size: 16px;
   font-weight: 700;
 }
+
+/* LinkedIn Wizard Step Enhancements */
+.source-selection-container {
+  padding: 10px 0;
+}
+
+.source-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-top: 10px;
+}
+
+.source-card {
+  background: #ffffff;
+  border: 2px solid #e0e6ed;
+  border-radius: 16px;
+  padding: 30px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.source-card:hover {
+  border-color: #6366f1;
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(99, 102, 241, 0.1);
+}
+
+.source-card.active {
+  border-color: #6366f1;
+  background: rgba(99, 102, 241, 0.02);
+}
+
+.source-icon {
+  font-size: 32px;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.source-icon.scratch {
+  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+  color: white;
+}
+
+.source-icon.linkedin {
+  background: #0077b5;
+  color: white;
+}
+
+.source-card h4 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.source-card p {
+  margin: 0;
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.import-input-group {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  margin-top: 16px;
+}
+
+.import-input-group input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 12px;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.import-input-group input:focus {
+  border-color: #0077b5;
+  box-shadow: 0 0 0 3px rgba(0, 119, 181, 0.1);
+}
+
+.import-input-group input.error {
+  border-color: #ef4444;
+}
+
+.import-btn {
+  background: #0077b5;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.import-btn:hover:not(:disabled) {
+  background: #005582;
+  transform: scale(1.02);
+}
+
+.import-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.error-text {
+  color: #ef4444;
+  font-size: 11px;
+  margin-top: 8px;
+  font-weight: 500;
+}
+
+.spin {
+  animation: rotate 1s linear infinite;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

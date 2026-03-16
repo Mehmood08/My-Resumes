@@ -3,9 +3,21 @@ import { LuX, LuChevronLeft, LuCheck } from "react-icons/lu";
 import { LiveThumbnail } from "./SharedLiveThumbnail";
 
 const steps = [
-    { id: "layout", title: "What layout suits you best?" },
+    { id: "education", title: "What is your education level?" },
     { id: "occupation", title: "What is your occupation?" },
+    { id: "experience", title: "What is your experience level?" },
+    { id: "layout", title: "What layout suits you best?" },
     { id: "photo", title: "Will you be adding a photo?" },
+];
+
+const educationLevels = [
+    "High School Diploma",
+    "Associate's Degree",
+    "Bachelor's Degree",
+    "Master's Degree",
+    "PhD / Doctorate",
+    "Certification / Vocational",
+    "In Progress / Student"
 ];
 
 const occupations = [
@@ -23,7 +35,14 @@ const occupations = [
     "Logistics & Supply Chain",
     "Legal & Compliance",
     "Government & Public Sector",
-    "Other / Student",
+    "Other / Professional"
+];
+
+const experienceLevels = [
+    { id: "fresher", name: "Fresher / Entry Level", description: "Just starting out or changing careers." },
+    { id: "junior", name: "Junior Level", description: "1-3 years of professional experience." },
+    { id: "mid", name: "Mid Level", description: "3-7 years of professional experience." },
+    { id: "senior", name: "Senior / Expert", description: "7+ years of professional experience." }
 ];
 
 const layouts = [
@@ -43,10 +62,11 @@ export default function TemplateWizard({ isOpen, onClose, onCreate }) {
     const [currentStep, setCurrentStep] = useState(0);
     const [showGuidance, setShowGuidance] = useState(true);
     const [selections, setSelections] = useState({
+        education: "",
         occupation: "",
+        experience: "",
         layout: "America",
-        style: "classic",
-        photo: "no",
+        photo: "no"
     });
 
     if (!isOpen) return null;
@@ -59,7 +79,16 @@ export default function TemplateWizard({ isOpen, onClose, onCreate }) {
             onCreate(selections);
             onClose();
             // Reset for next time
-            setTimeout(() => setCurrentStep(0), 300);
+            setTimeout(() => {
+                setCurrentStep(0);
+                setSelections({
+                    education: "",
+                    occupation: "",
+                    experience: "",
+                    layout: "America",
+                    photo: "no"
+                });
+            }, 300);
         }
     };
 
@@ -71,39 +100,32 @@ export default function TemplateWizard({ isOpen, onClose, onCreate }) {
 
     const updateSelection = (key, value) => {
         setSelections((prev) => ({ ...prev, [key]: value }));
-        // Auto-next for single-selection steps to feel faster (except Layout since it has many options)
-        if (key === "occupation" || key === "photo") {
-            // Give user a split second to see the selection checkmark
+        // Auto-advance for list-based selections
+        if (["education", "occupation", "experience", "photo"].includes(key)) {
             setTimeout(() => handleNext(), 200);
         }
     };
 
     const renderStepContent = () => {
         switch (currentStep) {
-            case 0:
+            case 0: // Education
                 return (
-                    <div className="selection-grid large-scroll" style={{ maxHeight: '450px', overflowY: 'auto', paddingRight: '10px' }}>
-                        {layouts.map((layout) => (
+                    <div className="occupation-list large-scroll" style={{ maxHeight: '420px', overflowY: 'auto' }}>
+                        {educationLevels.map((edu) => (
                             <div
-                                key={layout.id}
-                                className={`selection-card large ${selections.layout === layout.id ? "selected" : ""}`}
-                                onClick={() => updateSelection("layout", layout.id)}
+                                key={edu}
+                                className={`occupation-item ${selections.education === edu ? "selected" : ""}`}
+                                onClick={() => updateSelection("education", edu)}
                             >
-                                <div className={`cv-thumbnail-container ${layout.filter || ''}`} style={{ position: 'relative', overflow: 'hidden', height: '180px' }}>
-                                    <LiveThumbnail
-                                        formatId={layout.id}
-                                        markdown={""} /* Use demo data in wizard */
-                                    />
-                                </div>
-                                <h4>{layout.name}</h4>
-                                <p style={{ fontSize: '11px' }}>{layout.description}</p>
+                                {edu}
+                                {selections.education === edu && <LuCheck className="check-icon" />}
                             </div>
                         ))}
                     </div>
                 );
-            case 1:
+            case 1: // Occupation
                 return (
-                    <div className="occupation-list large-scroll" style={{ maxHeight: '450px', overflowY: 'auto' }}>
+                    <div className="occupation-list large-scroll" style={{ maxHeight: '420px', overflowY: 'auto' }}>
                         {occupations.map((occ) => (
                             <div
                                 key={occ}
@@ -116,7 +138,49 @@ export default function TemplateWizard({ isOpen, onClose, onCreate }) {
                         ))}
                     </div>
                 );
-            case 2:
+            case 2: // Experience
+                return (
+                    <div className="selection-grid experience-step">
+                        {experienceLevels.map((exp) => (
+                            <div
+                                key={exp.id}
+                                className={`selection-card large ${selections.experience === exp.id ? "selected" : ""}`}
+                                onClick={() => updateSelection("experience", exp.id)}
+                            >
+                                <div className={`experience-icon-placeholder ${exp.id}`}>
+                                    {exp.id === "fresher" && "🌱"}
+                                    {exp.id === "junior" && "🚀"}
+                                    {exp.id === "mid" && "💼"}
+                                    {exp.id === "senior" && "👑"}
+                                </div>
+                                <h4>{exp.name}</h4>
+                                <p style={{ fontSize: '11px' }}>{exp.description}</p>
+                            </div>
+                        ))}
+                    </div>
+                );
+            case 3: // Layout
+                return (
+                    <div className="selection-grid large-scroll" style={{ maxHeight: '420px', overflowY: 'auto', paddingRight: '10px' }}>
+                        {layouts.map((layout) => (
+                            <div
+                                key={layout.id}
+                                className={`selection-card large ${selections.layout === layout.id ? "selected" : ""}`}
+                                onClick={() => updateSelection("layout", layout.id)}
+                            >
+                                <div className={`cv-thumbnail-container ${layout.filter || ''}`} style={{ position: 'relative', overflow: 'hidden', height: '180px' }}>
+                                    <LiveThumbnail
+                                        formatId={layout.id}
+                                        markdown="" /* Empty for generic samples */
+                                    />
+                                </div>
+                                <h4>{layout.name}</h4>
+                                <p style={{ fontSize: '11px' }}>{layout.description}</p>
+                            </div>
+                        ))}
+                    </div>
+                );
+            case 4: // Photo
                 return (
                     <div className="selection-grid photo-step">
                         <div
@@ -138,7 +202,7 @@ export default function TemplateWizard({ isOpen, onClose, onCreate }) {
                                 <div className="p-lines"><span></span><span></span><span></span></div>
                             </div>
                             <h4>No Photo</h4>
-                            <p>Standard for  Tech roles.</p>
+                            <p>Standard for Tech roles.</p>
                         </div>
                     </div>
                 );
@@ -165,19 +229,6 @@ export default function TemplateWizard({ isOpen, onClose, onCreate }) {
                 </div>
 
                 <div className="wizard-modal-content">
-                    {currentStep === 0 && showGuidance && (
-                        <div className="guidance-popup fadeIn">
-                            <div className="guidance-content">
-                                <span className="guidance-icon">💡</span>
-                                <div className="guidance-text">
-                                    <strong>Template Selection</strong>
-
-                                </div>
-
-                            </div>
-                        </div>
-                    )}
-
                     <div className="wizard-step-body animate-slide">
                         <h2>{steps[currentStep].title}</h2>
                         <div className="wizard-main-selection">
@@ -197,10 +248,14 @@ export default function TemplateWizard({ isOpen, onClose, onCreate }) {
                     <div className="footer-actions">
                         <button
                             className="continue-btn premium"
-                            disabled={currentStep === 1 && !selections.occupation}
                             onClick={handleNext}
+                            disabled={
+                                (currentStep === 0 && !selections.education) ||
+                                (currentStep === 1 && !selections.occupation) ||
+                                (currentStep === 2 && !selections.experience)
+                            }
                         >
-                            {currentStep === steps.length - 1 ? "Finish & Create ✨" : "Continue"}
+                            {currentStep === steps.length - 1 ? "Finish & Create" : "Continue"}
                         </button>
                     </div>
                 </div>

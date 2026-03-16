@@ -9,10 +9,28 @@ function Login() {
     const [password, setPassword] = useState('');
     const [isRegistering, setIsRegistering] = useState(false);
     const [error, setError] = useState('');
+    const [serverStatus, setServerStatus] = useState('checking'); // 'checking', 'online', 'offline'
+
+    React.useEffect(() => {
+        fetch(`${import.meta.env.VITE_API_URL}/api/test`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    setServerStatus('online');
+                } else {
+                    setServerStatus('offline'); // Database disconnected means offline for login
+                }
+            })
+            .catch(() => setServerStatus('offline'));
+    }, []);
 
     const handleEmailAuth = async (e) => {
         e.preventDefault();
         setError('');
+        if (serverStatus === 'offline') {
+            setError('The backend server is offline. Please start the backend first (npm run dev).');
+            return;
+        }
         try {
             if (isRegistering) {
                 await registerWithEmail(email, password, email.split('@')[0]);
@@ -82,9 +100,6 @@ function Login() {
                         <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                             <LuShieldCheck size={14} /> Secure Access
                         </span>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                            <LuSparkles size={14} /> AI Enhanced
-                        </span>
                     </div>
                 </header>
 
@@ -102,6 +117,19 @@ function Login() {
                             }}>User Authentication</h2>
 
                             <form onSubmit={handleEmailAuth} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                {serverStatus === 'offline' && (
+                                    <div style={{ 
+                                        color: '#b91c1c', 
+                                        fontSize: '13px', 
+                                        background: '#fee2e2', 
+                                        padding: '12px', 
+                                        borderRadius: '6px', 
+                                        border: '1px solid #fecaca',
+                                        fontWeight: '600'
+                                    }}>
+                                        ⚠️ SERVER OFFLINE: Please run `npm run dev` in the backend folder.
+                                    </div>
+                                )}
                                 {error && <div style={{ color: '#ef4444', fontSize: '13px', background: '#fef2f2', padding: '10px', borderRadius: '4px', border: '1px solid #fee2e2' }}>{error}</div>}
                                 <div style={{ position: 'relative' }}>
                                     <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>
@@ -220,8 +248,8 @@ function Login() {
                                     <p style={{ margin: '5px 0 0', fontSize: '13px', color: '#64748b' }}>Choose from American, European, and Gulf styles.</p>
                                 </li>
                                 <li style={{ marginBottom: '15px' }}>
-                                    <div style={{ fontWeight: '700', fontSize: '14px', color: '#334155' }}>AI Optimization</div>
-                                    <p style={{ margin: '5px 0 0', fontSize: '13px', color: '#64748b' }}>Enhanced formatting and content suggestions for better results.</p>
+                                    <div style={{ fontWeight: '700', fontSize: '14px', color: '#334155' }}>Optimized Formatting</div>
+                                    <p style={{ margin: '5px 0 0', fontSize: '13px', color: '#64748b' }}>Enhanced formatting suggestions for better results.</p>
                                 </li>
                             </ul>
                         </section>

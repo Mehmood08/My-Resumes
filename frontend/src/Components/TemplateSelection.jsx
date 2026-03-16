@@ -60,7 +60,7 @@ export default function TemplateSelection({ currentFormat, onFormatChange, markd
     return (
         <div className="template-selection-container">
             <div className="selection-split-layout">
-                {/* Left Panel: Grid  can u tell me that like i want to tell u something in the mind and the */}
+                {/* Left Panel:  */}
                 <div className="left-panel-grid large-scroll">
                     <div className="template-header">
                         <h3>Choose Template</h3>
