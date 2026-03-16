@@ -31,19 +31,26 @@ function App() {
       return;
     }
 
-    fetch(`${import.meta.env.VITE_API_URL}/api/test`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.status === 'success') {
-          setBackendStatus("connected");
-        } else {
-          setBackendStatus("disconnected");
-        }
-      })
-      .catch((err) => {
-        console.error("Backend offline", err);
-        setBackendStatus("disconnected");
-      });
+    const checkBackend = (retries = 3) => {
+      fetch(`${import.meta.env.VITE_API_URL}/api/test`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.status === 'success') {
+            setBackendStatus("connected");
+          } else {
+            if (retries > 0) setTimeout(() => checkBackend(retries - 1), 2000);
+            else setBackendStatus("disconnected");
+          }
+        })
+        .catch((err) => {
+          if (retries > 0) setTimeout(() => checkBackend(retries - 1), 2000);
+          else {
+            console.error("Backend offline", err);
+            setBackendStatus("disconnected");
+          }
+        });
+    };
+    checkBackend();
 
     const userId = getUserId();
     if (!userId) return;
