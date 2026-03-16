@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import GuidedHelper from './GuidedHelper';
 import { LuPlus, LuInfo, LuLightbulb, LuTrash2, LuChevronLeft, LuCheck } from "react-icons/lu";
 
 const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard }) => {
     const [currentStep, setCurrentStep] = useState(markdown ? 0 : -1);
     const [showHelper, setShowHelper] = useState(false);
+    // Flag: skip re-parsing when the markdown change came from our OWN typing
+    const isInternalChange = useRef(false);
 
     // Only reset to step 0 if we are currently at the welcome screen (-1) and markdown is provided.
     // This prevents jumping back to step 0 on every keystroke.
@@ -44,8 +46,12 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard }) => {
         { id: 'certifications', label: 'Certifications', emoji: '🏆', helper: 'certifications' }
     ];
 
-    // Parse Markdown into state
+    // Parse Markdown into state — but SKIP if this change came from the user typing
     useEffect(() => {
+        if (isInternalChange.current) {
+            isInternalChange.current = false; // reset flag
+            return; // don't re-parse — user is actively editing
+        }
         if (!markdown) return;
         const lines = markdown.split('\n');
         const parsedSections = [];
@@ -57,20 +63,21 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard }) => {
             if (!trimmed && isParsingHeader) return;
 
             if (line.startsWith('# ') && isParsingHeader) {
-                const titleLine = line.replace('# ', '').trim();
-                const [namePart, professionPart] = titleLine.split('|').map(s => s.trim());
+                const titleLine = line.replace('# ', ''); // Do not trim to preserve trailing spaces
+                const [namePart, professionPart] = titleLine.split('|').map(s => s.trimStart()); // only trim start
+
                 if (namePart) {
                     const nameWords = namePart.split(' ');
                     setPersonalInfo(prev => ({
                         ...prev,
                         firstName: nameWords[0] || '',
                         lastName: nameWords.slice(1).join(' ') || '',
-                        profession: professionPart || ''
+                        profession: professionPart !== undefined ? professionPart : '' // Don't fall back to '' if it's just spaces
                     }));
                 }
             } else if (isParsingHeader && line.includes('|') && (line.includes('@') || line.match(/\d/) || line.includes('http') || line.includes('www'))) {
                 // Header contact line or links line
-                const parts = line.split('|').map(s => s.trim());
+                const parts = line.split('|').map(s => s.trimStart()); // only trim start
 
                 // Check if this is a links line (contains http or www)
                 if (parts.length >= 2 && (parts[0].includes('http') || parts[0].includes('www'))) {
@@ -123,6 +130,8 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard }) => {
             md += `## ${sec.title}\n${sec.content}\n\n`;
         });
 
+        // Mark this as an internal change so the parser useEffect won't overwrite user's input
+        isInternalChange.current = true;
         onChange(md.trim());
     };
 
