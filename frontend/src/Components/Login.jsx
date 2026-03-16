@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { GoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../context/AuthContext';
 import { LuMail, LuLock, LuGlobe, LuShieldCheck, LuSparkles } from "react-icons/lu";
+import './Login.css';
 
 function Login() {
     const { login, loginWithEmail, registerWithEmail, loginAsGuest } = useAuth();
@@ -54,26 +55,9 @@ function Login() {
     };
 
     return (
-        <div className="login-page" style={{
-            background: '#e2e8f0', // Workspace/Desk background
-            minHeight: '100vh',
-            padding: '40px 20px',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'flex-start',
-            fontFamily: "'Inter', sans-serif"
-        }}>
+        <div className="login-page">
             {/* The "CV Paper" */}
-            <div className="cv-paper" style={{
-                background: 'white',
-                width: '100%',
-                maxWidth: '850px',
-                minHeight: '1100px', // A4-ish ratio
-                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-                display: 'flex',
-                flexDirection: 'column',
-                padding: '60px'
-            }}>
+            <div className="cv-paper">
 
                 {/* CV Header */}
                 <header style={{
@@ -97,7 +81,7 @@ function Login() {
                         letterSpacing: '2px'
                     }}>Authentication Portal & Resume Manager</div>
 
-                    <div style={{
+                    <div className="mobile-hide" style={{
                         marginTop: '20px',
                         display: 'flex',
                         justifyContent: 'center',
@@ -114,7 +98,7 @@ function Login() {
                     </div>
                 </header>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '60px' }}>
+                <div className="login-auth-grid">
                     {/* Main Content Area (Left) */}
                     <div>
                         <section style={{ marginBottom: '40px' }}>
@@ -225,7 +209,7 @@ function Login() {
                                 <div style={{ flex: 1, height: '1px', background: '#f1f5f9' }}></div>
                             </div>
 
-                            <div style={{ display: 'flex', justifyContent: 'center' }}>
+                            <div className="google-login-container" style={{ display: 'flex', justifyContent: 'center' }}>
                                 <GoogleLogin
                                     onSuccess={credentialResponse => {
                                         login(credentialResponse.credential);
@@ -236,7 +220,7 @@ function Login() {
                                     }}
                                     theme="filled_black"
                                     shape="rectangular"
-                                    width="350px"
+                                    width="100%"
                                 />
                             </div>
 
