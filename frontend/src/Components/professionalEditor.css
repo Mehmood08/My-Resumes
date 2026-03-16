@@ -2033,3 +2033,109 @@
     transform: translateY(0);
   }
 }
+
+/* =========================
+   MOBILE RESPONSIVENESS
+   ========================= */
+@media (max-width: 768px) {
+  .tabs {
+    margin: 10px 12px;
+    overflow-x: auto;
+    width: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Hide scrollbar Firefox */
+  }
+  
+  .tabs::-webkit-scrollbar {
+    display: none; /* Hide scrollbar Chrome/Safari */
+  }
+
+  .tabs button {
+    padding: 8px 15px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .wizard-container {
+    flex-direction: column;
+  }
+
+  .wizard-sidebar {
+    width: 100%;
+    height: auto;
+    padding: 10px 0;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .wizard-steps-list {
+    flex-direction: row;
+    overflow-x: auto;
+    padding: 0 15px;
+    gap: 10px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .wizard-step-item {
+    padding: 8px 12px;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .step-label {
+    display: none; /* Hide labels on very small steps to save space */
+  }
+  
+  .wizard-step-item.active .step-label {
+    display: inline; /* Only show label for active step */
+    font-size: 12px;
+  }
+
+  .completeness-tracker {
+    display: none; /* Hide to save vertical space on mobile */
+  }
+
+  .wizard-content-scroll {
+    padding: 20px 15px;
+  }
+
+  .wizard-header h2 {
+    font-size: 24px;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  .form-group.full-width {
+    grid-column: span 1;
+  }
+
+  .wizard-actions {
+    padding: 15px;
+  }
+
+  .continue-btn {
+    padding: 12px 20px;
+    font-size: 14px;
+    width: auto;
+  }
+
+  .header-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .section-title-edit {
+    width: 100%;
+    max-width: none;
+  }
+
+  .add-item-btn {
+    width: 100%;
+    justify-content: center;
+    margin-top: 10px;
+  }
+}

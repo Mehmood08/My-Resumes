@@ -523,3 +523,89 @@
     font-size: 32px;
     margin-bottom: 10px;
 }
+
+/* ------------------ Mobile Responsiveness ------------------ */
+
+/* Helper classes */
+.mobile-only {
+    display: none !important;
+}
+
+@media (max-width: 768px) {
+    .mobile-only {
+        display: flex !important;
+    }
+
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: -280px;
+        height: 100vh;
+        z-index: 1000;
+        box-shadow: 10px 0 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .sidebar.mobile-show {
+        left: 0;
+    }
+
+    .sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(2px);
+        z-index: 999;
+        animation: fadeIn 0.2s ease-out;
+    }
+
+    .main-content {
+        width: 100vw;
+    }
+
+    .top-bar {
+        padding: 0 16px;
+        gap: 8px;
+    }
+
+    .title-input-flat {
+        font-size: 15px;
+        padding: 6px 8px;
+    }
+
+    .top-bar-right {
+        gap: 8px;
+    }
+
+    .save-btn-primary {
+        padding: 8px 16px;
+        font-size: 12px;
+    }
+
+    .sidebar-close-btn {
+        background: transparent;
+        border: none;
+        color: white;
+        padding: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0.7;
+    }
+
+    .sidebar-close-btn:hover {
+        opacity: 1;
+    }
+
+    .divider-vertical {
+        display: none;
+    }
+
+    .editor-status {
+        padding: 4px 8px;
+        font-size: 9px;
+    }
+}

@@ -1,8 +1,8 @@
 import React, { useState, useEffect, memo, useMemo } from "react";
 import { useAuth } from '../context/AuthContext'; // Import Auth
-import { LuPlus, LuTrash2, LuChevronDown, LuChevronRight, LuLogOut } from "react-icons/lu";
+import { LuPlus, LuTrash2, LuChevronDown, LuChevronRight, LuLogOut, LuX } from "react-icons/lu";
 
-function Sidebar({ notes, onSelectNote, onDeleteNote, onCreateNote, activeNoteId, openParentId }) {
+function Sidebar({ notes, onSelectNote, onDeleteNote, onCreateNote, activeNoteId, openParentId, isSidebarOpen, onCloseSidebar }) {
   const { user, logout } = useAuth(); // Get User
   const [openParents, setOpenParents] = useState({});
 
@@ -31,7 +31,7 @@ function Sidebar({ notes, onSelectNote, onDeleteNote, onCreateNote, activeNoteId
   };
 
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar ${isSidebarOpen ? 'mobile-show' : ''}`}>
       {/* PROFESSIONAL USER PROFILE HEADER */}
       {user && (
         <div className="sidebar-profile" style={{
@@ -76,6 +76,9 @@ function Sidebar({ notes, onSelectNote, onDeleteNote, onCreateNote, activeNoteId
       <div className="sidebar-header">
         <div className="header-top">
           <h3>My Resumes</h3>
+          <button className="sidebar-close-btn mobile-only" onClick={onCloseSidebar} title="Close Sidebar">
+            <LuX size={20} />
+          </button>
         </div>
       </div>
 

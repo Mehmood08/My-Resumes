@@ -7,6 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 import html2pdf from 'html2pdf.js';
 import { cvTemplates } from './data/cvTemplates';
 import ErrorBoundary from './Components/ErrorBoundary';
+import { LuPlus, LuLogOut, LuUser, LuChevronRight, LuCalendar, LuFileText, LuSmartphone, LuShare2, LuDownload, LuSave, LuTrash2, LuMenu, LuX } from "react-icons/lu";
 
 import { useAuth } from './context/AuthContext';
 import Login from './Components/Login';
@@ -22,6 +23,7 @@ function App() {
   const [cvFormat, setCvFormat] = useState("European");
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [backendStatus, setBackendStatus] = useState("checking");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -183,23 +185,35 @@ function App() {
     html2pdf().set(opt).from(element).save();
   };
 
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
+
   if (!user) return <Login />;
 
   return (
-    <div className="app-layout">
+    <div className={`app-layout ${isSidebarOpen ? 'sidebar-open' : ''}`}>
+      {/* Sidebar Overlay for Mobile */}
+      {isSidebarOpen && <div className="sidebar-overlay" onClick={toggleSidebar}></div>}
+
       <ErrorBoundary>
         <Sidebar
           notes={notes}
-          onCreateNote={() => handleCreateNote()}
-          onSelectNote={(note) => { setCurrentNote({ ...note, title: note.title || "", desc: note.desc || "", script: note.script || "" }); setIsEditing(true); }}
+          onCreateNote={() => { handleCreateNote(); setIsSidebarOpen(false); }}
+          onSelectNote={(note) => { setCurrentNote({ ...note, title: note.title || "", desc: note.desc || "", script: note.script || "" }); setIsEditing(true); setIsSidebarOpen(false); }}
           onDeleteNote={handleDeleteNote}
           activeNoteId={currentNote.id}
+          isSidebarOpen={isSidebarOpen}
+          onCloseSidebar={toggleSidebar}
         />
       </ErrorBoundary>
 
       <main className="main-content">
         <header className="top-bar">
           <div className="top-bar-left">
+            <button className="icon-btn-top mobile-only" onClick={toggleSidebar} title="Open Sidebar">
+              <LuMenu />
+            </button>
             <input
               type="text"
               className="title-input-flat"
