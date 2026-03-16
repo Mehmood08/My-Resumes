@@ -12,16 +12,25 @@ function Login() {
     const [serverStatus, setServerStatus] = useState('checking'); // 'checking', 'online', 'offline'
 
     React.useEffect(() => {
-        fetch(`${import.meta.env.VITE_API_URL}/api/test`)
-            .then(res => res.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    setServerStatus('online');
-                } else {
-                    setServerStatus('offline'); // Database disconnected means offline for login
-                }
-            })
-            .catch(() => setServerStatus('offline'));
+        const checkStatus = (retries = 3) => {
+            fetch(`${import.meta.env.VITE_API_URL}/api/test`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        setServerStatus('online');
+                    } else {
+                        // If it's a serverless cold start, it might not be ready yet.
+                        if (retries > 0) setTimeout(() => checkStatus(retries - 1), 2000);
+                        else setServerStatus('offline');
+                    }
+                })
+                .catch(() => {
+                    if (retries > 0) setTimeout(() => checkStatus(retries - 1), 2000);
+                    else setServerStatus('offline');
+                });
+        };
+        
+        checkStatus();
     }, []);
 
     const handleEmailAuth = async (e) => {
