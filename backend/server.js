@@ -13,8 +13,8 @@ const PORT = process.env.PORT || 3001;
 app.use(cors({
     origin: [
         'http://localhost:5173', 
-        'https://notes-app-five-kappa.vercel.app', 
-        'https://notes-app-frontend-production.vercel.app'
+        'https://my-resumes-alpha.vercel.app', 
+        'https://my-resumes-ixfh.vercel.app'
     ],
     credentials: true
 }));
@@ -49,11 +49,14 @@ app.get('/', (req, res) => {
 });
 
 app.get('/api/test', (req, res) => {
-    const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+    const state = mongoose.connection.readyState;
+    // 1 = connected, 2 = connecting
+    const isDbWorking = state === 1 || state === 2;
+    
     res.json({ 
         message: 'Backend is working!', 
-        status: dbStatus === 'connected' ? 'success' : 'error',
-        database: dbStatus 
+        status: isDbWorking ? 'success' : 'error',
+        database: state 
     });
 });
 
