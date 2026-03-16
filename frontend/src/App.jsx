@@ -31,19 +31,19 @@ function App() {
       return;
     }
 
-    const checkBackend = (retries = 3) => {
+    const checkBackend = (retries = 6) => {
       fetch(`${import.meta.env.VITE_API_URL}/api/test`)
         .then(res => res.json())
         .then(data => {
           if (data.status === 'success') {
             setBackendStatus("connected");
           } else {
-            if (retries > 0) setTimeout(() => checkBackend(retries - 1), 2000);
+            if (retries > 0) setTimeout(() => checkBackend(retries - 1), 3000);
             else setBackendStatus("disconnected");
           }
         })
         .catch((err) => {
-          if (retries > 0) setTimeout(() => checkBackend(retries - 1), 2000);
+          if (retries > 0) setTimeout(() => checkBackend(retries - 1), 3000);
           else {
             console.error("Backend offline", err);
             setBackendStatus("disconnected");

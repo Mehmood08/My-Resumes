@@ -12,32 +12,31 @@ function Login() {
     const [serverStatus, setServerStatus] = useState('checking'); // 'checking', 'online', 'offline'
 
     React.useEffect(() => {
-        const checkStatus = (retries = 3) => {
+        const checkStatus = (retries = 6) => {
             fetch(`${import.meta.env.VITE_API_URL}/api/test`)
                 .then(res => res.json())
                 .then(data => {
                     if (data.status === 'success') {
                         setServerStatus('online');
                     } else {
-                        // If it's a serverless cold start, it might not be ready yet.
-                        if (retries > 0) setTimeout(() => checkStatus(retries - 1), 2000);
+                        if (retries > 0) setTimeout(() => checkStatus(retries - 1), 3000);
                         else setServerStatus('offline');
                     }
                 })
                 .catch(() => {
-                    if (retries > 0) setTimeout(() => checkStatus(retries - 1), 2000);
+                    if (retries > 0) setTimeout(() => checkStatus(retries - 1), 3000);
                     else setServerStatus('offline');
                 });
         };
-        
         checkStatus();
     }, []);
 
     const handleEmailAuth = async (e) => {
         e.preventDefault();
         setError('');
+        // Allow login attempt even during 'checking' — if server is truly offline it will still fail with a clear error
         if (serverStatus === 'offline') {
-            setError('The backend server is offline. Please start the backend first (npm run dev).');
+            setError('Server is not responding. Please try again in a moment.');
             return;
         }
         try {
