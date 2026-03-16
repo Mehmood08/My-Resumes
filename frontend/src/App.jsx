@@ -21,7 +21,7 @@ function App() {
   const [activeTab, setActiveTab] = useState("Guided");
   const [cvFormat, setCvFormat] = useState("European");
   const [isWizardOpen, setIsWizardOpen] = useState(false);
-  const [backendStatus, setBackendStatus] = useState("disconnected");
+  const [backendStatus, setBackendStatus] = useState("checking");
 
   useEffect(() => {
     if (!user) {
@@ -31,18 +31,20 @@ function App() {
       return;
     }
 
-    const checkBackend = (retries = 6) => {
+    const checkBackend = (retries = 10) => {
       fetch(`${import.meta.env.VITE_API_URL}/api/test`)
         .then(res => res.json())
         .then(data => {
           if (data.status === 'success') {
             setBackendStatus("connected");
           } else {
+            setBackendStatus("waking-up");
             if (retries > 0) setTimeout(() => checkBackend(retries - 1), 3000);
             else setBackendStatus("disconnected");
           }
         })
         .catch((err) => {
+          setBackendStatus("waking-up");
           if (retries > 0) setTimeout(() => checkBackend(retries - 1), 3000);
           else {
             console.error("Backend offline", err);
@@ -210,8 +212,12 @@ function App() {
               {isEditing ? "SAVED" : "UNSAVED"}
             </span>
             <div className="divider-vertical"></div>
-            <span className={`editor-status ${backendStatus === "connected" ? "status-saved" : "status-unsaved"}`} title="Backend Connection">
-              {backendStatus === "connected" ? "ONLINE" : "OFFLINE"}
+            <span 
+              className={`editor-status ${backendStatus === "connected" ? "status-saved" : (backendStatus === "waking-up" ? "status-waking" : "status-unsaved")}`} 
+              title="Backend Connection"
+              style={backendStatus === "waking-up" ? { background: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd' } : {}}
+            >
+              {backendStatus === "connected" ? "ONLINE" : (backendStatus === "waking-up" ? "WAKING UP..." : "OFFLINE")}
             </span>
           </div>
 
