@@ -57,21 +57,35 @@ router.post('/register', async (req, res) => {
     const { email, password, name } = req.body;
     try {
         let user = await User.findOne({ email });
-        if (user) return res.status(400).json({ message: "User already exists" });
-
+        
         const hashedPassword = await bcrypt.hash(password, 10);
-        user = new User({ email, password: hashedPassword, name });
-        await user.save();
 
-        user.googleId = user._id.toString();
-        await user.save();
+        if (user) {
+            // If user exists but has no password (signed up via Google previously)
+            if (!user.password) {
+                user.password = hashedPassword;
+                if (!user.name) user.name = name; // Update name if missing
+                await user.save();
+                console.log(`Password added to existing Google account: ${email}`);
+            } else {
+                return res.status(400).json({ message: "User already exists with this email." });
+            }
+        } else {
+            // Completely new user
+            user = new User({ email, password: hashedPassword, name });
+            await user.save();
+            user.googleId = user._id.toString(); // Fallback ID
+            await user.save();
+            console.log(`New user registered: ${email}`);
+        }
 
         const token = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
 
-        const userData = { ...user._doc, googleId: user.googleId };
+        const userData = { ...user._doc, googleId: user.googleId || user._id.toString() };
         res.status(201).json({ token, user: userData });
     } catch (err) {
-        res.status(500).json({ message: "Server error" });
+        console.error("Register Error:", err);
+        res.status(500).json({ message: "Server error during registration." });
     }
 });
 
@@ -80,10 +94,16 @@ router.post('/login', async (req, res) => {
     const { email, password } = req.body;
     try {
         const user = await User.findOne({ email });
-        if (!user || !user.password) return res.status(400).json({ message: "Invalid credentials" });
+        if (!user) {
+            return res.status(400).json({ message: "No account found with this email. Please register." });
+        }
+
+        if (!user.password) {
+            return res.status(400).json({ message: "You previously signed in with Google. Please use the 'Sign in with Google' button, or register to set a password." });
+        }
 
         const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
+        if (!isMatch) return res.status(400).json({ message: "Incorrect password." });
 
         if (!user.googleId) {
             user.googleId = user._id.toString();
@@ -92,10 +112,11 @@ router.post('/login', async (req, res) => {
 
         const token = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
 
-        const userData = { ...user._doc, googleId: user.googleId };
+        const userData = { ...user._doc, googleId: user.googleId || user._id.toString() };
         res.json({ token, user: userData });
     } catch (err) {
-        res.status(500).json({ message: "Server error" });
+        console.error("Login Error:", err);
+        res.status(500).json({ message: "Server error during login." });
     }
 });
 
