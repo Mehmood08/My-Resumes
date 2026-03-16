@@ -12,31 +12,34 @@ function Login() {
     const [serverStatus, setServerStatus] = useState('checking'); // 'checking', 'online', 'offline'
 
     React.useEffect(() => {
-        const checkStatus = (retries = 6) => {
+        const checkStatus = (retries = 10) => {
             fetch(`${import.meta.env.VITE_API_URL}/api/test`)
                 .then(res => res.json())
                 .then(data => {
                     if (data.status === 'success') {
                         setServerStatus('online');
                     } else {
+                        setServerStatus('waking-up');
                         if (retries > 0) setTimeout(() => checkStatus(retries - 1), 3000);
                         else setServerStatus('offline');
                     }
                 })
                 .catch(() => {
+                    setServerStatus('waking-up');
                     if (retries > 0) setTimeout(() => checkStatus(retries - 1), 3000);
                     else setServerStatus('offline');
                 });
         };
+        
         checkStatus();
     }, []);
 
     const handleEmailAuth = async (e) => {
         e.preventDefault();
         setError('');
-        // Allow login attempt even during 'checking' — if server is truly offline it will still fail with a clear error
+        // Block login ONLY if definitively offline
         if (serverStatus === 'offline') {
-            setError('Server is not responding. Please try again in a moment.');
+            setError('Server is not responding. Please wait or refresh the page.');
             return;
         }
         try {
@@ -125,6 +128,23 @@ function Login() {
                             }}>User Authentication</h2>
 
                             <form onSubmit={handleEmailAuth} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                {serverStatus === 'waking-up' && (
+                                    <div style={{ 
+                                        color: '#0369a1', 
+                                        fontSize: '13px', 
+                                        background: '#f0f9ff', 
+                                        padding: '12px', 
+                                        borderRadius: '6px', 
+                                        border: '1px solid #bae6fd',
+                                        fontWeight: '600',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '10px'
+                                    }}>
+                                        <div className="spinner-small" style={{ width: '15px', height: '15px', border: '2px solid #0ea5e9', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                                        Connecting to Server... (Waking up)
+                                    </div>
+                                )}
                                 {serverStatus === 'offline' && (
                                     <div style={{ 
                                         color: '#b91c1c', 
@@ -135,7 +155,7 @@ function Login() {
                                         border: '1px solid #fecaca',
                                         fontWeight: '600'
                                     }}>
-                                        ⚠️ SERVER OFFLINE: Please run `npm run dev` in the backend folder.
+                                        ⚠️ SERVER UNREACHABLE: We are having trouble connecting to the backend. Please try again in a minute.
                                     </div>
                                 )}
                                 {error && <div style={{ color: '#ef4444', fontSize: '13px', background: '#fef2f2', padding: '10px', borderRadius: '4px', border: '1px solid #fee2e2' }}>{error}</div>}
