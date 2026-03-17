@@ -23,42 +23,62 @@ app.use(express.json());
 // Security Headers for Google Auth (COOP)
 app.use((req, res, next) => {
     res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
-    // res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp'); // Optional, keep commented unless needed
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     next();
 });
+
 
 
 // MongoDB Connection logic for Serverless/Production
 let cachedDb = null;
 
 const connectDB = async () => {
-    if (cachedDb) return cachedDb;
+    if (cachedDb && mongoose.connection.readyState === 1) return cachedDb;
 
+    const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/notes-app';
+    
     try {
-        console.log('🔄 Connecting to MongoDB...');
-        const conn = await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/notes-app');
+        console.log('🔄 Attempting to connect to MongoDB...');
+        // Standard Mongoose options for stable production connection
+        const conn = await mongoose.connect(MONGODB_URI, {
+            serverSelectionTimeoutMS: 30000, // Wait 30 seconds before timing out
+            connectTimeoutMS: 30000,
+            socketTimeoutMS: 45000,
+        });
         cachedDb = conn;
-        console.log('✅ Connected to MongoDB');
+        console.log('✅ Connected to MongoDB Successfully');
         return conn;
     } catch (err) {
-        console.error('❌ MongoDB Connection Error:', err);
+        console.error('❌ MongoDB Connection ERROR:', err.message);
         throw err;
     }
 };
 
+// Initial connection attempt with error recovery
+connectDB().catch(err => {
+    console.error("Initial DB connect failed. Will retry on request.");
+});
 
-// Initial connection attempt
-connectDB().catch(err => console.error("Initial DB connect failed:", err));
-
-// Middleware to ensure DB is connected for every request
+// Middleware to ensure DB is connected before any API route executes
 app.use(async (req, res, next) => {
-    try {
-        await connectDB();
+    // Only wait for DB on /api routes
+    if (req.path.startsWith('/api')) {
+        try {
+            await connectDB();
+            next();
+        } catch (err) {
+            console.error("📛 Request failed due to DB connection issues.");
+            return res.status(503).json({ 
+                status: 'error', 
+                message: 'Database is still waking up. Please refresh in 5 seconds.',
+                details: err.message
+            });
+        }
+    } else {
         next();
-    } catch (err) {
-        res.status(503).json({ status: 'error', message: 'Database connection failed' });
     }
 });
+
 
 
 // Routes
