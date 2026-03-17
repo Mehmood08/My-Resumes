@@ -52,14 +52,21 @@ router.post('/google', async (req, res) => {
     } catch (err) {
         console.error("❌ Google Auth Backend Error:", err.message);
         
-        // Return EXACT error detail to help user debug Google Console mismatch
+        let customMessage = "Authentication Failed";
+        if (err.message.includes("buffering timed out")) {
+            customMessage = "Server Busy (Database Timeout). Please click login again.";
+        } else if (err.message.includes("audience")) {
+            customMessage = "Google Console Mismatch (Wait 5 min after whitelist)";
+        }
+
         res.status(401).json({ 
-            message: "Authentication Failed", 
+            message: customMessage, 
             error_type: "GOOGLE_VERIFY_ERROR",
-            details: err.message // This will say "Wrong recipient, payload audience != audience" etc.
+            details: err.message 
         });
     }
 });
+
 
 
 
