@@ -35,9 +35,8 @@ const connectDB = async () => {
     if (cachedDb) return cachedDb;
 
     try {
-        const conn = await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/notes-app', {
-            bufferCommands: false, // Recommended for serverless
-        });
+        console.log('🔄 Connecting to MongoDB...');
+        const conn = await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/notes-app');
         cachedDb = conn;
         console.log('✅ Connected to MongoDB');
         return conn;
@@ -46,6 +45,7 @@ const connectDB = async () => {
         throw err;
     }
 };
+
 
 // Initial connection attempt
 connectDB().catch(err => console.error("Initial DB connect failed:", err));
