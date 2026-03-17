@@ -20,6 +20,14 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// Security Headers for Google Auth (COOP)
+app.use((req, res, next) => {
+    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+    // res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp'); // Optional, keep commented unless needed
+    next();
+});
+
+
 // MongoDB Connection logic for Serverless/Production
 let cachedDb = null;
 

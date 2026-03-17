@@ -25,8 +25,10 @@ export const AuthProvider = ({ children }) => {
 
             if (!res.ok) {
                 const errorData = await res.json().catch(() => ({}));
-                throw new Error(errorData.message || 'Login failed');
+                const detailedError = errorData.details ? `${errorData.message}: ${errorData.details}` : (errorData.message || 'Login failed');
+                throw new Error(detailedError);
             }
+
 
 
             // B. Get the Session Token & User Info from Backend
