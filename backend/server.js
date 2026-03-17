@@ -20,17 +20,38 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/notes-app')
-    .then(() => console.log('✅ Connected to MongoDB'))
-    .catch(err => {
-        if (err.code === 'ENOTFOUND') {
-            console.error('❌ MongoDB Connection Error: DNS address not found (ENOTFOUND).');
-            console.error('👉 Please check your internet connection or the MONGODB_URI in your .env file.');
-        } else {
-            console.error('❌ Could not connect to MongoDB:', err);
-        }
-    });
+// MongoDB Connection logic for Serverless/Production
+let cachedDb = null;
+
+const connectDB = async () => {
+    if (cachedDb) return cachedDb;
+
+    try {
+        const conn = await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/notes-app', {
+            bufferCommands: false, // Recommended for serverless
+        });
+        cachedDb = conn;
+        console.log('✅ Connected to MongoDB');
+        return conn;
+    } catch (err) {
+        console.error('❌ MongoDB Connection Error:', err);
+        throw err;
+    }
+};
+
+// Initial connection attempt
+connectDB().catch(err => console.error("Initial DB connect failed:", err));
+
+// Middleware to ensure DB is connected for every request
+app.use(async (req, res, next) => {
+    try {
+        await connectDB();
+        next();
+    } catch (err) {
+        res.status(503).json({ status: 'error', message: 'Database connection failed' });
+    }
+});
+
 
 // Routes
 app.use('/api/auth', authRoutes);

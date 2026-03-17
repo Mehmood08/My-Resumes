@@ -23,7 +23,11 @@ export const AuthProvider = ({ children }) => {
                 body: JSON.stringify({ token: googleCredential })
             });
 
-            if (!res.ok) throw new Error('Login failed');
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                throw new Error(errorData.message || 'Login failed');
+            }
+
 
             // B. Get the Session Token & User Info from Backend
             const data = await res.json();
