@@ -11,9 +11,16 @@ function Login() {
     const [isRegistering, setIsRegistering] = useState(false);
     const [error, setError] = useState('');
     const [serverStatus, setServerStatus] = useState('checking'); // 'checking', 'online', 'offline'
+    const [isWebView, setIsWebView] = useState(false);
 
     React.useEffect(() => {
+        // Simple check for common in-app browsers that Google blocks
+        const ua = navigator.userAgent || navigator.vendor || window.opera;
+        const isAppBrowser = (ua.indexOf('FBAN') > -1) || (ua.indexOf('FBAV') > -1) || (ua.indexOf('Instagram') > -1) || (ua.indexOf('WhatsApp') > -1);
+        setIsWebView(isAppBrowser);
+        
         const checkStatus = (retries = 10) => {
+
             fetch(`${import.meta.env.VITE_API_URL}/api/test`)
                 .then(res => res.json())
                 .then(data => {
@@ -112,7 +119,21 @@ function Login() {
                             }}>User Authentication</h2>
 
                             <form onSubmit={handleEmailAuth} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                {isWebView && (
+                                    <div style={{ 
+                                        color: '#854d0e', 
+                                        fontSize: '13px', 
+                                        background: '#fefce8', 
+                                        padding: '12px', 
+                                        borderRadius: '6px', 
+                                        border: '1px solid #fef08a',
+                                        marginBottom: '10px'
+                                    }}>
+                                        ⚠️ <strong>Note:</strong> In-app browsers (like Facebook/Instagram/WhatsApp) might not support Google Sign-in. Please open this link in <strong>Chrome</strong> or <strong>Safari</strong> if login fails.
+                                    </div>
+                                )}
                                 {serverStatus === 'waking-up' && (
+
                                     <div style={{ 
                                         color: '#0369a1', 
                                         fontSize: '13px', 

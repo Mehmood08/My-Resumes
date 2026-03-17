@@ -10,28 +10,35 @@ const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 // Google Auth
 router.post('/google', async (req, res) => {
     const { token } = req.body;
-    console.log("Google Auth Request received. Token present:", !!token);
-
+    
+    // Use environment variable OR hardcoded fallback (Must match frontend)
     const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "1042081648232-0jteg1ui82qc1k1ckid5i08lsmtb3oa6.apps.googleusercontent.com";
+    
+    // Initialize client inside handler to ensure GOOGLE_CLIENT_ID is captured correctly
+    const authClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
     try {
-        const ticket = await client.verifyIdToken({
+        if (!token) {
+            return res.status(400).json({ message: "No token provided" });
+        }
+
+        const ticket = await authClient.verifyIdToken({
             idToken: token,
             audience: GOOGLE_CLIENT_ID
         });
-        console.log("Token verified successfully for:", ticket.getPayload().email);
+
         const { sub, email, name, picture } = ticket.getPayload();
+        console.log("✅ Token verified for:", email);
 
         let user = await User.findOne({ email });
+        // ... user creation logic remains same ...
         if (!user) {
             user = new User({ googleId: sub, email, name, picture });
             await user.save();
-            console.log("New user created via Google:", email);
         } else if (!user.googleId) {
             user.googleId = sub;
             if (!user.picture) user.picture = picture;
             await user.save();
-            console.log("Existing user linked to Google:", email);
         }
 
         const sessionToken = jwt.sign(
@@ -40,27 +47,20 @@ router.post('/google', async (req, res) => {
             { expiresIn: '7d' }
         );
 
-        const userData = {
-            ...user._doc,
-            googleId: user.googleId || user._id.toString()
-        };
+        res.json({ token: sessionToken, user: { ...user._doc, googleId: user.googleId || user._id.toString() } });
 
-        res.json({ token: sessionToken, user: userData });
     } catch (err) {
-        console.error("❌ Google Auth Verification Failed:", {
-            message: err.message,
-            stack: err.stack,
-            token_preview: token ? `${token.substring(0, 10)}...` : "null"
+        console.error("❌ Google Auth Backend Error:", err.message);
+        
+        // Return EXACT error detail to help user debug Google Console mismatch
+        res.status(401).json({ 
+            message: "Authentication Failed", 
+            error_type: "GOOGLE_VERIFY_ERROR",
+            details: err.message // This will say "Wrong recipient, payload audience != audience" etc.
         });
-        
-        // Return more specific error message to frontend
-        let errorMsg = "Invalid Token";
-        if (err.message.includes('expired')) errorMsg = "Token Expired";
-        if (err.message.includes('audience')) errorMsg = "Client ID Mismatch";
-        
-        res.status(401).json({ message: errorMsg, details: err.message });
     }
 });
+
 
 
 // Register
