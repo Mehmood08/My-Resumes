@@ -47,10 +47,21 @@ router.post('/google', async (req, res) => {
 
         res.json({ token: sessionToken, user: userData });
     } catch (err) {
-        console.error("Auth Error:", err);
-        res.status(401).json({ message: "Invalid Token" });
+        console.error("❌ Google Auth Verification Failed:", {
+            message: err.message,
+            stack: err.stack,
+            token_preview: token ? `${token.substring(0, 10)}...` : "null"
+        });
+        
+        // Return more specific error message to frontend
+        let errorMsg = "Invalid Token";
+        if (err.message.includes('expired')) errorMsg = "Token Expired";
+        if (err.message.includes('audience')) errorMsg = "Client ID Mismatch";
+        
+        res.status(401).json({ message: errorMsg, details: err.message });
     }
 });
+
 
 // Register
 router.post('/register', async (req, res) => {

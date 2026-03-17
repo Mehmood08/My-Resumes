@@ -142,7 +142,21 @@ function Login() {
                                         ⚠️ SERVER UNREACHABLE: We are having trouble connecting to the backend. Please try again in a minute.
                                     </div>
                                 )}
-                                {error && <div style={{ color: '#ef4444', fontSize: '13px', background: '#fef2f2', padding: '10px', borderRadius: '4px', border: '1px solid #fee2e2' }}>{error}</div>}
+                                {error && (
+                                    <div style={{ 
+                                        color: '#ef4444', 
+                                        fontSize: '13px', 
+                                        background: '#fef2f2', 
+                                        padding: '12px', 
+                                        borderRadius: '6px', 
+                                        border: '1px solid #fee2e2',
+                                        lineHeight: '1.4'
+                                    }}>
+                                        <strong>⚠️ Auth Error:</strong><br/>
+                                        {error}
+                                    </div>
+                                )}
+
                                 <div style={{ position: 'relative' }}>
                                     <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>
                                         Email Address

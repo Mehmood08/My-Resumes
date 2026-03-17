@@ -1,6 +1,6 @@
 import React, { useState, useEffect, memo, useMemo } from "react";
 import { useAuth } from '../context/AuthContext'; // Import Auth
-import { LuPlus, LuTrash2, LuChevronDown, LuChevronRight, LuLogOut, LuX } from "react-icons/lu";
+import { LuPlus, LuTrash2, LuChevronDown, LuChevronRight, LuLogOut, LuX, LuFileText } from "react-icons/lu";
 
 function Sidebar({ notes, onSelectNote, onDeleteNote, onCreateNote, activeNoteId, openParentId, isSidebarOpen, onCloseSidebar }) {
   const { user, logout } = useAuth(); // Get User
@@ -75,7 +75,22 @@ function Sidebar({ notes, onSelectNote, onDeleteNote, onCreateNote, activeNoteId
 
       <div className="sidebar-header">
         <div className="header-top">
-          <h3>My Resumes</h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{
+              background: 'rgba(79, 70, 229, 0.2)',
+              color: '#a5b4fc',
+              padding: '6px',
+              borderRadius: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <LuFileText size={18} />
+            </div>
+            <h3 style={{ margin: 0, fontSize: '12px', fontWeight: '700', letterSpacing: '1px', textTransform: 'uppercase', color: '#f8fafc', opacity: 0.9 }}>
+              My Resumes
+            </h3>
+          </div>
           <button className="sidebar-close-btn mobile-only" onClick={onCloseSidebar} title="Close Sidebar">
             <LuX size={20} />
           </button>
