@@ -2039,22 +2039,26 @@
    ========================= */
 @media (max-width: 768px) {
   .tabs {
-    margin: 10px 12px;
+    margin: 8px 10px;
+    padding: 4px;
     overflow-x: auto;
     width: auto;
     flex-wrap: nowrap;
     -webkit-overflow-scrolling: touch;
-    scrollbar-width: none; /* Hide scrollbar Firefox */
+    scrollbar-width: none;
+    gap: 4px;
+    border-radius: 10px;
   }
   
   .tabs::-webkit-scrollbar {
-    display: none; /* Hide scrollbar Chrome/Safari */
+    display: none;
   }
 
   .tabs button {
-    padding: 8px 15px;
-    font-size: 12px;
+    padding: 6px 12px;
+    font-size: 11px;
     white-space: nowrap;
+    border-radius: 6px;
   }
 
   .wizard-container {
@@ -2064,7 +2068,7 @@
   .wizard-sidebar {
     width: 100%;
     height: auto;
-    padding: 10px 0;
+    padding: 8px 0;
     border-right: none;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   }
@@ -2072,70 +2076,142 @@
   .wizard-steps-list {
     flex-direction: row;
     overflow-x: auto;
-    padding: 0 15px;
-    gap: 10px;
+    padding: 0 12px;
+    gap: 6px;
     -webkit-overflow-scrolling: touch;
   }
 
   .wizard-step-item {
-    padding: 8px 12px;
-    gap: 8px;
+    padding: 6px;
+    gap: 0;
     flex-shrink: 0;
+    min-width: 40px;
+    justify-content: center;
   }
 
   .step-label {
-    display: none; /* Hide labels on very small steps to save space */
+    display: none;
   }
   
   .wizard-step-item.active .step-label {
-    display: inline; /* Only show label for active step */
-    font-size: 12px;
+    display: none; /* Keep it compact on mobile */
   }
 
   .completeness-tracker {
-    display: none; /* Hide to save vertical space on mobile */
+    display: none;
   }
 
   .wizard-content-scroll {
-    padding: 20px 15px;
+    padding: 15px 12px;
+    background: #ffffff;
+  }
+
+  .wizard-header {
+    margin-bottom: 20px;
   }
 
   .wizard-header h2 {
-    font-size: 24px;
+    font-size: 20px;
+    line-height: 1.2;
+    margin-bottom: 8px;
+  }
+
+  .wizard-header p {
+    font-size: 14px;
   }
 
   .form-grid {
     grid-template-columns: 1fr;
-    gap: 15px;
+    gap: 12px;
   }
 
-  .form-group.full-width {
-    grid-column: span 1;
+  .form-group label {
+    font-size: 12px;
+    margin-bottom: 4px;
+  }
+
+  .form-group input {
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+
+  .wizard-textarea {
+    min-height: 300px;
+    padding: 15px;
+    font-size: 14px;
   }
 
   .wizard-actions {
-    padding: 15px;
+    padding: 12px 15px;
+    background: #fff;
+    border-top: 1px solid #f1f5f9;
   }
 
   .continue-btn {
-    padding: 12px 20px;
+    padding: 10px 20px;
     font-size: 14px;
+    border-radius: 10px;
     width: auto;
+  }
+
+  .template-wizard-modal {
+    width: 100%;
+    height: 100%;
+    max-width: 100vw;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .wizard-modal-header {
+    padding: 12px 15px;
+  }
+
+  .wizard-modal-content {
+    padding: 15px 12px;
+  }
+
+  .selection-grid {
+    grid-template-columns: 1fr 1fr; /* 2 columns for layout/experience */
+    gap: 12px;
+  }
+
+  .selection-grid.experience-step,
+  .selection-grid.photo-step {
+     grid-template-columns: 1fr;
+  }
+
+  .selection-card.large {
+    padding: 12px;
+  }
+
+  .selection-card h4 {
+    font-size: 13px;
+    margin-top: 4px;
+  }
+
+  .cv-thumbnail-container {
+    height: 140px;
   }
 
   .header-row {
     flex-direction: column;
     align-items: flex-start;
+    gap: 8px;
   }
 
   .section-title-edit {
     width: 100%;
-    max-width: none;
+  }
+
+  .section-title-input {
+    font-size: 22px;
   }
 
   .add-item-btn {
     width: 100%;
-    justify-content: center;
-    margin-top: 10px;
+    padding: 10px;
+    font-size: 12px;
+    margin-top: 0;
   }
-}
+}
+

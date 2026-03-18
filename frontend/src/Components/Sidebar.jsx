@@ -38,13 +38,24 @@ function Sidebar({ notes, onSelectNote, onDeleteNote, onCreateNote, activeNoteId
           padding: '20px 16px', display: 'flex', alignItems: 'center', gap: '15px',
           borderBottom: '1px solid #e2e8f0', marginBottom: '15px', background: 'linear-gradient(to right, #f8fafc, #f1f5f9)'
         }}>
-          <div style={{ position: 'relative' }}>
-            <img
-              src={user.picture}
-              alt="Profile"
-              style={{ width: '48px', height: '48px', borderRadius: '50%', border: '2px solid #fff', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', objectFit: 'cover' }}
-            />
-            <div style={{ position: 'absolute', bottom: '2px', right: '0', width: '12px', height: '12px', background: '#10b981', borderRadius: '50%', border: '2px solid #fff' }}></div>
+          <div style={{ position: 'relative', width: '48px', height: '48px', flexShrink: 0 }}>
+            {user.picture ? (
+              <img
+                src={user.picture}
+                alt="Profile"
+                style={{ width: '100%', height: '100%', borderRadius: '50%', border: '2px solid #fff', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', objectFit: 'cover' }}
+              />
+            ) : (
+              <div style={{
+                width: '100%', height: '100%', borderRadius: '50%', border: '2px solid #fff', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
+                background: 'linear-gradient(135deg, #6366f1, #3b82f6)', color: 'white',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '20px', fontWeight: 'bold'
+              }}>
+                {user.name && user.name.length > 0 ? user.name.charAt(0).toUpperCase() : 'U'}
+              </div>
+            )}
+            <div style={{ position: 'absolute', bottom: '2px', right: '0', width: '14px', height: '14px', background: '#22c55e', borderRadius: '50%', border: '2px solid #fff', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}></div>
           </div>
 
           <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2px' }}>
@@ -73,29 +84,30 @@ function Sidebar({ notes, onSelectNote, onDeleteNote, onCreateNote, activeNoteId
         </div>
       )}
 
-      <div className="sidebar-header">
-        <div className="header-top">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+      <div className="sidebar-header" style={{ padding: '16px 20px' }}>
+        <div className="header-top" style={{ marginBottom: '0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <div style={{
               background: 'rgba(79, 70, 229, 0.2)',
               color: '#a5b4fc',
-              padding: '6px',
-              borderRadius: '8px',
+              padding: '5px',
+              borderRadius: '6px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
             }}>
-              <LuFileText size={18} />
+              <LuFileText size={16} />
             </div>
-            <h3 style={{ margin: 0, fontSize: '12px', fontWeight: '700', letterSpacing: '1px', textTransform: 'uppercase', color: '#f8fafc', opacity: 0.9 }}>
-              My Resumes
+            <h3 style={{ margin: 0, fontSize: '11px', fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase', color: '#f8fafc', opacity: 0.9 }}>
+              My-Resume
             </h3>
           </div>
           <button className="sidebar-close-btn mobile-only" onClick={onCloseSidebar} title="Close Sidebar">
-            <LuX size={20} />
+            <LuX size={18} />
           </button>
         </div>
       </div>
+
 
       <div className="section-label">History / Resumes</div>
       <div className="notes-list large-scroll">
