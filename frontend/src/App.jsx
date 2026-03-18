@@ -80,9 +80,16 @@ function App() {
 
     if (selections) {
       // Direct Creation Flow (Using Selections)
-      const { occupation, layout } = selections;
+      const { occupation, layout, education } = selections;
       const format = layout || "America";
-      const templateContent = cvTemplates[occupation] || cvTemplates["Blank Note"];
+      
+      // Try to find template, fallback to a generated header so it's not empty
+      let templateContent = cvTemplates[occupation];
+      if (!templateContent) {
+        // Generate a baseline if no template exists
+        templateContent = `# [Your Name] | ${occupation || 'Professional'}\n[Email] | [Phone]\n\n## Education\n- ${education || '[Degree]'}\n\n## Experience\n- [Job Title] | [Company Name]`;
+      }
+      
       const newTitle = occupation ? `${occupation} CV` : "New CV";
 
       setCurrentNote({
@@ -94,7 +101,9 @@ function App() {
       });
       setCvFormat(format);
       setIsEditing(false);
+      setActiveTab("Guided"); // Switch to editor tab immediately
     } else {
+
       // Manual creation (Initial state or empty)
       templateContent = cvTemplates["Blank Note"];
       setCurrentNote({

@@ -542,11 +542,13 @@
         left: -280px;
         height: 100vh;
         z-index: 1000;
-        box-shadow: 10px 0 30px rgba(0, 0, 0, 0.2);
+        box-shadow: 10px 0 40px rgba(0, 0, 0, 0.3);
+        transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        width: 260px; /* Slightly more compact */
     }
 
     .sidebar.mobile-show {
-        left: 0;
+        transform: translateX(280px);
     }
 
     .sidebar-overlay {
@@ -555,10 +557,10 @@
         left: 0;
         width: 100vw;
         height: 100vh;
-        background: rgba(0, 0, 0, 0.5);
-        backdrop-filter: blur(2px);
+        background: rgba(15, 23, 42, 0.4);
+        backdrop-filter: blur(4px);
         z-index: 999;
-        animation: fadeIn 0.2s ease-out;
+        animation: fadeIn 0.3s ease-out;
     }
 
     .main-content {
@@ -566,38 +568,43 @@
     }
 
     .top-bar {
-        padding: 0 16px;
-        gap: 8px;
+        height: 56px; /* Reduced from 64px */
+        padding: 0 12px;
+        gap: 6px;
     }
 
     .title-input-flat {
-        font-size: 15px;
-        padding: 6px 8px;
+        font-size: 14px;
+        padding: 4px 6px;
+        margin-left: -4px;
     }
 
     .top-bar-right {
-        gap: 8px;
+        gap: 6px;
     }
 
     .save-btn-primary {
-        padding: 8px 16px;
-        font-size: 12px;
+        padding: 6px 14px;
+        font-size: 11px;
+        border-radius: 6px;
+        height: 36px;
     }
 
     .sidebar-close-btn {
-        background: transparent;
+        background: rgba(255, 255, 255, 0.1);
         border: none;
         color: white;
-        padding: 8px;
+        padding: 6px;
+        border-radius: 8px;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
-        opacity: 0.7;
+        transition: all 0.2s;
     }
 
-    .sidebar-close-btn:hover {
-        opacity: 1;
+    .sidebar-close-btn:active {
+        transform: scale(0.9);
     }
 
     .divider-vertical {
@@ -605,7 +612,9 @@
     }
 
     .editor-status {
-        padding: 4px 8px;
-        font-size: 9px;
+        padding: 2px 6px;
+        font-size: 8.5px;
+        border-radius: 4px;
     }
-}
+}
+
