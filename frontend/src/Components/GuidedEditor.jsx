@@ -481,6 +481,14 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard }) => {
             </aside>
 
             <main className="wizard-main">
+                {/* Mobile-only context banner */}
+                {currentStep !== -1 && (
+                    <div className="mobile-step-banner mobile-only">
+                        <span className="mb-step-indicator">STEP {currentStep + 1} OF {steps.length}</span>
+                        <h4 className="mb-step-title">{steps[currentStep].label}</h4>
+                    </div>
+                )}
+
                 <div className="wizard-content-scroll">
                     {renderStepContent()}
                 </div>

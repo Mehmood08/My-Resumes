@@ -110,34 +110,39 @@ export default function TemplateWizard({ isOpen, onClose, onCreate }) {
         switch (currentStep) {
             case 0: // Education
                 return (
-                    <div className="occupation-list large-scroll" style={{ maxHeight: '420px', overflowY: 'auto' }}>
+                    <div className="selection-list-modern large-scroll">
                         {educationLevels.map((edu) => (
                             <div
                                 key={edu}
-                                className={`occupation-item ${selections.education === edu ? "selected" : ""}`}
+                                className={`selection-card-mini ${selections.education === edu ? "selected" : ""}`}
                                 onClick={() => updateSelection("education", edu)}
                             >
-                                {edu}
-                                {selections.education === edu && <LuCheck className="check-icon" />}
+                                <span className="item-text">{edu}</span>
+                                <div className="indicator-circle">
+                                    {selections.education === edu && <LuCheck className="check-icon" />}
+                                </div>
                             </div>
                         ))}
                     </div>
                 );
             case 1: // Occupation
                 return (
-                    <div className="occupation-list large-scroll" style={{ maxHeight: '420px', overflowY: 'auto' }}>
+                    <div className="selection-list-modern large-scroll">
                         {occupations.map((occ) => (
                             <div
                                 key={occ}
-                                className={`occupation-item ${selections.occupation === occ ? "selected" : ""}`}
+                                className={`selection-card-mini ${selections.occupation === occ ? "selected" : ""}`}
                                 onClick={() => updateSelection("occupation", occ)}
                             >
-                                {occ}
-                                {selections.occupation === occ && <LuCheck className="check-icon" />}
+                                <span className="item-text">{occ}</span>
+                                <div className="indicator-circle">
+                                    {selections.occupation === occ && <LuCheck className="check-icon" />}
+                                </div>
                             </div>
                         ))}
                     </div>
                 );
+
             case 2: // Experience
                 return (
                     <div className="selection-grid experience-step">

@@ -2213,5 +2213,100 @@
     font-size: 12px;
     margin-top: 0;
   }
+
+  /* --- NEW MOBILE UX STYLES --- */
+  .mobile-step-banner {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: #ffffff;
+    padding: 12px 15px;
+    border-bottom: 1px solid #f1f5f9;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+  }
+
+  .mb-step-indicator {
+    display: block;
+    font-size: 9px;
+    font-weight: 800;
+    color: #3b82f6;
+    letter-spacing: 0.05em;
+    margin-bottom: 2px;
+  }
+
+  .mb-step-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+  }
+
+  .selection-list-modern {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 5px 2px;
+  }
+
+  .selection-card-mini {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    background: #ffffff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .selection-card-mini:active {
+    transform: scale(0.98);
+    background: #f8fafc;
+  }
+
+  .selection-card-mini.selected {
+    border-color: #3b82f6;
+    background: #eff6ff;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+  }
+
+  .selection-card-mini .item-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+  }
+
+  .indicator-circle {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid #cbd5e1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .selection-card-mini.selected .indicator-circle {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    color: #ffffff;
+  }
+
+  .welcome-hero h1 {
+    font-size: 24px !important;
+    line-height: 1.2;
+  }
+
+  .welcome-options {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .welcome-card {
+    padding: 20px;
+  }
 }
 
