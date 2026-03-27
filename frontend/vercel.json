@@ -1,8 +1,12 @@
 {
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/googleed38b476db4c7042.html",
+      "destination": "/googleed38b476db4c7042.html"
+    },
+    {
+      "source": "/((?!googleed38b476db4c7042.html).*)",
       "destination": "/index.html"
     }
   ]
-}
+}
