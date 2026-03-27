@@ -1,15 +1,7 @@
 {
   "rewrites": [
     {
-      "source": "/sitemap.xml",
-      "destination": "/sitemap.xml"
-    },
-    {
-      "source": "/googleed38b476db4c7042.html",
-      "destination": "/googleed38b476db4c7042.html"
-    },
-    {
-      "source": "/(.*)",
+      "source": "/((?!sitemap\\.xml|googleed38b476db4c7042\\.html|favicon\\.png|assets/).*)",
       "destination": "/index.html"
     }
   ]
