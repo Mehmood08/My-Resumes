@@ -32,7 +32,7 @@ Experienced Software Engineer with a strong background in [Core Tech Stack]. Pro
 - **[Project Name]**: Brief description of the project and your role.
 `,
 
-    "Mechanical Engineer": `# [Name]
+    "Mechanical Engineer": `#  
 [Email] | [Phone]
 
 ## Professional Summary
@@ -57,7 +57,7 @@ Results-oriented Mechanical Engineer with expertise in [CAD Software], product d
 - **Professional Engineer (PE) License** (if applicable)
 `,
 
-    "Project Manager": `# [Name]
+    "Project Manager": `#  
 [Email] | [Phone]
 
 ## Professional Summary
@@ -82,7 +82,7 @@ Dynamic Project Manager with [Number] years of experience leading cross-function
 - **PMP Certification**
 `,
 
-    "Technician": `# [Name]
+    "Technician": `#  
 [Email] | [Phone]
 
 ## Professional Summary
@@ -107,7 +107,7 @@ Skilled Technician with experience in installation, maintenance, and repair of [
 - [Technical Certifications]
 `,
 
-    "HR Manager": `# [Name]
+    "HR Manager": `#  
 [Email] | [Phone]
 
 ## Professional Summary
@@ -127,7 +127,7 @@ Strategic HR Manager focused on building strong company culture and maximizing e
 - **M.S. Human Resources**
 `,
 
-    "Software & IT Services": `# [Name] | Software Engineer
+    "Software & IT Services": `#   | Software Engineer
 [Email] | [Phone] | [Link]
 
 ## Professional Summary
@@ -146,7 +146,7 @@ Dedicated Software Professional with expertise in developing scalable applicatio
 - **B.S. Computer Science**
 `,
 
-    "Business & Finance": `# [Name]
+    "Business & Finance": `#  
 [Email] | [Phone]
 
 ## Professional Summary
@@ -161,7 +161,7 @@ Detail-oriented Finance Professional with a strong background in financial analy
 - **B.S. Finance / Accounting**
 `,
 
-    "Other / Professional": `# [Name]
+    "Other / Professional": `#  
 [Email] | [Phone]
 
 ## Professional Summary
