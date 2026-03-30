@@ -193,6 +193,94 @@
 }
 
 /* =========================
+   FLOATING TOOLBAR
+========================= */
+.floating-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 6px 8px;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  animation: toolFloatIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  z-index: 1000;
+}
+
+.floating-toolbar button {
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  padding: 8px;
+  color: #475569;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  font-size: 13px;
+  font-weight: 600;
+  gap: 6px;
+}
+
+.floating-toolbar button:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.floating-toolbar button:active {
+  transform: scale(0.95);
+  background: #e2e8f0;
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 20px;
+  background: #cbd5e1;
+  margin: 0 4px;
+}
+
+@keyframes toolFloatIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* =========================
+   ONBOARDING TOOLTIP
+========================= */
+.markdown-onboarding-tip {
+  position: absolute;
+  top: -30px;
+  right: 10px;
+  background: white;
+  border: 1px solid #3b82f6;
+  border-radius: 8px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #1e293b;
+  font-size: 13px;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
+  z-index: 100;
+  pointer-events: none;
+}
+
+.markdown-onboarding-tip .tip-icon-small {
+  color: #f59e0b;
+  font-size: 16px;
+}
+
+/* =========================
    HTML PREVIEW OVERRIDE
 ========================= */
 .html-preview {

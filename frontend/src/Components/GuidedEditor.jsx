@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import GuidedHelper from './GuidedHelper';
-import { LuPlus, LuInfo, LuLightbulb, LuTrash2, LuChevronLeft, LuCheck } from "react-icons/lu";
+import { LuPlus, LuInfo, LuLightbulb, LuTrash2, LuChevronLeft, LuCheck, LuBold, LuItalic, LuHeading, LuList, LuListOrdered } from "react-icons/lu";
 
 const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard }) => {
     const [currentStep, setCurrentStep] = useState(markdown ? 0 : -1);
     const [showHelper, setShowHelper] = useState(false);
-    // Flag: skip re-parsing when the markdown change came from our OWN typing
     const isInternalChange = useRef(false);
+    const textAreaRef = useRef(null);
+    const [toolbarState, setToolbarState] = useState({ visible: false, top: 0, left: 0, selectionStart: 0, selectionEnd: 0 });
+    const [showMarkdownTip, setShowMarkdownTip] = useState(false);
 
     // Only reset to step 0 if we are currently at the welcome screen (-1) and markdown is provided.
     // This prevents jumping back to step 0 on every keystroke.
@@ -116,6 +118,103 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard }) => {
         }));
         setSections(finalSections);
     }, [markdown]);
+
+    // --- Floating Toolbar Handlers ---
+    const handleTextareaSelect = (e) => {
+        const el = e.target;
+        const start = el.selectionStart;
+        const end = el.selectionEnd;
+        
+        if (start !== end) {
+            // Text is selected! Show toolbar above the selection.
+            const rect = el.getBoundingClientRect();
+            // We'll position it relatively stable above the textarea
+            setToolbarState({
+                visible: true,
+                top: rect.top - 60, // Above the textarea
+                left: rect.left + (rect.width / 2) - 120, // Centered
+                selectionStart: start,
+                selectionEnd: end
+            });
+            // Auto-hide the introductory tooltip if user figured it out!
+            if (showMarkdownTip) {
+                setShowMarkdownTip(false);
+                localStorage.setItem('hasSeenMarkdownTip', 'true');
+            }
+        } else {
+            setToolbarState(prev => ({ ...prev, visible: false }));
+        }
+    };
+
+    const handleTextareaFocus = () => {
+        // Show tooltip for first-time users focusing on summary/experience step
+        if (currentStep > 0 && !localStorage.getItem('hasSeenMarkdownTip')) {
+            setShowMarkdownTip(true);
+            setTimeout(() => {
+                setShowMarkdownTip(false);
+                localStorage.setItem('hasSeenMarkdownTip', 'true');
+            }, 6000); // hide after 6 seconds
+        }
+    };
+
+    const handleTextareaMouseDown = () => {
+        // Hide toolbar when user clicks to type or clear selection
+        if (toolbarState.visible) {
+            setToolbarState(prev => ({ ...prev, visible: false }));
+        }
+    };
+
+    const applyFormat = (formatType) => {
+        if (!textAreaRef.current || currentStep < 0) return;
+        
+        const el = textAreaRef.current;
+        const start = toolbarState.selectionStart;
+        const end = toolbarState.selectionEnd;
+        
+        const step = steps[currentStep];
+        const suggestedTitle = step.label.toUpperCase();
+        const sectionIndex = sections.findIndex(s => {
+            const title = s.title.toUpperCase();
+            const id = step.id.toUpperCase();
+            return title.includes(id) || (id === 'SUMMARY' && title.includes('PROFESSIONAL'));
+        });
+        
+        const activeSection = sectionIndex !== -1 ? sections[sectionIndex] : null;
+        const currentVal = activeSection ? activeSection.content : '';
+        
+        const selectedText = currentVal.substring(start, end);
+        let newText = "";
+        
+        if (formatType === 'bold') newText = `**${selectedText}**`;
+        else if (formatType === 'italic') newText = `*${selectedText}*`;
+        else if (formatType === 'heading') newText = `### ${selectedText}`;
+        else if (formatType === 'list') {
+           newText = selectedText.split('\n').filter(line => line.trim() !== '').map(line => `- ${line}`).join('\n');
+        }
+        else if (formatType === 'orderedList') {
+           newText = selectedText.split('\n').filter(line => line.trim() !== '').map((line, idx) => `${idx + 1}. ${line}`).join('\n');
+        }
+
+        const finalVal = currentVal.substring(0, start) + newText + currentVal.substring(end);
+        
+        // Update state
+        if (sectionIndex !== -1) {
+            handleSectionChange(sectionIndex, finalVal);
+        } else {
+            const updated = [...sections, { title: activeSection ? activeSection.title : suggestedTitle, content: finalVal }];
+            setSections(updated);
+            updateMarkdown(personalInfo, updated);
+        }
+        
+        setToolbarState(prev => ({ ...prev, visible: false }));
+        
+        // Restore focus and cursor position after React re-render
+        setTimeout(() => {
+            el.focus();
+            const newPos = start + newText.length;
+            el.setSelectionRange(newPos, newPos);
+        }, 10);
+    };
 
     const updateMarkdown = (newPersonalInfo, newSections) => {
         let md = `# ${newPersonalInfo.firstName} ${newPersonalInfo.lastName} | ${newPersonalInfo.profession}\n`;
@@ -415,9 +514,10 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard }) => {
                     </div>
                 )}
 
-                <div className="form-group full-width">
+                <div className="form-group full-width" style={{ position: 'relative' }}>
                     <label>Section Content</label>
                     <textarea
+                        ref={textAreaRef}
                         className="wizard-textarea"
                         value={activeSection ? activeSection.content : ''}
                         onChange={(e) => {
@@ -430,8 +530,20 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard }) => {
                                 updateMarkdown(personalInfo, updated);
                             }
                         }}
+                        onFocus={handleTextareaFocus}
+                        onMouseUp={handleTextareaSelect}
+                        onKeyUp={handleTextareaSelect}
+                        onMouseDown={handleTextareaMouseDown}
                         placeholder={`Enter details here... \n\nTips:\n- Use **bold** for emphasis\n- Use - for bullet points`}
                     />
+                    
+                    {/* Onboarding Tooltip */}
+                    {showMarkdownTip && (
+                        <div className="markdown-onboarding-tip fadeIn">
+                            <LuLightbulb className="tip-icon-small" />
+                            <span><strong>Tip:</strong> Select text to easily make it bold, italic, or a list!</span>
+                        </div>
+                    )}
                 </div>
 
                 {showHelper && (
@@ -481,6 +593,27 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard }) => {
             </aside>
 
             <main className="wizard-main">
+                {/* Floating Markdown Toolbar */}
+                {toolbarState.visible && (
+                    <div 
+                        className="floating-toolbar" 
+                        style={{ 
+                            position: 'fixed', 
+                            top: toolbarState.top, 
+                            left: toolbarState.left,
+                            zIndex: 1000
+                        }}
+                    >
+                        <button onClick={() => applyFormat('bold')} title="Bold"><LuBold size={18} /></button>
+                        <button onClick={() => applyFormat('italic')} title="Italic"><LuItalic size={18} /></button>
+                        <span className="toolbar-divider" />
+                        <button onClick={() => applyFormat('heading')} title="Heading"><LuHeading size={18} /> H3</button>
+                        <span className="toolbar-divider" />
+                        <button onClick={() => applyFormat('list')} title="Bullet List"><LuList size={18} /> Dots</button>
+                        <button onClick={() => applyFormat('orderedList')} title="Numbered List"><LuListOrdered size={18} /> 123</button>
+                    </div>
+                )}
+
                 {/* Mobile-only context banner */}
                 {currentStep !== -1 && (
                     <div className="mobile-step-banner mobile-only">
