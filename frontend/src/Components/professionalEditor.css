@@ -2257,18 +2257,26 @@
 } /* END OF EXPERT MOBILE MEDIA QUERY */
 
 /* --- GLOBAL TEMPLATE WIZARD STYLES --- */
+.wizard-main-selection {
+  max-width: 600px;
+  margin: 0 auto;
+  width: 100%;
+}
+
 .selection-list-modern {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   padding: 5px 2px;
+  max-height: 400px;
+  overflow-y: auto;
 }
 
 .selection-card-mini {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 16px;
+  padding: 16px 20px;
   background: #ffffff;
   border: 1.5px solid #e2e8f0;
   border-radius: 12px;
@@ -2277,9 +2285,13 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+.selection-card-mini:hover {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
 .selection-card-mini:active {
   transform: scale(0.98);
-  background: #f8fafc;
 }
 
 .selection-card-mini.selected {
@@ -2289,14 +2301,14 @@
 }
 
 .selection-card-mini .item-text {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   color: #1e293b;
 }
 
 .indicator-circle {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   border: 2px solid #cbd5e1;
   display: flex;
@@ -2309,6 +2321,36 @@
   background: #3b82f6;
   border-color: #3b82f6;
   color: #ffffff;
+}
+
+/* --- PDF PRINT & PAGE BREAK FIXES --- */
+@media print {
+  .cv-preview, .html-preview {
+    background: white !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+}
+
+/* Prevent sections and headers from splitting in PDF */
+.cv-preview h1, 
+.cv-preview h2, 
+.cv-preview h3,
+.html-preview h1,
+.html-preview h2,
+.html-preview h3 {
+  page-break-after: avoid;
+  break-after: avoid;
+}
+
+.cv-preview section,
+.cv-preview .resume-section,
+.html-preview section,
+.html-preview .resume-block,
+.cv-preview li,
+.html-preview li {
+  page-break-inside: avoid;
+  break-inside: avoid;
 }
 
 
