@@ -96,27 +96,27 @@ export default function CVScoringModal({ isOpen, onClose, markdown }) {
                                 <div className="breakdown-grid">
                                     <div className="breakdown-item">
                                         <span>Contact Info</span>
-                                        <div className="bar-bg"><div className="bar-fill" style={{ width: \`${(scoreData.breakdown.contact / 10) * 100}%\` }}></div></div>
+                                        <div className="bar-bg"><div className="bar-fill" style={{ width: `${(scoreData.breakdown.contact / 10) * 100}%` }}></div></div>
                                         <span className="b-score">{scoreData.breakdown.contact}/10</span>
                                     </div>
                                     <div className="breakdown-item">
                                         <span>Summary</span>
-                                        <div className="bar-bg"><div className="bar-fill" style={{ width: \`${(scoreData.breakdown.summary / 15) * 100}%\` }}></div></div>
+                                        <div className="bar-bg"><div className="bar-fill" style={{ width: `${(scoreData.breakdown.summary / 15) * 100}%` }}></div></div>
                                         <span className="b-score">{scoreData.breakdown.summary}/15</span>
                                     </div>
                                     <div className="breakdown-item">
                                         <span>Experience</span>
-                                        <div className="bar-bg"><div className="bar-fill" style={{ width: \`${(scoreData.breakdown.experience / 30) * 100}%\` }}></div></div>
+                                        <div className="bar-bg"><div className="bar-fill" style={{ width: `${(scoreData.breakdown.experience / 30) * 100}%` }}></div></div>
                                         <span className="b-score">{scoreData.breakdown.experience}/30</span>
                                     </div>
                                     <div className="breakdown-item">
                                         <span>Skills</span>
-                                        <div className="bar-bg"><div className="bar-fill" style={{ width: \`${(scoreData.breakdown.skills / 25) * 100}%\` }}></div></div>
+                                        <div className="bar-bg"><div className="bar-fill" style={{ width: `${(scoreData.breakdown.skills / 25) * 100}%` }}></div></div>
                                         <span className="b-score">{scoreData.breakdown.skills}/25</span>
                                     </div>
                                     <div className="breakdown-item">
                                         <span>Education</span>
-                                        <div className="bar-bg"><div className="bar-fill" style={{ width: \`${(scoreData.breakdown.education / 20) * 100}%\` }}></div></div>
+                                        <div className="bar-bg"><div className="bar-fill" style={{ width: `${(scoreData.breakdown.education / 20) * 100}%` }}></div></div>
                                         <span className="b-score">{scoreData.breakdown.education}/20</span>
                                     </div>
                                 </div>
