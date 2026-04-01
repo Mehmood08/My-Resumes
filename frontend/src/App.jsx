@@ -11,6 +11,7 @@ import { LuPlus, LuLogOut, LuUser, LuChevronRight, LuCalendar, LuFileText, LuSma
 
 import { useAuth } from './context/AuthContext';
 import Login from './Components/Login';
+import CVScoringModal from './Components/CVScoringModal';
 
 function App() {
   const { user, getUserId } = useAuth();
@@ -22,6 +23,7 @@ function App() {
   const [activeTab, setActiveTab] = useState("Guided");
   const [cvFormat, setCvFormat] = useState("European");
   const [isWizardOpen, setIsWizardOpen] = useState(false);
+  const [isScoringModalOpen, setIsScoringModalOpen] = useState(false);
   const [backendStatus, setBackendStatus] = useState("checking");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -246,6 +248,15 @@ function App() {
           </div>
 
           <div className="top-bar-right">
+            {currentNote.id && (
+                <button 
+                  className="icon-btn-top score-btn" 
+                  onClick={() => setIsScoringModalOpen(true)} 
+                  title="Score CV with AI"
+                >
+                  Score CV ✨
+                </button>
+            )}
             {activeTab === "Preview" && (
               <div className="preview-controls">
                 <button className="icon-btn-top" onClick={handleDownloadPDF} title="Export PDF">
@@ -280,6 +291,12 @@ function App() {
         isOpen={isWizardOpen}
         onClose={() => setIsWizardOpen(false)}
         onCreate={(selections) => handleCreateNote("", selections)}
+      />
+
+      <CVScoringModal 
+        isOpen={isScoringModalOpen} 
+        onClose={() => setIsScoringModalOpen(false)} 
+        markdown={currentNote.desc} 
       />
     </div>
   );

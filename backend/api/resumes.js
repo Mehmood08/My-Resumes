@@ -1,6 +1,9 @@
 import express from 'express';
 import Resume from '../models/Resume.js';
 import mongoose from 'mongoose';
+import { GoogleGenAI } from '@google/genai';
+
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 const router = express.Router();
 
@@ -25,6 +28,52 @@ router.get('/:id', async (req, res) => {
         res.json(resume);
     } catch (err) {
         res.status(500).json({ message: err.message });
+    }
+});
+
+// POST AI Score
+router.post('/score', async (req, res) => {
+    try {
+        const { markdown } = req.body;
+        if (!markdown || markdown.trim() === '') {
+            return res.status(400).json({ message: "CV content required for scoring" });
+        }
+
+        const prompt = `Analyze the following CV markdown and provide a score out of 100 based strictly on this JSON format:
+{
+  "totalScore": 78,
+  "breakdown": {
+    "contact": 8,
+    "summary": 12,
+    "experience": 25,
+    "skills": 20,
+    "education": 13
+  },
+  "tips": [
+    "Add more quantifiable results in the experience section.",
+    "Include a link to your portfolio or LinkedIn."
+  ]
+}
+Max breakdown scores: contact (10), summary (15), experience (30), skills (25), education (20).
+
+CV Content:
+${markdown}
+`;
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
+            config: {
+                responseMimeType: 'application/json'
+            }
+        });
+
+        const jsonScore = JSON.parse(response.text);
+        res.json(jsonScore);
+
+    } catch (err) {
+        console.error("Scoring Error:", err);
+        res.status(500).json({ message: "Failed to score CV with AI. Please try again." });
     }
 });
 
