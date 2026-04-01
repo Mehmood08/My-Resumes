@@ -1,0 +1,102 @@
+/* CVScoringModal.css */
+.scoring-modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.scoring-modal {
+    background: #ffffff;
+    border-radius: 20px;
+    width: 90%;
+    max-width: 550px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    position: relative;
+    overflow: hidden;
+    padding: 30px;
+}
+
+.scoring-close-btn {
+    position: absolute;
+    top: 15px; right: 15px;
+    background: #f1f5f9;
+    border: none;
+    border-radius: 50%;
+    width: 36px; height: 36px;
+    display: flex; justify-content: center; align-items: center;
+    cursor: pointer;
+    color: #64748b;
+    transition: all 0.2s;
+}
+
+.scoring-close-btn:hover { background: #e2e8f0; color: #0f172a; }
+
+/* LOADING STATE */
+.scoring-loading { text-align: center; padding: 40px 20px; }
+.scoring-loading h3 { font-size: 20px; color: #0f172a; margin-bottom: 8px; }
+.scoring-loading p { font-size: 14px; color: #64748b; }
+
+.scanner-container { position: relative; display: inline-block; margin-bottom: 20px; width: 64px; height: 64px; }
+.pulse-icon { color: #3b82f6; animation: pulse 2s infinite; }
+.scanner-beam {
+    position: absolute;
+    top: 0; left: -10px; right: -10px; height: 3px;
+    background: #3b82f6;
+    box-shadow: 0 0 10px #3b82f6;
+    animation: scan 1.5s linear infinite;
+    z-index: 10;
+}
+
+/* ERROR STATE */
+.scoring-error { text-align: center; padding: 40px 20px; }
+.error-icon { color: #ef4444; margin-bottom: 20px; }
+.retry-btn { 
+    margin-top: 15px; padding: 10px 24px; 
+    background: #ef4444; color: white; border: none; border-radius: 8px;
+    cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; margin: 20px auto 0;
+}
+
+/* SUCCESS STATE */
+.score-header { display: flex; align-items: center; gap: 20px; margin-bottom: 30px; }
+.circular-score { position: relative; width: 100px; height: 100px; flex-shrink: 0; }
+.circular-chart { display: block; margin: 0 auto; max-width: 100%; max-height: 250px; }
+.circle-bg { fill: none; stroke: #e2e8f0; stroke-width: 2.5; }
+.circle { fill: none; stroke-width: 2.5; stroke-linecap: round; animation: progress 1.5s ease-out forwards; }
+.percentage { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 24px; font-weight: 800; color: #0f172a; }
+
+.circular-score.green .circle { stroke: #22c55e; }
+.circular-score.yellow .circle { stroke: #f59e0b; }
+.circular-score.red .circle { stroke: #ef4444; }
+
+.score-text h2 { margin: 0 0 5px 0; font-size: 22px; color: #0f172a; }
+.score-text p { margin: 0; color: #64748b; font-size: 14px; }
+
+/* BREAKDOWN */
+.breakdown-section h3, .tips-section h3 { font-size: 16px; margin: 0 0 15px 0; color: #1e293b; }
+.breakdown-item { display: flex; align-items: center; gap: 15px; margin-bottom: 12px; }
+.breakdown-item > span:first-child { width: 100px; font-size: 14px; font-weight: 600; color: #475569; }
+.bar-bg { flex: 1; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; }
+.bar-fill { height: 100%; background: #3b82f6; border-radius: 4px; transition: width 1s ease-out; animation: slideFill 1s ease-out forwards; }
+.b-score { font-size: 13px; font-weight: 700; color: #0f172a; width: 40px; text-align: right; }
+
+/* TIPS */
+.tips-section { margin-top: 25px; padding-top: 25px; border-top: 1px solid #e2e8f0; }
+.tips-list { list-style: none; padding: 0; margin: 0; }
+.tips-list li { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 12px; font-size: 14px; color: #334155; line-height: 1.5; }
+.tip-bullet { color: #3b82f6; flex-shrink: 0; margin-top: 3px; }
+
+.score-footer { margin-top: 30px; display: flex; justify-content: flex-end; }
+.improve-btn { padding: 12px 24px; background: #0f172a; color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+.improve-btn:hover { background: #1e293b; }
+
+@keyframes scan { 0% { top: -10%; } 50% { top: 110%; } 100% { top: -10%; } }
+@keyframes pulse { 0% { opacity: 0.6; transform: scale(0.9); } 50% { opacity: 1; transform: scale(1.1); } 100% { opacity: 0.6; transform: scale(0.9); } }
+@keyframes progress { 0% { stroke-dasharray: 0, 100; } }
+@keyframes slideFill { 0% { transform: scaleX(0); transform-origin: left; } 100% { transform: scaleX(1); transform-origin: left; } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
