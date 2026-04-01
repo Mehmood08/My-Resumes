@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './CVScoringModal.css';
-import { LuX, LuCheckCircle, LuAlertTriangle, LuXCircle, LuRefreshCw, LuChevronRight } from "react-icons/lu";
+import { LuX, LuCheck, LuInfo, LuChevronRight } from "react-icons/lu";
 
 export default function CVScoringModal({ isOpen, onClose, markdown }) {
     const [status, setStatus] = useState('idle'); // idle, loading, success, error
@@ -51,7 +51,7 @@ export default function CVScoringModal({ isOpen, onClose, markdown }) {
                     <div className="scoring-loading">
                         <div className="scanner-container">
                             <div className="scanner-beam"></div>
-                            <LuCheckCircle size={64} className="pulse-icon" />
+                            <LuCheck size={64} className="pulse-icon" />
                         </div>
                         <h3>Analyzing your CV...</h3>
                         <p>Our AI is reviewing your experience, skills, and structure.</p>
@@ -60,11 +60,11 @@ export default function CVScoringModal({ isOpen, onClose, markdown }) {
 
                 {status === 'error' && (
                     <div className="scoring-error">
-                        <LuAlertTriangle size={48} className="error-icon" />
+                        <LuInfo size={48} className="error-icon" />
                         <h3>Oops! Something went wrong.</h3>
                         <p>We couldn't score your CV right now. Please try again later.</p>
                         <button className="retry-btn" onClick={handleScoreCV}>
-                            <LuRefreshCw /> Retry
+                            Retry
                         </button>
                     </div>
                 )}
