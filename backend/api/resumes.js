@@ -3,8 +3,6 @@ import Resume from '../models/Resume.js';
 import mongoose from 'mongoose';
 import { GoogleGenAI } from '@google/genai';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
 const router = express.Router();
 
 // GET All (Filtered by User)
@@ -39,7 +37,7 @@ router.post('/score', async (req, res) => {
             return res.status(400).json({ message: "CV content required for scoring" });
         }
 
-        const prompt = `Analyze the following CV markdown and provide a score out of 100 based strictly on this JSON format:
+        const prompt = `Act as an expert HR Recruiter. Analyze the following CV markdown and provide a score out of 100 based strictly on this JSON format:
 {
   "totalScore": 78,
   "breakdown": {
@@ -50,15 +48,20 @@ router.post('/score', async (req, res) => {
     "education": 13
   },
   "tips": [
-    "Add more quantifiable results in the experience section.",
-    "Include a link to your portfolio or LinkedIn."
+    "Experience: You haven't mentioned any metrics. Industry standard is to use quantifiable results (e.g., 'Increased sales by 20%').",
+    "Summary: Your summary is too generic. Professionals highlight their specialized skills and years of experience in the first sentence."
   ]
 }
 Max breakdown scores: contact (10), summary (15), experience (30), skills (25), education (20).
 
+Crucial Instruction for "tips": 
+Ensure you provide 3 to 5 tips. Do NOT give generic advice. Be very specific about what is missing in their CV. For each tip, explicitly state what is lacking, and then explain the "Industry Standard" (what top professionals do) so the user clearly understands how to fix it.
+
 CV Content:
 ${markdown}
 `;
+
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
@@ -73,7 +76,7 @@ ${markdown}
 
     } catch (err) {
         console.error("Scoring Error:", err);
-        res.status(500).json({ message: "Failed to score CV with AI. Please try again." });
+        res.status(500).json({ message: "Failed to score CV with AI. Please try again.", error: err.message, stack: err.stack });
     }
 });
 
