@@ -15,6 +15,12 @@ const CVTech = ({ data }) => {
     return (
         <div className="cv-tech">
             <header className="tech-header">
+                {data.photo && (
+                    <div className="cv-photo-container">
+                        <img src={data.photo} alt="Profile" className="cv-photo" />
+                        <div className="photo-overlay"></div>
+                    </div>
+                )}
                 <div className="tech-branding">
                     <h1>{data.name}</h1>
                     <div className="tag">&gt; {data.profession}</div>

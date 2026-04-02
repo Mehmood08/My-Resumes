@@ -15,6 +15,11 @@ const CVService = ({ data }) => {
     return (
         <div className="cv-service">
             <header className="service-header">
+                {data.photo && (
+                    <div className="cv-photo-container">
+                        <img src={data.photo} alt="Profile" className="cv-photo" />
+                    </div>
+                )}
                 <div className="service-info">
                     <h1>{data.name}</h1>
                     <div className="contact-list">

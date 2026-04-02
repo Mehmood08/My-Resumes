@@ -13,6 +13,28 @@
     margin-bottom: 30px;
 }
 
+.header-top-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 25px;
+}
+
+.cv-photo-container {
+    width: 140px;
+    height: 140px;
+    border: 1px solid #2d3748;
+    background: #f8fafc;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.cv-photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+
 .exec-header h1 {
     font-size: 2.2rem;
     margin: 0;

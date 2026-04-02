@@ -21,9 +21,16 @@ const CVCreative = ({ data }) => {
         <div className="cv-creative">
             <div className="creative-header">
                 <div className="header-blob"></div>
-                <div className="header-content">
-                    <h1>{data.name || "Your Name"}</h1>
-                    <p className="cv-profession">{data.profession}</p>
+                <div className="header-content-wrapper">
+                    {data.photo && (
+                        <div className="cv-photo-container">
+                            <img src={data.photo} alt="Profile" className="cv-photo" />
+                        </div>
+                    )}
+                    <div className="header-content">
+                        <h1>{data.name || "Your Name"}</h1>
+                        <p className="cv-profession">{data.profession}</p>
+                    </div>
                 </div>
             </div>
 

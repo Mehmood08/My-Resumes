@@ -21,6 +21,11 @@ const CVMinimalist = ({ data }) => {
         <div className="cv-minimalist">
             {/* Header Section */}
             <div className="mini-header">
+                {data.photo && (
+                    <div className="cv-photo-container">
+                        <img src={data.photo} alt="Profile" className="cv-photo" />
+                    </div>
+                )}
                 <h1>{data.name || "Your Name"}</h1>
                 {data.profession && <div className="mini-profession">{data.profession}</div>}
 

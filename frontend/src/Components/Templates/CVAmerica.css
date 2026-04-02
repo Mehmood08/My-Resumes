@@ -23,7 +23,25 @@
     border-bottom: 2px solid #000;
     padding-bottom: 20px;
     margin-bottom: 25px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
+
+.cv-photo-container {
+    width: 130px;
+    height: 130px;
+    margin-bottom: 15px;
+    overflow: hidden;
+    border: 1px solid #000;
+}
+
+.cv-photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
 
 .cv-america .contact-info {
     font-size: 13px;

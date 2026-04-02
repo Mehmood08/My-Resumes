@@ -23,6 +23,7 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard }) => {
     }, [markdown]);
 
     const [personalInfo, setPersonalInfo] = useState({
+        photo: '',
         firstName: '',
         lastName: '',
         profession: '',
@@ -64,7 +65,10 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard }) => {
             const trimmed = line.trim();
             if (!trimmed && isParsingHeader) return;
 
-            if (line.startsWith('# ') && isParsingHeader) {
+            if (line.startsWith('![Profile](') && isParsingHeader) {
+                const url = line.substring(11, line.length - 1);
+                setPersonalInfo(prev => ({ ...prev, photo: url }));
+            } else if (line.startsWith('# ') && isParsingHeader) {
                 const titleLine = line.replace('# ', ''); // Do not trim to preserve trailing spaces
                 const [namePart, professionPart] = titleLine.split('|').map(s => s.trimStart()); // only trim start
 
@@ -164,6 +168,22 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard }) => {
         }
     };
 
+    const stripMarkdown = (text) => {
+        // Remove bold, italic, heading, and list markers
+        let cleaned = text.trim();
+        
+        // Remove bold/italic (stars and underscores)
+        cleaned = cleaned.replace(/^(\*\*|\*|__|_)/, '').replace(/(\*\*|\*|__|_)$/, '');
+        // Remove horizontal lines if any
+        cleaned = cleaned.replace(/^---$/, '');
+        // Remove list markers (handle both bullet and numbered)
+        cleaned = cleaned.replace(/^([\-\*]|\d+\.)\s+/, '');
+        // Remove headings
+        cleaned = cleaned.replace(/^#+\s+/, '');
+        
+        return cleaned;
+    };
+
     const applyFormat = (formatType) => {
         if (!textAreaRef.current || currentStep < 0) return;
         
@@ -184,15 +204,46 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard }) => {
         
         const selectedText = currentVal.substring(start, end);
         let newText = "";
-        
-        if (formatType === 'bold') newText = `**${selectedText}**`;
-        else if (formatType === 'italic') newText = `*${selectedText}*`;
-        else if (formatType === 'heading') newText = `### ${selectedText}`;
+
+        // Check if current selection ALREADY has exactly this format (Toggle Check)
+        const isBold = selectedText.startsWith('**') && selectedText.endsWith('**');
+        const isItalic = (selectedText.startsWith('*') && selectedText.endsWith('*')) && !isBold;
+        const isHeading = selectedText.startsWith('### ');
+        const isList = selectedText.split('\n').every(line => line.trim().startsWith('- '));
+        const isOrderedList = selectedText.split('\n').every(line => /^\d+\.\s+/.test(line.trim()));
+
+        // Logic: If same format, REMOVE IT. If different format, STRIP & APPLY.
+        if (formatType === 'bold') {
+            if (isBold) newText = selectedText.slice(2, -2);
+            else newText = `**${stripMarkdown(selectedText)}**`;
+        } 
+        else if (formatType === 'italic') {
+            if (isItalic) newText = selectedText.slice(1, -1);
+            else newText = `*${stripMarkdown(selectedText)}*`;
+        }
+        else if (formatType === 'heading') {
+            if (isHeading) newText = selectedText.replace(/^###\s+/, '');
+            else newText = `### ${stripMarkdown(selectedText)}`;
+        }
         else if (formatType === 'list') {
-           newText = selectedText.split('\n').filter(line => line.trim() !== '').map(line => `- ${line}`).join('\n');
+            if (isList) {
+                newText = selectedText.split('\n').map(l => l.replace(/^[-*]\s+/, '')).join('\n');
+            } else {
+                newText = selectedText.split('\n')
+                    .filter(line => line.trim() !== '')
+                    .map(line => `- ${stripMarkdown(line)}`)
+                    .join('\n');
+            }
         }
         else if (formatType === 'orderedList') {
-           newText = selectedText.split('\n').filter(line => line.trim() !== '').map((line, idx) => `${idx + 1}. ${line}`).join('\n');
+            if (isOrderedList) {
+                newText = selectedText.split('\n').map(l => l.replace(/^\d+\.\s+/, '')).join('\n');
+            } else {
+                newText = selectedText.split('\n')
+                    .filter(line => line.trim() !== '')
+                    .map((line, idx) => `${idx + 1}. ${stripMarkdown(line)}`)
+                    .join('\n');
+            }
         }
 
         const finalVal = currentVal.substring(0, start) + newText + currentVal.substring(end);
@@ -217,7 +268,11 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard }) => {
     };
 
     const updateMarkdown = (newPersonalInfo, newSections) => {
-        let md = `# ${newPersonalInfo.firstName} ${newPersonalInfo.lastName} | ${newPersonalInfo.profession}\n`;
+        let md = '';
+        if (newPersonalInfo.photo) {
+            md += `![Profile](${newPersonalInfo.photo})\n`;
+        }
+        md += `# ${newPersonalInfo.firstName} ${newPersonalInfo.lastName} | ${newPersonalInfo.profession}\n`;
         md += `${newPersonalInfo.city}, ${newPersonalInfo.province}, ${newPersonalInfo.zip} | ${newPersonalInfo.email} | ${newPersonalInfo.phone}\n`;
 
         if (newPersonalInfo.link1 || newPersonalInfo.link2) {
@@ -238,6 +293,29 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard }) => {
         const updated = { ...personalInfo, [field]: value };
         setPersonalInfo(updated);
         updateMarkdown(updated, sections);
+    };
+
+    const handleImageUpload = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 250;
+                const scaleSize = MAX_WIDTH / img.width;
+                canvas.width = MAX_WIDTH;
+                canvas.height = img.height * scaleSize;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                handleInfoChange('photo', dataUrl);
+            };
+            img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
     };
 
     const handleSectionChange = (index, value) => {
@@ -364,6 +442,24 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard }) => {
                     <div className="wizard-header">
                         <h2>Let's start with your header</h2>
                     </div>
+                    
+                    <div className="photo-upload-container">
+                        <label className="photo-upload-label">Profile Photo (Optional)</label>
+                        <div className="photo-upload-box">
+                            {personalInfo.photo ? (
+                                <div className="photo-preview-wrapper">
+                                    <img src={personalInfo.photo} alt="Profile" className="photo-preview" />
+                                    <button type="button" className="remove-photo-btn" onClick={() => handleInfoChange('photo', '')}>Remove</button>
+                                </div>
+                            ) : (
+                                <label className="photo-upload-btn">
+                                    <input type="file" accept="image/*" onChange={handleImageUpload} hidden />
+                                    <LuPlus size={20} /> Upload Photo
+                                </label>
+                            )}
+                        </div>
+                    </div>
+
                     <div className="form-grid">
                         <div className="form-group">
                             <label>First Name</label>
