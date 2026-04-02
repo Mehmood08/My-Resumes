@@ -7,6 +7,21 @@
     box-sizing: border-box;
 }
 
+.cv-photo-container {
+    width: 140px;
+    height: 140px;
+    margin: 0 auto 15px auto;
+    overflow: hidden;
+    border: 1px solid black;
+    padding: 2px;
+}
+
+.cv-photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
 .name-center {
     text-align: center;
     font-size: 1.8rem;

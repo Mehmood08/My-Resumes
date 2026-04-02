@@ -22,7 +22,13 @@ const CVEuropean = ({ data }) => {
     return (
         <div className="cv-european">
             <aside className="cv-sidebar">
-                <div className="user-initials">{initials}</div>
+                {data.photo ? (
+                    <div className="cv-photo-container">
+                        <img src={data.photo} alt="Profile" className="cv-photo" />
+                    </div>
+                ) : (
+                    <div className="user-initials">{initials}</div>
+                )}
                 <div className="sidebar-contact">
                     <h3>Contact</h3>
                     {data.email && (

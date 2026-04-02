@@ -17,7 +17,7 @@ import CVService from './Templates/CVService';
 
 const CVPreview = ({ markdown, format }) => {
     const parsedData = useMemo(() => {
-        if (!markdown) return { name: "", email: "", phone: "", profession: "", city: "", province: "", zip: "", link1: "", link2: "", sections: [], raw: "" };
+        if (!markdown) return { photo: "", name: "", email: "", phone: "", profession: "", city: "", province: "", zip: "", link1: "", link2: "", sections: [], raw: "" };
 
         const lines = markdown.split('\n');
         let name = "";
@@ -29,12 +29,18 @@ const CVPreview = ({ markdown, format }) => {
         let zip = "";
         let link1 = "";
         let link2 = "";
+        let photo = "";
         const sections = [];
         let currentSection = null;
         let isHeaderParsing = true;
 
         for (let line of lines) {
             const trimmed = line.trim();
+
+            if (trimmed.startsWith('![Profile](') && isHeaderParsing) {
+                photo = trimmed.substring(11, trimmed.length - 1);
+                continue;
+            }
 
             if (line.startsWith('# ') && isHeaderParsing) {
                 const titleLine = line.replace('# ', '').trim();
@@ -64,7 +70,7 @@ const CVPreview = ({ markdown, format }) => {
                     phone = parts[2] || "";
                 }
                 // Don't set isHeaderParsing = false here, continue parsing for links
-                continue;
+                continue;``
             }
 
             if (line.startsWith('## ')) {
@@ -81,7 +87,7 @@ const CVPreview = ({ markdown, format }) => {
             sections.push({ ...currentSection, content: currentSection.content.join('\n').trim() });
         }
 
-        return { name, profession, email, phone, city, province, zip, link1, link2, sections, raw: markdown };
+        return { photo, name, profession, email, phone, city, province, zip, link1, link2, sections, raw: markdown };
     }, [markdown]);
 
     // Handle Template Rendering with fallback

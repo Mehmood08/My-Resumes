@@ -20,6 +20,11 @@ const CVProfessional = ({ data }) => {
     return (
         <div className="cv-professional">
             <header className="cv-header">
+                {data.photo && (
+                    <div className="cv-photo-container">
+                        <img src={data.photo} alt="Profile" className="cv-photo" />
+                    </div>
+                )}
                 <div className="header-center">
                     <h1>{data.name || "Your Name"}</h1>
                     <p className="cv-profession">{data.profession}</p>

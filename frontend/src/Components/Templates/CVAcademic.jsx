@@ -14,6 +14,11 @@ const CVAcademic = ({ data }) => {
     };
     return (
         <div className="cv-academic">
+            {data.photo && (
+                <div className="cv-photo-container">
+                    <img src={data.photo} alt="Profile" className="cv-photo" />
+                </div>
+            )}
             <h1 className="name-center">{data.name}</h1>
             <div className="contact-center">
                 {data.email && <span className="contact-item"><LuMail size={12} /> {data.email}</span>}

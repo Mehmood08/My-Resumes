@@ -15,6 +15,21 @@
     border-radius: 0;
 }
 
+.cv-gulf .cv-photo-container {
+    width: 150px;
+    height: 150px;
+    margin: 0 auto 20px auto;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 4px solid rgba(255, 255, 255, 0.2);
+}
+
+.cv-gulf .cv-photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
 .cv-gulf .cv-header h1 {
     font-size: 38px;
     font-weight: 800;

@@ -15,9 +15,16 @@ const CVExecutive = ({ data }) => {
     return (
         <div className="cv-executive">
             <header className="exec-header">
-                <div className="title-block">
-                    <h1>{data.name}</h1>
-                    <p className="subtitle">{data.profession}</p>
+                <div className="header-top-wrapper">
+                    {data.photo && (
+                        <div className="cv-photo-container">
+                            <img src={data.photo} alt="Profile" className="cv-photo" />
+                        </div>
+                    )}
+                    <div className="title-block">
+                        <h1>{data.name}</h1>
+                        <p className="subtitle">{data.profession}</p>
+                    </div>
                 </div>
                 <div className="info-block">
                     {data.email && (
