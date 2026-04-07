@@ -17,7 +17,8 @@ const aiSteps = [
         { id: "email", placeholder: "Email Address", type: "email" },
         { id: "phone", placeholder: "Phone Number", type: "tel" },
         { id: "city", placeholder: "Your Residing City", type: "text" },
-        { id: "linkedin", placeholder: "LinkedIn Profile URL (Optional)", type: "text" }
+        { id: "linkedin", placeholder: "LinkedIn Profile URL (Optional)", type: "text", optional: true },
+        { id: "github", placeholder: "GitHub Profile URL (Optional)", type: "text", optional: true }
     ]},
     { id: "ai_education", title: "Your Qualification", type: "multi", fields: [
         { id: "ai_education", placeholder: "Degree | Highest Education | Your Basic Skill e.g., Driver", type: "text" },
@@ -103,6 +104,7 @@ export default function TemplateWizard({ isOpen, onClose, onCreate }) {
         phone: "",
         city: "",
         linkedin: "",
+        github: "",
         experienceYears: ""
     });
 
@@ -154,6 +156,7 @@ export default function TemplateWizard({ isOpen, onClose, onCreate }) {
                     phone: selections.phone,
                     city: selections.city,
                     linkedin: selections.linkedin,
+                    github: selections.github,
                     experienceYears: selections.experienceYears
                 })
             });
@@ -223,7 +226,8 @@ export default function TemplateWizard({ isOpen, onClose, onCreate }) {
             selections.email || '[Email]',
             selections.phone || '[Phone]',
             selections.city || '[City]',
-            selections.linkedin || null
+            selections.linkedin || null,
+            selections.github || null
         ].filter(Boolean).join(' | ');
 
         return `# ${selections.fullName || '[Your Name]'} | Professional
@@ -267,6 +271,7 @@ ${selections.ai_summary || "Professional experience details regarding recent rol
                 phone: "",
                 city: "",
                 linkedin: "",
+                github: "",
                 experienceYears: ""
             });
         }, 300);
@@ -565,7 +570,7 @@ ${selections.ai_summary || "Professional experience details regarding recent rol
                                     (wizardMode === "manual" && currentStep === 1 && !selections.education) ||
                                     (wizardMode === "manual" && currentStep === 2 && !selections.occupation) ||
                                     (wizardMode === "manual" && currentStep === 3 && !selections.experience) ||
-                                    (wizardMode === "ai" && aiSteps[currentStep].type === "multi" && aiSteps[currentStep].fields.some(f => !selections[f.id])) ||
+                                    (wizardMode === "ai" && aiSteps[currentStep].type === "multi" && aiSteps[currentStep].fields.filter(f => !f.optional).some(f => !selections[f.id])) ||
                                     (wizardMode === "ai" && aiSteps[currentStep].type === "single" && !selections[aiSteps[currentStep].fieldId])
                                 }
                             >
