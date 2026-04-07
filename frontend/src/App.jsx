@@ -81,18 +81,24 @@ function App() {
     let templateContent = "";
 
     if (selections) {
-      // Direct Creation Flow (Using Selections)
-      const { occupation, layout, education } = selections;
-      const format = layout || "America";
+      // Direct Creation Flow (Using Selections or AI)
+      const { occupation, layout, education, aiGenerated, mode } = selections;
+      const format = layout || "Professional";
       
-      // Try to find template, fallback to a generated header so it's not empty
-      let templateContent = cvTemplates[occupation];
-      if (!templateContent) {
-        // Generate a baseline if no template exists
-        templateContent = `# [Your Name] | ${occupation || 'Professional'}\n[Email] | [Phone]\n\n## Education\n- ${education || '[Degree]'}\n\n## Experience\n- [Job Title] | [Company Name]`;
+      let templateContent = "";
+      let newTitle = "New CV";
+
+      if (mode === 'ai' && aiGenerated) {
+        templateContent = aiGenerated;
+        newTitle = "AI Generated CV";
+      } else {
+        // Try to find template, fallback to a generated header so it's not empty
+        templateContent = cvTemplates[occupation];
+        if (!templateContent) {
+          templateContent = `# [Your Name] | ${occupation || 'Professional'}\n[Email] | [Phone]\n\n## Education\n- ${education || '[Degree]'}\n\n## Experience\n- [Job Title] | [Company Name]`;
+        }
+        newTitle = occupation ? `${occupation} CV` : "New CV";
       }
-      
-      const newTitle = occupation ? `${occupation} CV` : "New CV";
 
       setCurrentNote({
         title: newTitle,
