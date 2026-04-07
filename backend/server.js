@@ -110,7 +110,11 @@ app.get('/api/test', (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+    console.log(`
+    🚀 Backend is running!
+    📡 Port: ${PORT}
+    🔗 URL: http://localhost:${PORT}
+    `);
 });
 
 export default app;
