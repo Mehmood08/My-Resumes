@@ -113,7 +113,7 @@ ${markdown}
 // POST AI Generation
 router.post('/generate', async (req, res) => {
     try {
-        const { education, year, school, schoolCity, summary, jd, fullName, email, phone, city, linkedin, experienceYears } = req.body;
+        const { education, year, school, schoolCity, summary, jd, fullName, email, phone, city, linkedin, github, experienceYears } = req.body;
 
         if (!education || !jd) {
             return res.status(400).json({ message: "Education and Job Description are required" });
@@ -125,7 +125,8 @@ router.post('/generate', async (req, res) => {
             email || "[Email]",
             phone || "[Phone]",
             city || "[City]",
-            linkedin || null
+            linkedin || null,
+            github || null
         ].filter(Boolean).join(" | ");
 
         const prompt = `Act as an elite CV Writer, Career Coach, and Universal Job Match-Maker. 
@@ -137,6 +138,7 @@ User Contact Info:
 - Phone: ${phone || "[Phone]"}
 - Location: ${city || "[City]"}
 - LinkedIn: ${linkedin || "Not Provided"}
+- GitHub: ${github || "Not Provided"}
 
 User Profile:
 - Recent Education: ${education}
