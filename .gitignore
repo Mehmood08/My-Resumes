@@ -1,14 +1,18 @@
 # Dependencies
 node_modules/
-/.pnp
+.pnp
 .pnp.js
 
 # Testing
-/coverage
+coverage/
 
 # Production
-/dist
-/build
+dist/
+build/
+frontend/dist/
+frontend/build/
+backend/dist/
+backend/build/
 
 # Misc
 .DS_Store
@@ -25,8 +29,8 @@ lerna-debug.log*
 *.log
 
 # Editor directories and files
-.idea
-.vscode
+.idea/
+.vscode/
 *.suo
 *.ntvs*
 *.njsproj
@@ -35,6 +39,11 @@ lerna-debug.log*
 
 # Environment variables
 .env
+backend/.env
+frontend/.env
 
 # Vercel
-.vercel
+.vercel/
+
+# Devops Tools
+devops/

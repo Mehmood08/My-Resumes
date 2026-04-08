@@ -17,7 +17,8 @@ const aiSteps = [
         { id: "email", placeholder: "Email Address", type: "email" },
         { id: "phone", placeholder: "Phone Number", type: "tel" },
         { id: "city", placeholder: "Your Residing City", type: "text" },
-        { id: "linkedin", placeholder: "LinkedIn Profile URL (Optional)", type: "text" }
+        { id: "linkedin", placeholder: "LinkedIn Profile URL (Optional)", type: "text", optional: true },
+        { id: "github", placeholder: "GitHub Profile URL (Optional)", type: "text", optional: true }
     ]},
     { id: "ai_education", title: "Your Qualification", type: "multi", fields: [
         { id: "ai_education", placeholder: "Degree | Highest Education | Your Basic Skill e.g., Driver", type: "text" },
@@ -30,6 +31,7 @@ const aiSteps = [
         { id: "ai_summary", placeholder: "Detailed summary of your past experiences, roles, and achievements...", type: "textarea" }
     ]},
     { id: "ai_worker_jd", title: "Target Job Description", type: "single", fieldId: "ai_jd", fieldType: "textarea", placeholder: "Paste the full Job Description you are applying for..." },
+    { id: "ai_verification", title: "Truth Reading: Verify Your Details", type: "verification" },
 ];
 
 const educationLevels = [
@@ -85,7 +87,14 @@ export default function TemplateWizard({ isOpen, onClose, onCreate }) {
     const [wizardMode, setWizardMode] = useState("select"); // 'select', 'manual', 'ai'
     const [isGenerating, setIsGenerating] = useState(false);
     const [isSuggestingSummary, setIsSuggestingSummary] = useState(false);
+    const [showTruthHint, setShowTruthHint] = useState(false);
     const [errorType, setErrorType] = useState(null); // null, 'quota', 'error'
+    const [verifiedItems, setVerifiedItems] = useState({
+        contact: false,
+        education: false,
+        experience: false,
+        jd: false
+    });
     const [selections, setSelections] = useState({
         education: "",
         occupation: "",
@@ -103,6 +112,7 @@ export default function TemplateWizard({ isOpen, onClose, onCreate }) {
         phone: "",
         city: "",
         linkedin: "",
+        github: "",
         experienceYears: ""
     });
 
@@ -116,7 +126,12 @@ export default function TemplateWizard({ isOpen, onClose, onCreate }) {
 
         if (wizardMode === "ai") {
             if (currentStep < aiSteps.length - 1) {
-                setCurrentStep(currentStep + 1);
+                const nextStep = currentStep + 1;
+                setCurrentStep(nextStep);
+                // Trigger hint popup on entering verification step
+                if (aiSteps[nextStep].id === "ai_verification") {
+                    setShowTruthHint(true);
+                }
             } else {
                 // Final step in AI mode: Generate
                 await handleAiGenerate();
@@ -154,6 +169,7 @@ export default function TemplateWizard({ isOpen, onClose, onCreate }) {
                     phone: selections.phone,
                     city: selections.city,
                     linkedin: selections.linkedin,
+                    github: selections.github,
                     experienceYears: selections.experienceYears
                 })
             });
@@ -223,7 +239,8 @@ export default function TemplateWizard({ isOpen, onClose, onCreate }) {
             selections.email || '[Email]',
             selections.phone || '[Phone]',
             selections.city || '[City]',
-            selections.linkedin || null
+            selections.linkedin || null,
+            selections.github || null
         ].filter(Boolean).join(' | ');
 
         return `# ${selections.fullName || '[Your Name]'} | Professional
@@ -249,7 +266,14 @@ ${selections.ai_summary || "Professional experience details regarding recent rol
         setTimeout(() => {
             setCurrentStep(0);
             setWizardMode("select");
-            setIsGenerating(false);
+            setIsSuggestingSummary(false);
+            setShowTruthHint(false);
+            setVerifiedItems({
+                contact: false,
+                education: false,
+                experience: false,
+                jd: false
+            });
             setSelections({
                 education: "",
                 occupation: "",
@@ -267,6 +291,7 @@ ${selections.ai_summary || "Professional experience details regarding recent rol
                 phone: "",
                 city: "",
                 linkedin: "",
+                github: "",
                 experienceYears: ""
             });
         }, 300);
@@ -297,10 +322,82 @@ ${selections.ai_summary || "Professional experience details regarding recent rol
                         <div className="sparkle s2">🪄</div>
                         <div className="sparkle s3">💎</div>
                     </div>
-                    <h3>Analyzing JD and Your Profile...</h3>
-                    <p>Gemini is finding deep connections between your experience and the required skills.</p>
+                    <h3>Gemini is Thinking...</h3>
+                    <p>Analyzing JD and your verified profile to create a master-class CV.</p>
                 </div>
             );
+        }
+
+        const stats = Object.values(verifiedItems).filter(v => v).length;
+        const total = Object.keys(verifiedItems).length;
+
+        if (wizardMode === "ai" && aiSteps[currentStep].id === "ai_verification") {
+            return (
+                <div className="truth-reading-container">
+                    {showTruthHint && (
+                        <div className="truth-hint-popup animate-bounce-in">
+                            <div className="hint-content">
+                                <span>💡</span>
+                                <p>Please click each section to verify your details. We need 100% truth for the best AI results.</p>
+                                <button onClick={() => setShowTruthHint(false)}>Got it</button>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="verification-progress">
+                        <div className="progress-text">Verification Progress: {stats}/{total} Verified</div>
+                        <div className="progress-bar-verify">
+                            <div className="fill" style={{ width: `${(stats / total) * 100}%` }}></div>
+                        </div>
+                    </div>
+
+                    <div className="verification-list">
+                        <div 
+                            className={`verify-item ${verifiedItems.contact ? 'verified' : ''}`}
+                            onClick={() => setVerifiedItems(prev => ({ ...prev, contact: !prev.contact }))}
+                        >
+                            <div className="item-header">
+                                <h4>Contact Info</h4>
+                                <div className="verify-badge">{verifiedItems.contact ? '✅ Verified' : 'Verify'}</div>
+                            </div>
+                            <p>{selections.fullName} | {selections.email} | {selections.phone}</p>
+                        </div>
+
+                        <div 
+                            className={`verify-item ${verifiedItems.education ? 'verified' : ''}`}
+                            onClick={() => setVerifiedItems(prev => ({ ...prev, education: !prev.education }))}
+                        >
+                            <div className="item-header">
+                                <h4>Education</h4>
+                                <div className="verify-badge">{verifiedItems.education ? '✅ Verified' : 'Verify'}</div>
+                            </div>
+                            <p>{selections.ai_education} at {selections.ai_school} ({selections.ai_year})</p>
+                        </div>
+
+                        <div 
+                            className={`verify-item ${verifiedItems.experience ? 'verified' : ''}`}
+                            onClick={() => setVerifiedItems(prev => ({ ...prev, experience: !prev.experience }))}
+                        >
+                            <div className="item-header">
+                                <h4>Professional Experience</h4>
+                                <div className="verify-badge">{verifiedItems.experience ? '✅ Verified' : 'Verify'}</div>
+                            </div>
+                            <p>Total {selections.experienceYears} Years Experience</p>
+                        </div>
+
+                        <div 
+                            className={`verify-item ${verifiedItems.jd ? 'verified' : ''}`}
+                            onClick={() => setVerifiedItems(prev => ({ ...prev, jd: !prev.jd }))}
+                        >
+                            <div className="item-header">
+                                <h4>Target Job Description</h4>
+                                <div className="verify-badge">{verifiedItems.jd ? '✅ Verified' : 'Verify'}</div>
+                            </div>
+                            <p className="line-clamp">{selections.ai_jd}</p>
+                        </div>
+                    </div>
+                </div>
+            )
         }
 
         if (errorType) {
@@ -565,11 +662,12 @@ ${selections.ai_summary || "Professional experience details regarding recent rol
                                     (wizardMode === "manual" && currentStep === 1 && !selections.education) ||
                                     (wizardMode === "manual" && currentStep === 2 && !selections.occupation) ||
                                     (wizardMode === "manual" && currentStep === 3 && !selections.experience) ||
-                                    (wizardMode === "ai" && aiSteps[currentStep].type === "multi" && aiSteps[currentStep].fields.some(f => !selections[f.id])) ||
-                                    (wizardMode === "ai" && aiSteps[currentStep].type === "single" && !selections[aiSteps[currentStep].fieldId])
+                                    (wizardMode === "ai" && aiSteps[currentStep].type === "multi" && aiSteps[currentStep].fields.filter(f => !f.optional).some(f => !selections[f.id])) ||
+                                    (wizardMode === "ai" && aiSteps[currentStep].type === "single" && !selections[aiSteps[currentStep].fieldId]) ||
+                                    (wizardMode === "ai" && aiSteps[currentStep].id === "ai_verification" && Object.values(verifiedItems).some(v => !v))
                                 }
                             >
-                                {wizardMode === "ai" && currentStep === aiSteps.length - 1 ? "Generate CV ✨" : 
+                                {wizardMode === "ai" && currentStep === aiSteps.length - 1 ? "Confirm & Generate CV ✨" : 
                                  (wizardMode === "manual" && currentStep === steps.length - 1 ? "Finish & Create" : "Continue")}
                             </button>
                         )}
