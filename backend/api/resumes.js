@@ -122,12 +122,15 @@ router.post('/generate', async (req, res) => {
         const truncatedJD = truncateJD(jd);
         
         const contactLine = [
-            email || "[Email]",
-            phone || "[Phone]",
             city || "[City]",
-            linkedin || null,
-            github || null
-        ].filter(Boolean).join(" | ");
+            email || "[Email]",
+            phone || "[Phone]"
+        ].join(" | ");
+
+        let linksLine = "";
+        if (linkedin || github) {
+            linksLine = [linkedin || "", github || ""].filter(Boolean).join(" | ") + "\n";
+        }
 
         const prompt = `Act as an elite CV Writer, Career Coach, and Universal Job Match-Maker. 
 Create a professional CV in Markdown format perfectly tailored to the Target Job Description.
@@ -160,7 +163,7 @@ Structure Instructions:
 1. MUST start with a Header EXACTLY like this:
 # ${fullName || "[Your Name]"}
 ${contactLine}
-
+${linksLine}
 2. Followed by:
 ## SUMMARY
 ## EXPERIENCE
