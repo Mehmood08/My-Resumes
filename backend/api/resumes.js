@@ -90,7 +90,7 @@ CV Content:
 ${markdown}
 `;
 
-        const ai = new GoogleGenAI(process.env.GEMINI_API_KEY);
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash-lite',
@@ -180,7 +180,7 @@ ${linksLine}
             return res.status(500).json({ message: "API Key not configured", error: "Please add GEMINI_API_KEY to your .env file" });
         }
 
-        const ai = new GoogleGenAI(process.env.GEMINI_API_KEY);
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
         const model = ai.models;
 
         try {
@@ -242,7 +242,7 @@ router.post('/suggest-experience', async (req, res) => {
             return res.status(500).json({ message: "API Key not configured" });
         }
 
-        const ai = new GoogleGenAI(process.env.GEMINI_API_KEY);
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash-lite',
             contents: prompt,
