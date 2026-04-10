@@ -12,6 +12,7 @@ import { LuPlus, LuLogOut, LuUser, LuChevronRight, LuCalendar, LuFileText, LuSma
 import { useAuth } from './context/AuthContext';
 import Login from './Components/Login';
 import CVScoringModal from './Components/CVScoringModal';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 
 function App() {
   const { user, getUserId } = useAuth();
@@ -304,6 +305,7 @@ function App() {
         onClose={() => setIsScoringModalOpen(false)} 
         markdown={currentNote.desc} 
       />
+      <SpeedInsights />
     </div>
   );
 }
