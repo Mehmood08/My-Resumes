@@ -26,6 +26,7 @@ function App() {
   const [isScoringModalOpen, setIsScoringModalOpen] = useState(false);
   const [backendStatus, setBackendStatus] = useState("checking");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [needsVerification, setNeedsVerification] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -91,6 +92,7 @@ function App() {
       if (mode === 'ai' && aiGenerated) {
         templateContent = aiGenerated;
         newTitle = "AI Generated CV";
+        setNeedsVerification(true); // Trigger GuidedEditor verification popup
       } else {
         // Try to find template, fallback to a generated header so it's not empty
         templateContent = cvTemplates[occupation];
@@ -270,8 +272,13 @@ function App() {
                 </button>
               </div>
             )}
-            <button className="save-btn-primary" onClick={handleSaveNote}>
-              {isEditing ? "Update" : "Save"}
+            <button
+              className={`save-btn-primary ${needsVerification ? 'save-btn-locked' : ''}`}
+              onClick={handleSaveNote}
+              disabled={needsVerification}
+              title={needsVerification ? "Please verify all sections in the Guided tab first ✓" : ""}
+            >
+              {needsVerification ? "🔒 Verify First" : (isEditing ? "Update" : "Save")}
             </button>
           </div>
         </header>
@@ -289,6 +296,8 @@ function App() {
               onFormatChange={setCvFormat}
               onSave={handleSaveNote}
               onStartWizard={() => setIsWizardOpen(true)}
+              needsVerification={needsVerification}
+              onVerificationDismissed={() => setNeedsVerification(false)}
             />
           </ErrorBoundary>
         </div>

@@ -2466,4 +2466,220 @@
   break-inside: avoid;
 }
 
+/* =========================
+   AI VERIFICATION POPUP
+   ========================= */
+.verification-popup-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.verification-popup-card {
+  background: white;
+  border-radius: 24px;
+  padding: 48px 44px;
+  max-width: 480px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 32px 64px -12px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(0,0,0,0.04);
+  position: relative;
+}
+
+@keyframes popIn {
+  0% { opacity: 0; transform: scale(0.88) translateY(20px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.animate-pop {
+  animation: popIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.vp-icon {
+  font-size: 52px;
+  margin-bottom: 16px;
+  animation: bounceIconIn 0.6s 0.3s both;
+}
+
+@keyframes bounceIconIn {
+  0% { transform: scale(0.5); opacity: 0; }
+  70% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.vp-title {
+  font-size: 26px;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 14px;
+  letter-spacing: -0.02em;
+}
+
+.vp-desc {
+  font-size: 15px;
+  color: #475569;
+  line-height: 1.7;
+  margin-bottom: 28px;
+}
+
+.vp-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 32px;
+  background: #f8fafc;
+  border-radius: 14px;
+  padding: 18px 22px;
+  text-align: left;
+  border: 1px solid #e2e8f0;
+}
+
+.vp-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.vp-step span {
+  font-size: 18px;
+}
+
+.vp-start-btn {
+  background: linear-gradient(135deg, #2563eb, #4f46e5);
+  color: white;
+  border: none;
+  padding: 16px 40px;
+  border-radius: 14px;
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s;
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.35);
+  width: 100%;
+}
+
+.vp-start-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.45);
+}
+
+.vp-start-btn:active {
+  transform: scale(0.98);
+}
+
+/* =========================
+   VERIFY SECTION BUTTON
+   ========================= */
+.wizard-actions-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.verify-section-btn {
+  background: linear-gradient(135deg, #059669, #10b981);
+  color: white;
+  border: none;
+  padding: 14px 28px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.verify-section-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.45);
+}
+
+.verify-section-btn:active {
+  transform: scale(0.97);
+}
+
+.verify-section-btn.verified {
+  background: linear-gradient(135deg, #10b981, #34d399);
+  cursor: default;
+  opacity: 0.85;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+}
+
+/* Ghost / Skip button */
+.continue-btn.ghost {
+  background: transparent;
+  color: #94a3b8;
+  border: 1px solid #e2e8f0;
+  box-shadow: none;
+  padding: 14px 24px;
+  font-size: 14px;
+}
+
+.continue-btn.ghost:hover {
+  background: #f8fafc;
+  color: #64748b;
+  transform: translateY(-1px);
+  box-shadow: none;
+}
+
+/* All Verified Save button */
+.continue-btn.all-verified-save {
+  background: linear-gradient(135deg, #7c3aed, #4f46e5);
+  box-shadow: 0 6px 18px rgba(124, 58, 237, 0.4);
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 6px 18px rgba(124, 58, 237, 0.4); }
+  50% { box-shadow: 0 8px 24px rgba(124, 58, 237, 0.65); }
+}
+
+.continue-btn.all-verified-save:hover {
+  background: linear-gradient(135deg, #6d28d9, #4338ca);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(124, 58, 237, 0.5);
+}
+
+/* =========================
+   SIDEBAR VERIFIED BADGE
+   ========================= */
+.verified-badge {
+  color: #10b981;
+  font-weight: 900;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.verified-label-sidebar {
+  font-size: 9px;
+  font-weight: 800;
+  color: #10b981;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-left: auto;
+  background: rgba(16, 185, 129, 0.15);
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
 

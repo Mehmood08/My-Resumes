@@ -2,13 +2,33 @@ import React, { useState, useEffect, useRef } from 'react';
 import GuidedHelper from './GuidedHelper';
 import { LuPlus, LuInfo, LuLightbulb, LuTrash2, LuChevronLeft, LuCheck, LuBold, LuItalic, LuHeading, LuList, LuListOrdered } from "react-icons/lu";
 
-const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard }) => {
+const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerification, onVerificationDismissed }) => {
     const [currentStep, setCurrentStep] = useState(markdown ? 0 : -1);
     const [showHelper, setShowHelper] = useState(false);
     const isInternalChange = useRef(false);
     const textAreaRef = useRef(null);
     const [toolbarState, setToolbarState] = useState({ visible: false, top: 0, left: 0, selectionStart: 0, selectionEnd: 0 });
     const [showMarkdownTip, setShowMarkdownTip] = useState(false);
+    const [showVerificationPopup, setShowVerificationPopup] = useState(false);
+    const [verifiedSections, setVerifiedSections] = useState({});
+    const isVerificationInitialized = useRef(false);
+
+    // Show verification popup when AI CV is loaded
+    useEffect(() => {
+        if (needsVerification) {
+            // Only initialize once when the AI flow starts
+            if (!isVerificationInitialized.current && markdown && currentStep !== -1) {
+                setShowVerificationPopup(true); // Safely trigger side-effect outside of updater
+                const initial = {};
+                steps.forEach(s => { initial[s.id] = false; });
+                setVerifiedSections(initial);
+                isVerificationInitialized.current = true;
+            }
+        } else {
+            // Reset the flag when we leave verification mode
+            isVerificationInitialized.current = false;
+        }
+    }, [needsVerification, markdown, currentStep]);
 
     // Only reset to step 0 if we are currently at the welcome screen (-1) and markdown is provided.
     // This prevents jumping back to step 0 on every keystroke.
@@ -655,8 +675,46 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard }) => {
 
     const completionPercent = currentStep === -1 ? 0 : Math.round(((currentStep + 1) / steps.length) * 100);
 
+    const allVerified = needsVerification && Object.keys(verifiedSections).length > 0 && Object.values(verifiedSections).every(v => v);
+    const verifiedCount = Object.values(verifiedSections).filter(v => v).length;
+    const totalSections = steps.length;
+
+    // Auto-unlock main save button when all sections are verified
+    useEffect(() => {
+        if (allVerified && onVerificationDismissed) {
+            onVerificationDismissed();
+        }
+    }, [allVerified, onVerificationDismissed]);
+
     return (
         <div className="wizard-container">
+            {/* AI Verification Popup */}
+            {showVerificationPopup && (
+                <div className="verification-popup-overlay">
+                    <div className="verification-popup-card animate-pop">
+                        <div className="vp-icon">🎉</div>
+                        <h2 className="vp-title">Your AI CV is Ready!</h2>
+                        <p className="vp-desc">
+                            Please <strong>review each section</strong> carefully. Edit anything that needs updating, then click <strong>Verify ✓</strong> to confirm it's accurate before moving to the next section.
+                        </p>
+                        <div className="vp-steps">
+                            <div className="vp-step"><span>1️⃣</span> Review each section</div>
+                            <div className="vp-step"><span>2️⃣</span> Edit if needed</div>
+                            <div className="vp-step"><span>3️⃣</span> Click <strong>Verify ✓</strong> to confirm</div>
+                        </div>
+                        <button
+                            className="vp-start-btn"
+                            onClick={() => {
+                                setShowVerificationPopup(false);
+                                // Don't reset needsVerification here — Save stays locked until all verified
+                                setCurrentStep(0);
+                            }}
+                        >
+                            Let's Start! 🚀
+                        </button>
+                    </div>
+                </div>
+            )}
             <aside className="wizard-sidebar">
                 <div className="wizard-steps-list">
                     <div
@@ -673,18 +731,32 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard }) => {
                             className={`wizard-step-item ${idx === currentStep ? 'active' : ''} ${idx < currentStep ? 'completed' : ''}`}
                             onClick={() => setCurrentStep(idx)}
                         >
-                            <div className="step-number">{idx + 1}</div>
+                            <div className="step-number">
+                                {verifiedSections[step.id] ? (
+                                    <span className="verified-badge">✓</span>
+                                ) : (idx + 1)}
+                            </div>
                             <span className="step-label">{step.label}</span>
+                            {verifiedSections[step.id] && (
+                                <span className="verified-label-sidebar">Verified</span>
+                            )}
                         </div>
                     ))}
                 </div>
 
                 <div className="completeness-tracker">
-                    <div className="completeness-label">RESUME COMPLETENESS:</div>
-                    <div className="progress-bar-bg">
-                        <div className="progress-bar-fill" style={{ width: `${completionPercent}%` }}></div>
+                    <div className="completeness-label">
+                        {needsVerification ? `VERIFIED: ${verifiedCount}/${totalSections}` : 'RESUME COMPLETENESS:'}
                     </div>
-                    <div className="percent-text">{completionPercent}%</div>
+                    <div className="progress-bar-bg">
+                        <div
+                            className="progress-bar-fill"
+                            style={{ width: needsVerification ? `${(verifiedCount / totalSections) * 100}%` : `${completionPercent}%` }}
+                        ></div>
+                    </div>
+                    <div className="percent-text">
+                        {needsVerification ? `${Math.round((verifiedCount / totalSections) * 100)}%` : `${completionPercent}%`}
+                    </div>
                 </div>
             </aside>
 
@@ -731,16 +803,44 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard }) => {
                             ← Go Back
                         </button>
 
-                        {currentStep < steps.length - 1 && (
-                            <button className="continue-btn" onClick={() => setCurrentStep(currentStep + 1)}>
-                                Next: {steps[currentStep + 1].label} →
-                            </button>
-                        )}
-                        {currentStep === steps.length - 1 && (
-                            <button className="continue-btn" onClick={() => { onSave(); alert("Resume Saved Successfully! ✨"); }}>
-                                Finish ✨
-                            </button>
-                        )}
+                        <div className="wizard-actions-right">
+                            {/* Verify button — only in verification mode */}
+                            {needsVerification && currentStep >= 0 && (
+                                <button
+                                    className={`verify-section-btn ${verifiedSections[steps[currentStep]?.id] ? 'verified' : ''}`}
+                                    onClick={() => {
+                                        const stepId = steps[currentStep].id;
+                                        setVerifiedSections(prev => ({ ...prev, [stepId]: true }));
+                                        // Auto-advance to next section
+                                        if (currentStep < steps.length - 1) {
+                                            setTimeout(() => setCurrentStep(currentStep + 1), 300);
+                                        }
+                                    }}
+                                >
+                                    {verifiedSections[steps[currentStep]?.id] ? '✓ Verified' : 'Verify ✓'}
+                                </button>
+                            )}
+
+                            {!needsVerification && currentStep < steps.length - 1 && (
+                                <button className="continue-btn" onClick={() => setCurrentStep(currentStep + 1)}>
+                                    Next: {steps[currentStep + 1].label} →
+                                </button>
+                            )}
+                            {!needsVerification && currentStep === steps.length - 1 && (
+                                <button className="continue-btn" onClick={() => { onSave(); alert("Resume Saved Successfully! ✨"); }}>
+                                    Finish ✨
+                                </button>
+                            )}
+
+
+
+                            {/* Next button even in verification mode */}
+                            {needsVerification && !allVerified && currentStep < steps.length - 1 && !verifiedSections[steps[currentStep]?.id] && (
+                                <button className="continue-btn ghost" onClick={() => setCurrentStep(currentStep + 1)}>
+                                    Skip →
+                                </button>
+                            )}
+                        </div>
                     </div>
                 )}
             </main>
