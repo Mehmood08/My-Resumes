@@ -154,7 +154,8 @@ export default function MarkdownEditor({
 
       {/* Editor Content */}
       <div className="editor-content">
-        {activeTab === "Guided" && (
+        {/* GuidedEditor is always mounted to preserve 'Verified' state. We just hide it using display. */}
+        <div style={{ display: activeTab === "Guided" ? "block" : "none", height: "100%", width: "100%" }}>
           <GuidedEditor
             markdown={localMarkdown}
             onChange={setLocalMarkdown}
@@ -164,7 +165,7 @@ export default function MarkdownEditor({
             onVerificationDismissed={onVerificationDismissed}
             onMetaUpdate={onMetaUpdate}
           />
-        )}
+        </div>
 
         {activeTab === "Markdown" && (
           <textarea
