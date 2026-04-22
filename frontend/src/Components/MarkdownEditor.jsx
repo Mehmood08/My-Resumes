@@ -4,7 +4,7 @@ import "./professionalEditor.css";
 import CVPreview from "./CVPreview";
 import GuidedEditor from "./GuidedEditor";
 import { layouts } from "./templatesData";
-import { LuCheck } from "react-icons/lu";
+import { LuCheck, LuDownload } from "react-icons/lu";
 
 /* =========================================================
    MiniCVCard — Dynamically scales a full CV to fit any card.
@@ -84,7 +84,10 @@ export default function MarkdownEditor({
   onStartWizard,
   needsVerification,
   onVerificationDismissed,
-  onMetaUpdate
+  onMetaUpdate,
+  onDownloadPDF,
+  onScoreCV,
+  currentNoteId
 }) {
   const [localMarkdown, setLocalMarkdown] = useState(markdownValue);
   const [localScript, setLocalScript] = useState(scriptValue);
@@ -133,16 +136,37 @@ export default function MarkdownEditor({
     <div className="editor-container">
       {/* Tabs */}
       <div className="tabs">
-        {["Guided", "Templates", "Preview"].map(tab => (
-          <button
-            key={tab}
-            type="button"
-            className={activeTab === tab ? "active" : ""}
-            onClick={() => onTabChange(tab)}
-          >
-            {tab}
-          </button>
-        ))}
+        <div className="tab-group">
+          {["Guided", "Templates", "Preview"].map(tab => (
+            <button
+              key={tab}
+              type="button"
+              className={activeTab === tab ? "active" : ""}
+              onClick={() => onTabChange(tab)}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+
+        <div className="tab-actions">
+           {currentNoteId && (
+              <button 
+                className="tab-action-btn score-btn" 
+                onClick={onScoreCV}
+                title="Score CV with AI"
+              >
+                Score CV ✨
+              </button>
+           )}
+           <button 
+              className="tab-action-btn export-btn" 
+              onClick={onDownloadPDF}
+              title="Export PDF"
+           >
+             <LuDownload size={14} /> Export PDF
+           </button>
+        </div>
       </div>
 
       {/* Toolbar - Only for Markdown editing now */}

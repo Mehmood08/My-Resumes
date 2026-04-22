@@ -17,15 +17,88 @@
 ========================= */
 .tabs {
   display: flex;
-  background: #f1f5f9;
-  padding: 6px;
-  margin: 10px 20px 15px;
-  border-radius: 12px;
-  gap: 8px;
+  justify-content: space-between;
+  align-items: center;
+  background: transparent;
+  padding: 0;
+  margin: 10px 24px 15px;
   flex-shrink: 0;
   position: relative;
-  width: fit-content;
+}
+
+.tab-group {
+  display: flex;
+  background: #f1f5f9;
+  padding: 4px;
+  border-radius: 10px;
+  gap: 4px;
   border: 1px solid #e2e8f0;
+}
+
+.tab-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.tab-action-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tab-action-btn.score-btn {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: white;
+  border: none;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.tab-action-btn.score-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transition: all 0.6s;
+}
+
+.tab-action-btn.score-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(79, 70, 229, 0.3);
+  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+}
+
+.tab-action-btn.score-btn:hover::before {
+  left: 100%;
+}
+
+.tab-action-btn.export-btn {
+  background: #2563eb;
+  color: white;
+  border: none;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+.tab-action-btn.export-btn:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 15px rgba(37, 99, 235, 0.3);
 }
 
 .tabs button {

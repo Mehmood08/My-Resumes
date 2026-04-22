@@ -12,6 +12,8 @@ import { LuPlus, LuLogOut, LuUser, LuChevronRight, LuCalendar, LuFileText, LuSma
 import { useAuth } from './context/AuthContext';
 import Login from './Components/Login';
 import CVScoringModal from './Components/CVScoringModal';
+import EmptyState from './Components/EmptyState';
+import { SpeedInsights } from "@vercel/speed-insights/react";
 
 function App() {
   const { user, getUserId } = useAuth();
@@ -308,15 +310,6 @@ function App() {
               </div>
 
               <div className="top-bar-right">
-                {currentNote.id && (
-                    <button 
-                      className="icon-btn-top score-btn" 
-                      onClick={() => setIsScoringModalOpen(true)} 
-                      title="Score CV with AI"
-                    >
-                      Score CV ✨
-                    </button>
-                )}
                 <button
                   className="create-cv-btn-top"
                   onClick={() => {
@@ -326,17 +319,6 @@ function App() {
                   title="Create New CV"
                 >
                   <LuPlus size={16} /> Create CV
-                </button>
-                <button className="icon-btn-top export-pdf-btn" onClick={handleDownloadPDF} title="Export PDF">
-                  <LuDownload size={15} /> Export PDF
-                </button>
-                <button
-                  className={`save-btn-primary ${needsVerification ? 'save-btn-locked' : ''}`}
-                  onClick={handleSaveNote}
-                  disabled={needsVerification}
-                  title={needsVerification ? "Please verify all sections in the Guided tab first ✓" : ""}
-                >
-                  {needsVerification ? "🔒 Verify First" : (isEditing ? "Update" : "Save")}
                 </button>
               </div>
             </header>
@@ -357,6 +339,9 @@ function App() {
                   needsVerification={needsVerification}
                   onVerificationDismissed={() => setNeedsVerification(false)}
                   onMetaUpdate={handleAutoTitleUpdate}
+                  onDownloadPDF={handleDownloadPDF}
+                  onScoreCV={() => setIsScoringModalOpen(true)}
+                  currentNoteId={currentNote.id}
                 />
               </ErrorBoundary>
             </div>

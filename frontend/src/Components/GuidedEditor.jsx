@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import GuidedHelper from './GuidedHelper';
+import ImageCropperModal from './ImageCropperModal';
 import { LuPlus, LuInfo, LuLightbulb, LuTrash2, LuChevronLeft, LuCheck, LuBold, LuItalic, LuHeading, LuList, LuListOrdered } from "react-icons/lu";
 
 const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerification, onVerificationDismissed, onMetaUpdate }) => {
@@ -11,6 +12,7 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerifica
     const [showMarkdownTip, setShowMarkdownTip] = useState(false);
     const [showVerificationPopup, setShowVerificationPopup] = useState(false);
     const [verifiedSections, setVerifiedSections] = useState({});
+    const [cropperData, setCropperData] = useState(null);
     const isVerificationInitialized = useRef(false);
 
     // Show verification popup when AI CV is loaded
@@ -326,24 +328,35 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerifica
     const handleImageUpload = (e) => {
         const file = e.target.files[0];
         if (!file) return;
-
         const reader = new FileReader();
         reader.onload = (event) => {
-            const img = new Image();
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                const MAX_WIDTH = 250;
-                const scaleSize = MAX_WIDTH / img.width;
-                canvas.width = MAX_WIDTH;
-                canvas.height = img.height * scaleSize;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-                handleInfoChange('photo', dataUrl);
-            };
-            img.src = event.target.result;
+            // Open the advanced Image Cropper Modal instead of direct injection
+            setCropperData(event.target.result);
         };
         reader.readAsDataURL(file);
+        e.target.value = null; // allow uploading same file again
+    };
+
+    const handleCropDone = (croppedDataUrl) => {
+        // Compress the cropped image to save DB space
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 250; // standard CV profile picture width
+            const scaleSize = MAX_WIDTH / img.width;
+            canvas.width = MAX_WIDTH;
+            canvas.height = img.height * scaleSize;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            const compressedUrl = canvas.toDataURL('image/jpeg', 0.85);
+            handleInfoChange('photo', compressedUrl);
+            setCropperData(null);
+        };
+        img.src = croppedDataUrl;
+    };
+
+    const handleCropCancel = () => {
+        setCropperData(null);
     };
 
     const handleSectionChange = (index, value) => {
@@ -843,6 +856,15 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerifica
                     </div>
                 )}
             </main>
+
+            {/* Professional Image Cropper Modal */}
+            {cropperData && (
+                <ImageCropperModal 
+                    imageSrc={cropperData} 
+                    onCropDone={handleCropDone} 
+                    onCropCancel={handleCropCancel} 
+                />
+            )}
         </div>
     );
 };
