@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import GuidedHelper from './GuidedHelper';
 import { LuPlus, LuInfo, LuLightbulb, LuTrash2, LuChevronLeft, LuCheck, LuBold, LuItalic, LuHeading, LuList, LuListOrdered } from "react-icons/lu";
 
-const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerification, onVerificationDismissed }) => {
-    const [currentStep, setCurrentStep] = useState(markdown ? 0 : -1);
+const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerification, onVerificationDismissed, onMetaUpdate }) => {
+    const [currentStep, setCurrentStep] = useState(0);
     const [showHelper, setShowHelper] = useState(false);
     const isInternalChange = useRef(false);
     const textAreaRef = useRef(null);
@@ -32,13 +32,10 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerifica
 
     // Only reset to step 0 if we are currently at the welcome screen (-1) and markdown is provided.
     // This prevents jumping back to step 0 on every keystroke.
+    // Automatically set step to 0 if markdown exists
     useEffect(() => {
         if (markdown && currentStep === -1) {
             setCurrentStep(0);
-            setWelcomeStep(0);
-        } else if (!markdown && currentStep !== -1) {
-            setCurrentStep(-1);
-            setWelcomeStep(0);
         }
     }, [markdown]);
 
@@ -57,6 +54,17 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerifica
     });
 
     const [sections, setSections] = useState([]);
+
+    // Sync metadata with parent for auto-titling
+    useEffect(() => {
+        if (onMetaUpdate) {
+            onMetaUpdate({
+                firstName: personalInfo.firstName,
+                lastName: personalInfo.lastName,
+                profession: personalInfo.profession
+            });
+        }
+    }, [personalInfo.firstName, personalInfo.lastName, personalInfo.profession]);
 
     const steps = [
         { id: 'heading', label: 'Heading', emoji: '👤' },
@@ -452,8 +460,6 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerifica
     };
 
     const renderStepContent = () => {
-        if (currentStep === -1) return renderWelcome();
-
         const step = steps[currentStep];
 
         if (step.id === 'heading') {
@@ -673,7 +679,7 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerifica
         );
     };
 
-    const completionPercent = currentStep === -1 ? 0 : Math.round(((currentStep + 1) / steps.length) * 100);
+    const completionPercent = Math.round(((currentStep + 1) / steps.length) * 100);
 
     const allVerified = needsVerification && Object.keys(verifiedSections).length > 0 && Object.values(verifiedSections).every(v => v);
     const verifiedCount = Object.values(verifiedSections).filter(v => v).length;
@@ -717,13 +723,6 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerifica
             )}
             <aside className="wizard-sidebar">
                 <div className="wizard-steps-list">
-                    <div
-                        className={`wizard-step-item ${currentStep === -1 ? 'active' : 'completed'}`}
-                        onClick={() => setCurrentStep(-1)}
-                    >
-                        <div className="step-number">🏠</div>
-                        <span className="step-label">Welcome</span>
-                    </div>
 
                     {steps.map((step, idx) => (
                         <div

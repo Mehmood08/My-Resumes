@@ -802,6 +802,190 @@
   padding: 10px;
 }
 
+/* TEMPLATES TAB - PROFESSIONAL UI */
+.templates-tab-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  flex: 1;
+  width: 100%;
+  min-height: 0; /* Extremely critical to prevent flex container from blowing past viewport height */
+  overflow: hidden; 
+  background: #f8fafc;
+}
+
+.templates-header {
+  padding: 40px 48px 20px;
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+  flex-shrink: 0; /* Prevent header from shrinking */
+}
+
+.templates-header h2 {
+  font-size: 28px;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 8px;
+  margin-top: 0;
+}
+
+.templates-header p {
+  color: #64748b;
+  font-size: 15px;
+  margin: 0;
+}
+
+.templates-scroll-area {
+  flex: 1;
+  width: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-bottom: 60px;
+}
+
+/* Custom Scrollbar for Templates Scroll Area */
+.templates-scroll-area::-webkit-scrollbar {
+  width: 10px;
+}
+.templates-scroll-area::-webkit-scrollbar-track {
+  background: transparent;
+}
+.templates-scroll-area::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+  border: 3px solid #f8fafc;
+}
+.templates-scroll-area::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.templates-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 24px !important;  /* Reduced gap to make cards sleeker */
+  padding: 30px 40px !important;
+  width: 100%;
+  max-width: 1200px; /* Tighter grid */
+  margin: 0 auto;
+}
+
+.template-card-box {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px; /* Sleeker curves */
+  padding: 16px; /* Reduced padding from 24px so cards aren't too massive */
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  position: relative;
+  height: fit-content;
+}
+
+.template-card-box:hover {
+  transform: translateY(-6px);
+  border-color: #cbd5e1;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.template-card-box.active {
+  border-color: #4f46e5 !important;
+  border-width: 2px !important;
+  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.15), 0 10px 15px -3px rgba(79, 70, 229, 0.2);
+  background: #fdfdff;
+}
+
+.mini-cv-preview-container {
+  width: 100%;
+  height: 240px;   /* Fixed height — clean and reliable */
+  overflow: hidden;
+  position: relative;
+  border-radius: 8px;
+  background: white;
+  border: 1px solid #e2e8f0;
+}
+
+.mini-cv-scaler {
+  width: 794px;    /* A4 at 96dpi */
+  transform: scale(0.31);
+  transform-origin: top left;
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  background: white;
+}
+
+/* Strip the gray desk background + padding from CVPreview when used inside a mini card */
+.mini-cv-scaler .cv-preview {
+  background: white !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  min-height: 0 !important;
+  align-items: flex-start !important;
+}
+
+
+.template-card-info {
+  text-align: center;
+  padding: 8px 8px 4px;
+}
+
+.template-card-info h3 {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 8px 0;
+  letter-spacing: -0.01em;
+}
+
+.template-card-info p {
+  font-size: 13.5px;
+  color: #64748b;
+  line-height: 1.5;
+  height: 42px;
+  overflow: hidden;
+  margin: 0;
+}
+
+.selection-check {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  background: linear-gradient(135deg, #4f46e5, #3b82f6);
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(79, 70, 229, 0.4);
+  z-index: 2;
+  border: 3px solid white;
+  animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes popIn {
+  from { transform: scale(0.5); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* MOBILE RESPONSIVE OVERRIDES BLOCKED FOR TEMPLATES */
+@media (max-width: 900px) {
+  .templates-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .templates-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
 .selection-card {
   padding: 20px;
   border: 2px solid #e2e8f0;
