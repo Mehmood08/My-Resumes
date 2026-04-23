@@ -3,19 +3,73 @@ import MarkdownToolbar from "./MarkdownToolbar";
 import "./professionalEditor.css";
 import CVPreview from "./CVPreview";
 import GuidedEditor from "./GuidedEditor";
+import { layouts } from "./templatesData";
+import { LuCheck, LuDownload } from "react-icons/lu";
 
-const layouts = [
-    { id: "America", name: "American Standard", description: "Clean, traditional & results-focused." },
-    { id: "European", name: "European Modern", description: "Sleek, organized & structured." },
-    { id: "Gulf", name: "Gulf Professional", description: "Refined & optimized for the Gulf region." },
-    { id: "Professional", name: "Classic Professional", description: "Timeless business-standard layout." },
-    { id: "Creative", name: "Creative Edge", description: "Bold design for modern industries." },
-    { id: "Minimalist", name: "Clean Minimalist", description: "Simple, easy to read & distraction-free." },
-    { id: "Executive", name: "Senior Executive", description: "Sophisticated for top-tier roles." },
-    { id: "Academic", name: "Academic / Research", description: "Detailed structure for scholars." },
-    { id: "Tech", name: "Technical Specialist", description: "Optimized for skills & tech stack." },
-    { id: "Service", name: "Customer Service", description: "Practical & experience-heavy." }
-];
+/* =========================================================
+   MiniCVCard — Dynamically scales a full CV to fit any card.
+   Uses ResizeObserver for pixel-perfect, always-correct scale.
+========================================================= */
+const CV_NATIVE_WIDTH = 794; // A4 page at 96dpi in pixels
+const CV_NATIVE_HEIGHT = 750;  // Reduced to show top portion only, making cards more compact
+
+function MiniCVCard({ markdown, formatId }) {
+  const containerRef = useRef(null);
+  const [scale, setScale] = useState(0.3);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(entries => {
+      const width = entries[0].contentRect.width;
+      if (width > 0) setScale(width / CV_NATIVE_WIDTH);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const containerHeight = Math.round(CV_NATIVE_HEIGHT * scale);
+
+  return (
+    <div
+      ref={containerRef}
+      style={{
+        width: '100%',
+        height: `${containerHeight}px`,
+        overflow: 'hidden',
+        position: 'relative',
+        borderRadius: '8px',
+        border: '1px solid #e2e8f0',
+        background: 'white',
+        flexShrink: 0,
+      }}
+    >
+      <div style={{
+        width: `${CV_NATIVE_WIDTH}px`,
+        transform: `scale(${scale})`,
+        transformOrigin: 'top left',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        pointerEvents: 'none',
+      }}>
+        {/* Strip the CVPreview's own gray padding & background */}
+        <style>{`
+          .minicv-inner .cv-preview {
+            background: white !important;
+            padding: 0 !important;
+            min-height: 0 !important;
+            overflow: hidden !important;
+            align-items: flex-start !important;
+          }
+        `}</style>
+        <div className="minicv-inner">
+          <CVPreview markdown={markdown} format={formatId} />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function MarkdownEditor({
   markdownValue,
@@ -29,7 +83,11 @@ export default function MarkdownEditor({
   onSave,
   onStartWizard,
   needsVerification,
-  onVerificationDismissed
+  onVerificationDismissed,
+  onMetaUpdate,
+  onDownloadPDF,
+  onScoreCV,
+  currentNoteId
 }) {
   const [localMarkdown, setLocalMarkdown] = useState(markdownValue);
   const [localScript, setLocalScript] = useState(scriptValue);
@@ -78,16 +136,37 @@ export default function MarkdownEditor({
     <div className="editor-container">
       {/* Tabs */}
       <div className="tabs">
-        {["Guided", "Templates", "Preview"].map(tab => (
-          <button
-            key={tab}
-            type="button"
-            className={activeTab === tab ? "active" : ""}
-            onClick={() => onTabChange(tab)}
-          >
-            {tab}
-          </button>
-        ))}
+        <div className="tab-group">
+          {["Guided", "Templates", "Preview"].map(tab => (
+            <button
+              key={tab}
+              type="button"
+              className={activeTab === tab ? "active" : ""}
+              onClick={() => onTabChange(tab)}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+
+        <div className="tab-actions">
+           {currentNoteId && (
+              <button 
+                className="tab-action-btn score-btn" 
+                onClick={onScoreCV}
+                title="Score CV with AI"
+              >
+                Score CV ✨
+              </button>
+           )}
+           <button 
+              className="tab-action-btn export-btn" 
+              onClick={onDownloadPDF}
+              title="Export PDF"
+           >
+             <LuDownload size={14} /> Export PDF
+           </button>
+        </div>
       </div>
 
       {/* Toolbar - Only for Markdown editing now */}
@@ -99,7 +178,8 @@ export default function MarkdownEditor({
 
       {/* Editor Content */}
       <div className="editor-content">
-        {activeTab === "Guided" && (
+        {/* GuidedEditor is always mounted to preserve 'Verified' state. We just hide it using display. */}
+        <div style={{ display: activeTab === "Guided" ? "block" : "none", height: "100%", width: "100%" }}>
           <GuidedEditor
             markdown={localMarkdown}
             onChange={setLocalMarkdown}
@@ -107,8 +187,9 @@ export default function MarkdownEditor({
             onStartWizard={onStartWizard}
             needsVerification={needsVerification}
             onVerificationDismissed={onVerificationDismissed}
+            onMetaUpdate={onMetaUpdate}
           />
-        )}
+        </div>
 
         {activeTab === "Markdown" && (
           <textarea
@@ -121,45 +202,39 @@ export default function MarkdownEditor({
         )}
 
         {activeTab === "Templates" && (
-          <div className="template-switcher" style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#fff' }}>
-            <div className="wizard-header" style={{ marginBottom: '20px', padding: '30px 40px 10px' }}>
-              <h2 style={{ fontSize: '28px', fontWeight: '800', color: '#0f172a', marginBottom: '8px' }}>Choose a Template</h2>
-              <p style={{ color: '#64748b' }}>Select a layout that best fits your industry and style.</p>
+          <div className="templates-tab-container">
+            <div className="templates-header">
+              <h2>Choose a Template</h2>
+              <p>Select a layout that best fits your industry and style. All templates are 100% professional and ATS-friendly.</p>
             </div>
             
-            <div className="selection-grid" style={{ padding: '0 40px 40px', overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '24px' }}>
-                {layouts.map(layout => (
-                  <div 
-                    key={layout.id}
-                    className={`selection-card ${cvFormat === layout.id ? 'active' : ''}`}
-                    onClick={() => {
-                       onFormatChange(layout.id);
-                       onTabChange("Preview"); // Auto switch so they can see it!
-                    }}
-                    style={{ padding: '16px', display: 'flex', flexDirection: 'column' }}
-                  >
-                    {/* Live Mini Preview Box */}
-                    <div className="mini-cv-wrapper" style={{ 
-                        width: '100%', 
-                        height: '280px', 
-                        overflow: 'hidden', 
-                        position: 'relative', 
-                        borderRadius: '6px', 
-                        marginBottom: '16px', 
-                        background: '#f8fafc', 
-                        border: '1px solid #e2e8f0',
-                        boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
-                    }}>
-                        <div style={{ width: '800px', height: '1131px', transform: 'scale(0.28)', transformOrigin: 'top left', pointerEvents: 'none' }}>
-                             <CVPreview markdown={localMarkdown} format={layout.id} />
-                        </div>
+            <div className="templates-scroll-area">
+              <div className="templates-grid">
+                  {layouts.map(layout => (
+                    <div 
+                      key={layout.id}
+                      className={`template-card-box ${cvFormat === layout.id ? 'active' : ''}`}
+                      onClick={() => {
+                         onFormatChange(layout.id);
+                         onTabChange("Preview"); // Auto switch so they can see it!
+                      }}
+                    >
+                      {cvFormat === layout.id && (
+                         <div className="selection-check">
+                            <LuCheck size={18} strokeWidth={3} />
+                         </div>
+                      )}
+
+                      {/* Live Mini Preview using the self-scaling MiniCVCard */}
+                      <MiniCVCard markdown={localMarkdown} formatId={layout.id} />
+                      
+                      <div className="template-card-info">
+                          <h3>{layout.name}</h3>
+                          <p>{layout.description}</p>
+                      </div>
                     </div>
-                    
-                    <h3 style={{ fontSize: '16px', margin: '0 0 6px 0', color: '#0f172a' }}>{layout.name}</h3>
-                    <p style={{ fontSize: '13px', margin: 0, color: '#64748b', lineHeight: '1.4' }}>{layout.description}</p>
-                    {cvFormat === layout.id && <div className="active-indicator" style={{ marginTop: '12px' }}>Selected ✓</div>}
-                  </div>
-                ))}
+                  ))}
+              </div>
             </div>
           </div>
         )}

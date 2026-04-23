@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { LuX, LuChevronLeft, LuCheck } from "react-icons/lu";
 import { LiveThumbnail } from "./SharedLiveThumbnail";
+import { layouts } from "./templatesData";
 
 const steps = [
     { id: "mode", title: "Choose Your Creation Mode" },
@@ -68,22 +69,19 @@ const experienceLevels = [
     { id: "senior", name: "Senior / Expert", description: "7+ years of professional experience." }
 ];
 
-const layouts = [
-    { id: "America", name: "American Standard", description: "Clean, traditional & results-focused.", type: 'standard' },
-    { id: "European", name: "European Modern", description: "Sleek, organized & structured.", type: 'sidebar' },
-    { id: "Gulf", name: "Gulf Professional", description: "Refined & optimized for the Gulf region.", type: 'standard' },
-    { id: "Professional", name: "Classic Professional", description: "Timeless business-standard layout.", type: 'standard' },
-    { id: "Creative", name: "Creative Edge", description: "Bold design for modern industries.", type: 'standard' },
-    { id: "Minimalist", name: "Clean Minimalist", description: "Simple, easy to read & distraction-free.", type: 'standard' },
-    { id: "Executive", name: "Senior Executive", description: "Sophisticated for top-tier roles.", type: 'standard', filter: 'filter-executive' },
-    { id: "Academic", name: "Academic / Research", description: "Detailed structure for scholars.", type: 'compact', filter: 'filter-academic' },
-    { id: "Tech", name: "Technical Specialist", description: "Optimized for skills & tech stack.", type: 'standard', filter: 'filter-tech' },
-    { id: "Service", name: "Customer Service", description: "Practical & experience-heavy.", type: 'standard', filter: 'filter-service' },
-];
 
-export default function TemplateWizard({ isOpen, onClose, onCreate }) {
-    const [currentStep, setCurrentStep] = useState(0);
-    const [wizardMode, setWizardMode] = useState("select"); // 'select', 'manual', 'ai'
+export default function TemplateWizard({ isOpen, onClose, onCreate, initialMode = "select", initialStep = 0 }) {
+    const [currentStep, setCurrentStep] = useState(initialStep);
+    const [wizardMode, setWizardMode] = useState(initialMode); // 'select', 'manual', 'ai'
+
+    // Reset or update state when wizard opens with specific props
+    React.useEffect(() => {
+        if (isOpen) {
+            setWizardMode(initialMode);
+            setCurrentStep(initialStep);
+        }
+    }, [isOpen, initialMode, initialStep]);
+
     const [isGenerating, setIsGenerating] = useState(false);
     const [isSuggestingSummary, setIsSuggestingSummary] = useState(false);
     const [errorType, setErrorType] = useState(null); // null, 'quota', 'error'

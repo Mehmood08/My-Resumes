@@ -12,13 +12,14 @@ import { LuPlus, LuLogOut, LuUser, LuChevronRight, LuCalendar, LuFileText, LuSma
 import { useAuth } from './context/AuthContext';
 import Login from './Components/Login';
 import CVScoringModal from './Components/CVScoringModal';
-import { SpeedInsights } from '@vercel/speed-insights/react';
+import EmptyState from './Components/EmptyState';
+import { SpeedInsights } from "@vercel/speed-insights/react";
 
 function App() {
   const { user, getUserId } = useAuth();
   const [notes, setNotes] = useState([]);
 
-  const [currentNote, setCurrentNote] = useState({ title: "", desc: "", script: "", id: null, parentId: "" });
+  const [currentNote, setCurrentNote] = useState({ title: "", desc: "", script: "", id: null, parentId: "", isDraft: false });
   const [isEditing, setIsEditing] = useState(false);
 
   const [activeTab, setActiveTab] = useState("Guided");
@@ -28,6 +29,7 @@ function App() {
   const [backendStatus, setBackendStatus] = useState("checking");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [needsVerification, setNeedsVerification] = useState(false);
+  const [wizardOptions, setWizardOptions] = useState({ mode: 'select', step: 0 });
 
   useEffect(() => {
     if (!user) {
@@ -108,7 +110,8 @@ function App() {
         desc: templateContent,
         script: "",
         id: null,
-        parentId
+        parentId,
+        isDraft: true
       });
       setCvFormat(format);
       setIsEditing(false);
@@ -122,11 +125,40 @@ function App() {
         desc: templateContent,
         script: "",
         id: null,
-        parentId: ""
+        parentId: "",
+        isDraft: true
       });
       setCvFormat("America");
       setIsEditing(false);
+      setWizardOptions({ mode: 'select', step: 0 });
       setIsWizardOpen(true);
+    }
+  };
+
+  const handleOpenWizardFromEmpty = (mode) => {
+    setWizardOptions({ 
+      mode: mode, 
+      step: mode === 'ai' ? 0 : 1 
+    });
+    setIsWizardOpen(true);
+  };
+
+  const handleAutoTitleUpdate = ({ firstName, lastName, profession }) => {
+    // Only update if current title is essentially "Untitled"
+    const currentTitle = currentNote.title || "";
+    const isUntitled = !currentTitle || 
+                       currentTitle === "Untitled" || 
+                       currentTitle === "Untitled Resume" || 
+                       currentTitle === "Resume Title..." ||
+                       // Also allow if it looks like a previously auto-generated title
+                       (firstName && currentTitle.includes(firstName)) || 
+                       (lastName && currentTitle.includes(lastName));
+
+    if (isUntitled && (firstName || lastName || profession)) {
+      const newTitle = `${firstName} ${lastName} ${profession ? '- ' + profession : ''}`.trim();
+      if (newTitle && newTitle !== currentTitle) {
+        setCurrentNote(prev => ({ ...prev, title: newTitle }));
+      }
     }
   };
 
@@ -183,7 +215,7 @@ function App() {
           if (res.ok) {
             setNotes(notes.filter(n => n.id !== id));
             if (currentNote.id === id) {
-              setCurrentNote({ title: "", desc: "", script: "", id: null, parentId: "" });
+              setCurrentNote({ title: "", desc: "", script: "", id: null, parentId: "", isDraft: false });
               setIsEditing(false);
             }
           }
@@ -201,7 +233,10 @@ function App() {
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: { scale: 2 },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+      pagebreak: { 
+        mode: ['css', 'legacy'], // Utilize native CSS behaviors rather than forcing whole sections to jump
+        avoid: ['h2', 'h3', 'p', 'li', '.contact-info', '.cv-photo-container'] // Target atomic elements instead of large sections! 
+      }
     };
     html2pdf().set(opt).from(element).save();
   };
@@ -212,101 +247,115 @@ function App() {
 
   if (!user) return <Login />;
 
+  const hasResumes = notes.length > 0;
+  const isCreatingNew = currentNote.title !== "" || currentNote.desc !== "" || isWizardOpen || currentNote.id !== null || currentNote.isDraft;
+  const shouldShowEditor = hasResumes || isCreatingNew;
+  
+  // We strictly hide the sidebar space if there are no existing resumes to show.
+  // This ensures a clean, centered layout for the first CV creation.
+  const hideSidebarLayout = !hasResumes;
+
   return (
-    <div className={`app-layout ${isSidebarOpen ? 'sidebar-open' : ''}`}>
-      {/* Sidebar Overlay for Mobile */}
-      {isSidebarOpen && <div className="sidebar-overlay" onClick={toggleSidebar}></div>}
-
-      <ErrorBoundary>
-        <Sidebar
-          notes={notes}
-          onCreateNote={() => { handleCreateNote(); setIsSidebarOpen(false); }}
-          onSelectNote={(note) => { setCurrentNote({ ...note, title: note.title || "", desc: note.desc || "", script: note.script || "" }); setIsEditing(true); setIsSidebarOpen(false); }}
-          onDeleteNote={handleDeleteNote}
-          activeNoteId={currentNote.id}
-          isSidebarOpen={isSidebarOpen}
-          onCloseSidebar={toggleSidebar}
-        />
-      </ErrorBoundary>
-
-      <main className="main-content">
-        <header className="top-bar">
-          <div className="top-bar-left">
-            <button className="icon-btn-top mobile-only" onClick={toggleSidebar} title="Open Sidebar">
-              <LuMenu />
-            </button>
-            <input
-              type="text"
-              className="title-input-flat"
-              placeholder="Resume Title..."
-              value={currentNote.title || ""}
-              onChange={(e) => setCurrentNote({ ...currentNote, title: e.target.value })}
-            />
-            <div className="divider-vertical"></div>
-            <span className={`editor-status ${isEditing ? "status-saved" : "status-unsaved"}`}>
-              {isEditing ? "SAVED" : "UNSAVED"}
-            </span>
-            <div className="divider-vertical"></div>
-            <span 
-              className={`editor-status ${backendStatus === "connected" ? "status-saved" : (backendStatus === "waking-up" ? "status-waking" : "status-unsaved")}`} 
-              title="Backend Connection"
-              style={backendStatus === "waking-up" ? { background: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd' } : {}}
-            >
-              {backendStatus === "connected" ? "ONLINE" : (backendStatus === "waking-up" ? "WAKING UP..." : "OFFLINE")}
-            </span>
-          </div>
-
-          <div className="top-bar-right">
-            {currentNote.id && (
-                <button 
-                  className="icon-btn-top score-btn" 
-                  onClick={() => setIsScoringModalOpen(true)} 
-                  title="Score CV with AI"
-                >
-                  Score CV ✨
-                </button>
-            )}
-            {activeTab === "Preview" && (
-              <div className="preview-controls">
-                <button className="icon-btn-top" onClick={handleDownloadPDF} title="Export PDF">
-                  Export PDF
-                </button>
-              </div>
-            )}
-            <button
-              className={`save-btn-primary ${needsVerification ? 'save-btn-locked' : ''}`}
-              onClick={handleSaveNote}
-              disabled={needsVerification}
-              title={needsVerification ? "Please verify all sections in the Guided tab first ✓" : ""}
-            >
-              {needsVerification ? "🔒 Verify First" : (isEditing ? "Update" : "Save")}
-            </button>
-          </div>
-        </header>
-
-        <div className="editor-workspace">
+    <div className={`app-layout ${isSidebarOpen ? 'sidebar-open' : ''} ${hideSidebarLayout ? 'no-sidebar' : ''}`}>
+      {/* Sidebar rendered only if resumes exist */}
+      {hasResumes && (
+        <>
+          {isSidebarOpen && <div className="sidebar-overlay" onClick={toggleSidebar}></div>}
           <ErrorBoundary>
-            <MarkdownEditor
-              markdownValue={currentNote.desc}
-              onMarkdownChange={(val) => setCurrentNote({ ...currentNote, desc: val })}
-              scriptValue={currentNote.script}
-              onScriptChange={(val) => setCurrentNote({ ...currentNote, script: val })}
-              activeTab={activeTab}
-              onTabChange={setActiveTab}
-              cvFormat={cvFormat}
-              onFormatChange={setCvFormat}
-              onSave={handleSaveNote}
-              onStartWizard={() => setIsWizardOpen(true)}
-              needsVerification={needsVerification}
-              onVerificationDismissed={() => setNeedsVerification(false)}
+            <Sidebar
+              notes={notes}
+              onCreateNote={() => { 
+                setWizardOptions({ mode: 'select', step: 0 }); 
+                handleCreateNote(); 
+                setIsSidebarOpen(false); 
+              }}
+              onSelectNote={(note) => { setCurrentNote({ ...note, title: note.title || "", desc: note.desc || "", script: note.script || "" }); setIsEditing(true); setIsSidebarOpen(false); }}
+              onDeleteNote={handleDeleteNote}
+              activeNoteId={currentNote.id}
+              isSidebarOpen={isSidebarOpen}
+              onCloseSidebar={toggleSidebar}
             />
           </ErrorBoundary>
-        </div>
+        </>
+      )}
+
+      <main className="main-content">
+        {shouldShowEditor ? (
+          <>
+            <header className="top-bar">
+              <div className="top-bar-left">
+                <button className="icon-btn-top mobile-only" onClick={toggleSidebar} title="Open Sidebar">
+                  <LuMenu />
+                </button>
+                <div className="divider-vertical"></div>
+                <input
+                  type="text"
+                  className="title-input-flat"
+                  placeholder="Resume Title..."
+                  value={currentNote.title || ""}
+                  onChange={(e) => setCurrentNote({ ...currentNote, title: e.target.value })}
+                />
+                <div className="divider-vertical"></div>
+                <span className={`editor-status ${isEditing ? "status-saved" : "status-unsaved"}`}>
+                  {isEditing ? "SAVED" : "UNSAVED"}
+                </span>
+                <div className="divider-vertical"></div>
+                <span 
+                  className={`editor-status ${backendStatus === "connected" ? "status-saved" : (backendStatus === "waking-up" ? "status-waking" : "status-unsaved")}`} 
+                  title="Backend Connection"
+                  style={backendStatus === "waking-up" ? { background: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd' } : {}}
+                >
+                  {backendStatus === "connected" ? "ONLINE" : (backendStatus === "waking-up" ? "WAKING UP..." : "OFFLINE")}
+                </span>
+              </div>
+
+              <div className="top-bar-right">
+                <button
+                  className="create-cv-btn-top"
+                  onClick={() => {
+                    setWizardOptions({ mode: 'select', step: 0 });
+                    setIsWizardOpen(true);
+                  }}
+                  title="Create New CV"
+                >
+                  <LuPlus size={16} /> Create CV
+                </button>
+              </div>
+            </header>
+
+            <div className="editor-workspace">
+              <ErrorBoundary>
+                <MarkdownEditor
+                  markdownValue={currentNote.desc}
+                  onMarkdownChange={(val) => setCurrentNote({ ...currentNote, desc: val })}
+                  scriptValue={currentNote.script}
+                  onScriptChange={(val) => setCurrentNote({ ...currentNote, script: val })}
+                  activeTab={activeTab}
+                  onTabChange={setActiveTab}
+                  cvFormat={cvFormat}
+                  onFormatChange={setCvFormat}
+                  onSave={handleSaveNote}
+                  onStartWizard={() => setIsWizardOpen(true)}
+                  needsVerification={needsVerification}
+                  onVerificationDismissed={() => setNeedsVerification(false)}
+                  onMetaUpdate={handleAutoTitleUpdate}
+                  onDownloadPDF={handleDownloadPDF}
+                  onScoreCV={() => setIsScoringModalOpen(true)}
+                  currentNoteId={currentNote.id}
+                />
+              </ErrorBoundary>
+            </div>
+          </>
+        ) : (
+          <EmptyState onSelectMode={handleOpenWizardFromEmpty} />
+        )}
       </main>
       <TemplateWizard
         isOpen={isWizardOpen}
         onClose={() => setIsWizardOpen(false)}
         onCreate={(selections) => handleCreateNote("", selections)}
+        initialMode={wizardOptions.mode}
+        initialStep={wizardOptions.step}
       />
 
       <CVScoringModal 

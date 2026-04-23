@@ -32,3 +32,29 @@
     box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
     border-radius: 8px;
 }
+
+/* =========================================
+   PDF EXPORT & PAGE BREAK LOGIC (html2pdf)
+========================================= */
+
+/* Prevent individual paragraphs or list items from being cleanly sliced horizontally */
+.html-preview p, 
+.html-preview li,
+.html-preview .contact-item {
+    page-break-inside: avoid;
+    break-inside: avoid;
+}
+
+/* Prevent headlines from being stranded at the bottom of a page without their content */
+.html-preview h1, 
+.html-preview h2, 
+.html-preview h3,
+.html-preview .section-title {
+    page-break-after: avoid;
+    break-after: avoid-page;
+    page-break-inside: avoid;
+    break-inside: avoid;
+}
+
+/* We specifically do NOT put page-break-inside: avoid on .cv-section, 
+   so that long experience or education sections can naturally flow to the next page! */

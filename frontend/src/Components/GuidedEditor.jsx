@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import GuidedHelper from './GuidedHelper';
+import ImageCropperModal from './ImageCropperModal';
 import { LuPlus, LuInfo, LuLightbulb, LuTrash2, LuChevronLeft, LuCheck, LuBold, LuItalic, LuHeading, LuList, LuListOrdered } from "react-icons/lu";
 
-const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerification, onVerificationDismissed }) => {
-    const [currentStep, setCurrentStep] = useState(markdown ? 0 : -1);
+const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerification, onVerificationDismissed, onMetaUpdate }) => {
+    const [currentStep, setCurrentStep] = useState(0);
     const [showHelper, setShowHelper] = useState(false);
     const isInternalChange = useRef(false);
     const textAreaRef = useRef(null);
@@ -11,6 +12,7 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerifica
     const [showMarkdownTip, setShowMarkdownTip] = useState(false);
     const [showVerificationPopup, setShowVerificationPopup] = useState(false);
     const [verifiedSections, setVerifiedSections] = useState({});
+    const [cropperData, setCropperData] = useState(null);
     const isVerificationInitialized = useRef(false);
 
     // Show verification popup when AI CV is loaded
@@ -32,13 +34,10 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerifica
 
     // Only reset to step 0 if we are currently at the welcome screen (-1) and markdown is provided.
     // This prevents jumping back to step 0 on every keystroke.
+    // Automatically set step to 0 if markdown exists
     useEffect(() => {
         if (markdown && currentStep === -1) {
             setCurrentStep(0);
-            setWelcomeStep(0);
-        } else if (!markdown && currentStep !== -1) {
-            setCurrentStep(-1);
-            setWelcomeStep(0);
         }
     }, [markdown]);
 
@@ -57,6 +56,17 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerifica
     });
 
     const [sections, setSections] = useState([]);
+
+    // Sync metadata with parent for auto-titling
+    useEffect(() => {
+        if (onMetaUpdate) {
+            onMetaUpdate({
+                firstName: personalInfo.firstName,
+                lastName: personalInfo.lastName,
+                profession: personalInfo.profession
+            });
+        }
+    }, [personalInfo.firstName, personalInfo.lastName, personalInfo.profession]);
 
     const steps = [
         { id: 'heading', label: 'Heading', emoji: '👤' },
@@ -318,24 +328,35 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerifica
     const handleImageUpload = (e) => {
         const file = e.target.files[0];
         if (!file) return;
-
         const reader = new FileReader();
         reader.onload = (event) => {
-            const img = new Image();
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                const MAX_WIDTH = 250;
-                const scaleSize = MAX_WIDTH / img.width;
-                canvas.width = MAX_WIDTH;
-                canvas.height = img.height * scaleSize;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-                handleInfoChange('photo', dataUrl);
-            };
-            img.src = event.target.result;
+            // Open the advanced Image Cropper Modal instead of direct injection
+            setCropperData(event.target.result);
         };
         reader.readAsDataURL(file);
+        e.target.value = null; // allow uploading same file again
+    };
+
+    const handleCropDone = (croppedDataUrl) => {
+        // Compress the cropped image to save DB space
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 250; // standard CV profile picture width
+            const scaleSize = MAX_WIDTH / img.width;
+            canvas.width = MAX_WIDTH;
+            canvas.height = img.height * scaleSize;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            const compressedUrl = canvas.toDataURL('image/jpeg', 0.85);
+            handleInfoChange('photo', compressedUrl);
+            setCropperData(null);
+        };
+        img.src = croppedDataUrl;
+    };
+
+    const handleCropCancel = () => {
+        setCropperData(null);
     };
 
     const handleSectionChange = (index, value) => {
@@ -452,8 +473,6 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerifica
     };
 
     const renderStepContent = () => {
-        if (currentStep === -1) return renderWelcome();
-
         const step = steps[currentStep];
 
         if (step.id === 'heading') {
@@ -673,7 +692,7 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerifica
         );
     };
 
-    const completionPercent = currentStep === -1 ? 0 : Math.round(((currentStep + 1) / steps.length) * 100);
+    const completionPercent = Math.round(((currentStep + 1) / steps.length) * 100);
 
     const allVerified = needsVerification && Object.keys(verifiedSections).length > 0 && Object.values(verifiedSections).every(v => v);
     const verifiedCount = Object.values(verifiedSections).filter(v => v).length;
@@ -717,13 +736,6 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerifica
             )}
             <aside className="wizard-sidebar">
                 <div className="wizard-steps-list">
-                    <div
-                        className={`wizard-step-item ${currentStep === -1 ? 'active' : 'completed'}`}
-                        onClick={() => setCurrentStep(-1)}
-                    >
-                        <div className="step-number">🏠</div>
-                        <span className="step-label">Welcome</span>
-                    </div>
 
                     {steps.map((step, idx) => (
                         <div
@@ -844,6 +856,15 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerifica
                     </div>
                 )}
             </main>
+
+            {/* Professional Image Cropper Modal */}
+            {cropperData && (
+                <ImageCropperModal 
+                    imageSrc={cropperData} 
+                    onCropDone={handleCropDone} 
+                    onCropCancel={handleCropCancel} 
+                />
+            )}
         </div>
     );
 };

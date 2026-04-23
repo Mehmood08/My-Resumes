@@ -23,6 +23,15 @@
     overflow: hidden;
 }
 
+.no-sidebar .main-content {
+    width: 100vw;
+    background-color: #f8fafc; /* Match empty state bg */
+}
+
+.no-sidebar .top-bar .mobile-only {
+    display: none !important;
+}
+
 /* ------------------ Professional Sidebar ------------------ */
 .sidebar {
     width: 280px;
@@ -272,6 +281,15 @@
     overflow: hidden;
 }
 
+.editor-workspace {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Critical for internal component scrolling */
+    background: #fff;
+    position: relative;
+}
+
 .top-bar {
     height: 64px;
     display: flex;
@@ -281,6 +299,33 @@
     border-bottom: 1px solid var(--border);
     background-color: white;
     flex-shrink: 0;
+}
+
+.create-cv-btn-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #4f46e5;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13.5px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 10px rgba(79, 70, 229, 0.25);
+    white-space: nowrap;
+}
+
+.create-cv-btn-top:hover {
+    background: #4338ca;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(79, 70, 229, 0.35);
+}
+
+.create-cv-btn-top:active {
+    transform: scale(0.96);
 }
 
 .top-bar-left {
@@ -667,6 +712,7 @@
     padding: 10px;
     margin-top: 20px;
 }
+
 
 .mode-card {
     background: white;
