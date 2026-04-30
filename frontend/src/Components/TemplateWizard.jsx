@@ -27,11 +27,11 @@ const aiSteps = [
         { id: "ai_school_city", placeholder: "Qualification City", type: "text" },
         { id: "ai_year", placeholder: "Qualification Completion Year", type: "text" }
     ]},
+    { id: "ai_worker_jd", title: "Target Job Description", type: "single", fieldId: "ai_jd", fieldType: "textarea", placeholder: "Paste the full Job Description you are applying for..." },
     { id: "ai_experience", title: "Professional Experience", type: "multi", fields: [
         { id: "experienceYears", placeholder: "Total Years of Experience", type: "text" },
         { id: "ai_summary", placeholder: "Detailed summary of your past experiences, roles, and achievements...", type: "textarea" }
     ]},
-    { id: "ai_worker_jd", title: "Target Job Description", type: "single", fieldId: "ai_jd", fieldType: "textarea", placeholder: "Paste the full Job Description you are applying for..." },
 ];
 
 const educationLevels = [
@@ -197,7 +197,8 @@ export default function TemplateWizard({ isOpen, onClose, onCreate, initialMode 
                 body: JSON.stringify({
                     qualification: selections.ai_education,
                     years: selections.experienceYears,
-                    institute: selections.ai_school
+                    institute: selections.ai_school,
+                    jd: selections.ai_jd
                 })
             });
 

@@ -229,14 +229,18 @@ ${linksLine}
 // POST AI Suggest Experience
 router.post('/suggest-experience', async (req, res) => {
     try {
-        const { qualification, years, institute } = req.body;
+        const { qualification, years, institute, jd } = req.body;
 
         if (!qualification) {
             return res.status(400).json({ message: "Qualification is required for contextual suggestion." });
         }
 
         const prompt = `Write a professional 4-line experience summary for a person with ${years || "an unspecified amount of"} experience in "${qualification}"${institute ? ` with a background from ${institute}` : ""}.
-        DO NOT invent company names, specific dates, or fake projects. Keep it generic, skills-focused, and highly professional. DO NOT wrap the output in markdown blockquotes or json, just return the plain string text.`;
+        ${jd ? `The summary MUST be highly tailored to match the following Target Job Description to ensure ATS optimization:
+        ---
+        ${jd}
+        ---` : ""}
+        DO NOT invent company names, specific dates, or fake projects. Focus on highlighting skills and achievements that align with the job requirements. Keep it professional. DO NOT wrap the output in markdown blockquotes or json, just return the plain string text.`;
 
         if (!process.env.GEMINI_API_KEY) {
             return res.status(500).json({ message: "API Key not configured" });
