@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { GoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../context/AuthContext';
-import { LuMail, LuLock, LuGlobe, LuShieldCheck, LuSparkles } from "react-icons/lu";
+import { LuMail, LuLock, LuGlobe, LuShieldCheck, LuSparkles, LuEye, LuEyeOff } from "react-icons/lu";
 import './Login.css';
 
 function Login() {
@@ -9,6 +9,7 @@ function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isRegistering, setIsRegistering] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [serverStatus, setServerStatus] = useState('checking'); // 'checking', 'online', 'offline'
     const [isWebView, setIsWebView] = useState(false);
@@ -205,16 +206,35 @@ function Login() {
                                     <div style={{ position: 'relative' }}>
                                         <LuLock style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
                                         <input
-                                            type="password"
+                                            type={showPassword ? "text" : "password"}
                                             placeholder="Enter your password"
                                             value={password}
                                             onChange={(e) => setPassword(e.target.value)}
                                             style={{
-                                                width: '100%', padding: '12px 12px 12px 40px', borderRadius: '6px', border: '1px solid #cbd5e1',
+                                                width: '100%', padding: '12px 40px 12px 40px', borderRadius: '6px', border: '1px solid #cbd5e1',
                                                 fontSize: '14px', outline: 'none'
                                             }}
                                             required
                                         />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            style={{
+                                                position: 'absolute',
+                                                right: '12px',
+                                                top: '50%',
+                                                transform: 'translateY(-50%)',
+                                                background: 'none',
+                                                border: 'none',
+                                                cursor: 'pointer',
+                                                color: '#94a3b8',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                padding: '0'
+                                            }}
+                                        >
+                                            {showPassword ? <LuEyeOff size={18} /> : <LuEye size={18} />}
+                                        </button>
                                     </div>
                                 </div>
 
