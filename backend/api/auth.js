@@ -80,21 +80,8 @@ router.post('/register', async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         if (user) {
-            // Case 1: User exists but has no password (signed up via Google previously)
-            if (!user.password) {
-                user.password = hashedPassword;
-                if (name) user.name = name;
-                await user.save();
-                console.log(`Password added to existing Google account: ${email}`);
-                
-                // Now generate token and return (important to return here!)
-                const token = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
-                const userData = { ...user._doc, googleId: user.googleId || user._id.toString() };
-                return res.status(200).json({ token, user: userData });
-            } else {
-                // Case 2: User exists and already has a password
-                return res.status(400).json({ message: "User already exists with this email. Please Login instead." });
-            }
+            // No matter if it's a Google account or Password account, don't allow registration
+            return res.status(400).json({ message: "An account already exists with this email. Please Login instead or use Forgot Password." });
         }
 
         // Case 3: Completely new user
