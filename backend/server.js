@@ -109,6 +109,13 @@ app.get('/api/test', (req, res) => {
     });
 });
 
+// Fallback: If someone accidentally hits /reset-password on the BACKEND, redirect them to FRONTEND
+app.get('/reset-password/:token', (req, res) => {
+    const { token } = req.params;
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    res.redirect(`${frontendUrl}/reset-password/${token}`);
+});
+
 app.listen(PORT, () => {
     console.log(`
     🚀 Backend is running!
