@@ -5,6 +5,7 @@ import { LuPlus, LuTrash2, LuChevronDown, LuChevronRight, LuLogOut, LuX, LuFileT
 function Sidebar({ notes, onSelectNote, onDeleteNote, onCreateNote, activeNoteId, openParentId, isSidebarOpen, onCloseSidebar }) {
   const { user, logout } = useAuth(); // Get User
   const [openParents, setOpenParents] = useState({});
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const resumeCount = useMemo(() => Array.isArray(notes) ? notes.filter(n => !n.parentId).length : 0, [notes]);
   const parents = useMemo(() => Array.isArray(notes) ? notes.filter(n => !n.parentId) : [], [notes]);
@@ -64,8 +65,58 @@ function Sidebar({ notes, onSelectNote, onDeleteNote, onCreateNote, activeNoteId
               <button className="profile-action-btn" title="Profile Settings">
                 <LuSettings size={16} />
               </button>
-              <button onClick={logout} className="profile-action-btn logout-btn" title="Sign Out">
+              <button onClick={() => setShowLogoutConfirm(true)} className="profile-action-btn logout-btn" title="Sign Out">
                 <LuLogOut size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* LOGOUT CONFIRMATION MODAL */}
+      {showLogoutConfirm && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+          background: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(4px)',
+          zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          animation: 'fadeIn 0.2s ease-out'
+        }}>
+          <div style={{
+            background: 'white', padding: '30px', borderRadius: '20px', width: '90%', maxWidth: '400px',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+            textAlign: 'center'
+          }}>
+            <div style={{
+              background: '#fee2e2', color: '#ef4444', width: '60px', height: '60px',
+              borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              margin: '0 auto 20px'
+            }}>
+              <LuLogOut size={30} />
+            </div>
+            <h3 style={{ color: '#0f172a', fontSize: '1.25rem', marginBottom: '10px' }}>Sign Out</h3>
+            <p style={{ color: '#64748b', fontSize: '0.95rem', marginBottom: '25px', lineHeight: '1.5' }}>
+              Are you sure you want to log out? You will need to sign in again to access your resumes.
+            </p>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button 
+                onClick={() => setShowLogoutConfirm(false)}
+                style={{
+                  flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0',
+                  background: 'white', color: '#64748b', fontWeight: '600', cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={logout}
+                style={{
+                  flex: 1, padding: '12px', borderRadius: '12px', border: 'none',
+                  background: '#ef4444', color: 'white', fontWeight: '600', cursor: 'pointer',
+                  transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)'
+                }}
+              >
+                Sign Out
               </button>
             </div>
           </div>

@@ -2,7 +2,9 @@ import express from 'express';
 import { OAuth2Client } from 'google-auth-library';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import User from '../models/User.js';
+import sendEmail from '../utils/sendEmail.js';
 
 const router = express.Router();
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -135,6 +137,97 @@ router.post('/login', async (req, res) => {
     } catch (err) {
         console.error("Login Error:", err);
         res.status(500).json({ message: "Server error during login." });
+    }
+});
+
+// Forgot Password
+router.post('/forgot-password', async (req, res) => {
+    const { email } = req.body;
+    console.log('Forgot password request for:', email);
+    try {
+        const user = await User.findOne({ email });
+        if (!user) {
+            console.log('USER NOT FOUND IN DATABASE:', email);
+            // Send same message even if email not found for security
+            return res.json({ message: "If an account exists with this email, a reset link has been sent." });
+        }
+        console.log('USER FOUND:', user.email);
+
+        // Generate token
+        const resetToken = crypto.randomBytes(32).toString('hex');
+        const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+        // Save hashed token and expiry to DB
+        user.resetPasswordToken = hashedToken;
+        user.resetPasswordExpires = Date.now() + 15 * 60 * 1000; // 15 minutes
+        await user.save();
+
+        // Send Email
+        const resetURL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password/${resetToken}`;
+        const message = `You requested a password reset. Please click the link below to set a new password:\n\n${resetURL}\n\nIf you didn't request this, please ignore this email.`;
+        const html = `
+            <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #ddd; border-radius: 10px; max-width: 600px; margin: auto;">
+                <h2 style="color: #333;">Password Reset Request</h2>
+                <p>We received a request to reset your password. Click the button below to proceed:</p>
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="${resetURL}" style="background-color: #007bff; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Reset Password</a>
+                </div>
+                <p style="color: #777; font-size: 0.9em;">This link will expire in 15 minutes.</p>
+                <p style="color: #777; font-size: 0.9em;">If you didn't request this, you can safely ignore this email.</p>
+            </div>
+        `;
+
+        try {
+            console.log('Attempting to send email to:', user.email);
+            await sendEmail({
+                email: user.email,
+                subject: 'Password Reset Request',
+                message,
+                html
+            });
+            console.log('EMAIL SENT SUCCESSFULLY via Mailtrap');
+            res.json({ message: "If an account exists with this email, a reset link has been sent." });
+        } catch (err) {
+            user.resetPasswordToken = undefined;
+            user.resetPasswordExpires = undefined;
+            await user.save();
+            console.error("Email Error:", err);
+            return res.status(500).json({ message: "There was an error sending the email. Try again later." });
+        }
+
+    } catch (err) {
+        console.error("Forgot Password Error:", err);
+        res.status(500).json({ message: "Server error during forgot password request." });
+    }
+});
+
+// Reset Password
+router.post('/reset-password/:token', async (req, res) => {
+    const { token } = req.params;
+    const { password } = req.body;
+    try {
+        const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+        const user = await User.findOne({
+            resetPasswordToken: hashedToken,
+            resetPasswordExpires: { $gt: Date.now() }
+        });
+
+        if (!user) {
+            return res.status(400).json({ message: "Token is invalid or has expired." });
+        }
+
+        // Hash new password
+        user.password = await bcrypt.hash(password, 10);
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpires = undefined;
+        await user.save();
+
+        res.json({ message: "Password reset successful! You can now log in with your new password." });
+
+    } catch (err) {
+        console.error("Reset Password Error:", err);
+        res.status(500).json({ message: "Server error during password reset." });
     }
 });
 

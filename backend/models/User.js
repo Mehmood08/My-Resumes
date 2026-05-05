@@ -5,7 +5,9 @@ const userSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true },
     password: { type: String },
     name: String,
-    picture: String
+    picture: String,
+    resetPasswordToken: String,
+    resetPasswordExpires: Date
 }, { timestamps: true });
 
 export default mongoose.model('User', userSchema);

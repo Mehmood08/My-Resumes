@@ -11,12 +11,28 @@ import { LuPlus, LuLogOut, LuUser, LuChevronRight, LuCalendar, LuFileText, LuSma
 
 import { useAuth } from './context/AuthContext';
 import Login from './Components/Login';
+import ResetPassword from './Components/ResetPassword';
 import CVScoringModal from './Components/CVScoringModal';
 import EmptyState from './Components/EmptyState';
 import { SpeedInsights } from "@vercel/speed-insights/react";
 
 function App() {
   const { user, getUserId } = useAuth();
+  const [resetToken, setResetToken] = useState(null);
+
+  useEffect(() => {
+    // Check if URL is a reset password link
+    const path = window.location.pathname;
+    if (path.startsWith('/reset-password/')) {
+      const token = path.split('/').pop();
+      if (token) setResetToken(token);
+    }
+  }, []);
+
+  const handleBackToLogin = () => {
+    setResetToken(null);
+    window.history.pushState({}, '', '/');
+  };
   const [notes, setNotes] = useState([]);
 
   const [currentNote, setCurrentNote] = useState({ title: "", desc: "", script: "", id: null, parentId: "", isDraft: false });
@@ -245,6 +261,7 @@ function App() {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
+  if (resetToken) return <ResetPassword token={resetToken} onBackToLogin={handleBackToLogin} />;
   if (!user) return <Login />;
 
   const hasResumes = notes.length > 0;
