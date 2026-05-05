@@ -77,30 +77,34 @@ router.post('/register', async (req, res) => {
     const { email, password, name } = req.body;
     try {
         let user = await User.findOne({ email });
-        
         const hashedPassword = await bcrypt.hash(password, 10);
 
         if (user) {
-            // If user exists but has no password (signed up via Google previously)
+            // Case 1: User exists but has no password (signed up via Google previously)
             if (!user.password) {
                 user.password = hashedPassword;
-                if (!user.name) user.name = name; // Update name if missing
+                if (name) user.name = name;
                 await user.save();
                 console.log(`Password added to existing Google account: ${email}`);
+                
+                // Now generate token and return (important to return here!)
+                const token = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
+                const userData = { ...user._doc, googleId: user.googleId || user._id.toString() };
+                return res.status(200).json({ token, user: userData });
             } else {
-                return res.status(400).json({ message: "User already exists with this email." });
+                // Case 2: User exists and already has a password
+                return res.status(400).json({ message: "User already exists with this email. Please Login instead." });
             }
-        } else {
-            // Completely new user
-            user = new User({ email, password: hashedPassword, name });
-            await user.save();
-            user.googleId = user._id.toString(); // Fallback ID
-            await user.save();
-            console.log(`New user registered: ${email}`);
         }
 
-        const token = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
+        // Case 3: Completely new user
+        user = new User({ email, password: hashedPassword, name });
+        await user.save();
+        user.googleId = user._id.toString(); // Fallback ID
+        await user.save();
+        console.log(`New user registered: ${email}`);
 
+        const token = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
         const userData = { ...user._doc, googleId: user.googleId || user._id.toString() };
         res.status(201).json({ token, user: userData });
     } catch (err) {
