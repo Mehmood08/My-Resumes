@@ -1,6 +1,6 @@
-# LollyLaw AI CV Builder
+# AI CV Builder
 
-LollyLaw AI CV Builder is a professional, feature-rich web application built on the MERN stack (MongoDB, Express.js, React, Node.js). It allows users to create, customize, score with AI, and download professional resumes using modern, responsive templates.
+AI CV Builder is a professional, feature-rich web application built on the MERN stack (MongoDB, Express.js, React, Node.js). It allows users to create, customize, score with AI, and download professional resumes using modern, responsive templates.
 
 ---
 
