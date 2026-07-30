@@ -231,7 +231,16 @@ function Login() {
                             </div>
 
                             <div style={{ display: 'flex', justifyContent: 'center' }}>
-                                <GoogleLogin onSuccess={res => login(res.credential)} onError={() => alert('Login Failed')} theme="filled_black" shape="rectangular" width="100%" />
+                                <GoogleLogin
+                                    onSuccess={async (res) => {
+                                        const ok = await login(res.credential);
+                                        if (!ok) setError('Google sign-in failed. Please try again.');
+                                    }}
+                                    onError={() => setError('Google sign-in was cancelled or failed.')}
+                                    theme="filled_black"
+                                    shape="rectangular"
+                                    width="400"
+                                />
                             </div>
                         </section>
                     </div>

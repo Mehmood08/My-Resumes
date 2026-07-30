@@ -5,16 +5,16 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import User from '../models/User.js';
 import sendEmail from '../utils/sendEmail.js';
+import { getSystemConfig } from '../utils/configHelper.js';
 
 const router = express.Router();
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Google Auth
 router.post('/google', async (req, res) => {
     const { token } = req.body;
     
-    // Use environment variable OR hardcoded fallback (Must match frontend)
-    const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "1042081648232-0jteg1ui82qc1k1ckid5i08lsmtb3oa6.apps.googleusercontent.com";
+    // GOOGLE_CLIENT_ID always comes from process.env (not DB)
+    const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID ;
     
     // Initialize client inside handler to ensure GOOGLE_CLIENT_ID is captured correctly
     const authClient = new OAuth2Client(GOOGLE_CLIENT_ID);
@@ -45,7 +45,7 @@ router.post('/google', async (req, res) => {
 
         const sessionToken = jwt.sign(
             { id: user._id, email: user.email },
-            process.env.JWT_SECRET || 'secret',
+            config.JWT_SECRET ,
             { expiresIn: '7d' }
         );
 
@@ -91,7 +91,8 @@ router.post('/register', async (req, res) => {
         await user.save();
         console.log(`New user registered: ${email}`);
 
-        const token = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
+        const { config } = await getSystemConfig();
+        const token = jwt.sign({ id: user._id, email: user.email }, config.JWT_SECRET || 'secret', { expiresIn: '7d' });
         const userData = { ...user._doc, googleId: user.googleId || user._id.toString() };
         res.status(201).json({ token, user: userData });
     } catch (err) {
@@ -121,7 +122,8 @@ router.post('/login', async (req, res) => {
             await user.save();
         }
 
-        const token = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
+        const { config } = await getSystemConfig();
+        const token = jwt.sign({ id: user._id, email: user.email }, config.JWT_SECRET || 'secret', { expiresIn: '7d' });
 
         const userData = { ...user._doc, googleId: user.googleId || user._id.toString() };
         res.json({ token, user: userData });

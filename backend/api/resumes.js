@@ -2,6 +2,7 @@ import express from 'express';
 import Resume from '../models/Resume.js';
 import mongoose from 'mongoose';
 import { GoogleGenAI } from '@google/genai';
+import { getSystemConfig } from '../utils/configHelper.js';
 
 const router = express.Router();
 
@@ -90,7 +91,12 @@ CV Content:
 ${markdown}
 `;
 
-        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+        const { config } = await getSystemConfig();
+        if (!config.GEMINI_API_KEY) {
+            return res.status(500).json({ message: "Gemini API Key not configured in system settings." });
+        }
+
+        const ai = new GoogleGenAI({ apiKey: config.GEMINI_API_KEY });
 
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash-lite',
@@ -175,12 +181,13 @@ ${linksLine}
 4. Return ONLY a JSON object: { "markdown": "CV_HERE" }
 `;
 
-        if (!process.env.GEMINI_API_KEY) {
-            console.error("Missing GEMINI_API_KEY in backend environment");
-            return res.status(500).json({ message: "API Key not configured", error: "Please add GEMINI_API_KEY to your .env file" });
+        const { config } = await getSystemConfig();
+        if (!config.GEMINI_API_KEY) {
+            console.error("Missing GEMINI_API_KEY in system settings");
+            return res.status(500).json({ message: "API Key not configured", error: "Please configure GEMINI_API_KEY in System Settings" });
         }
 
-        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+        const ai = new GoogleGenAI({ apiKey: config.GEMINI_API_KEY });
         const model = ai.models;
 
         try {
@@ -242,11 +249,12 @@ router.post('/suggest-experience', async (req, res) => {
         ---` : ""}
         DO NOT invent company names, specific dates, or fake projects. Focus on highlighting skills and achievements that align with the job requirements. Keep it professional. DO NOT wrap the output in markdown blockquotes or json, just return the plain string text.`;
 
-        if (!process.env.GEMINI_API_KEY) {
+        const { config } = await getSystemConfig();
+        if (!config.GEMINI_API_KEY) {
             return res.status(500).json({ message: "API Key not configured" });
         }
 
-        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+        const ai = new GoogleGenAI({ apiKey: config.GEMINI_API_KEY });
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash-lite',
             contents: prompt,

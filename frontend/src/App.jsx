@@ -7,18 +7,23 @@ import { v4 as uuidv4 } from 'uuid';
 import html2pdf from 'html2pdf.js';
 import { cvTemplates } from './data/cvTemplates';
 import ErrorBoundary from './Components/ErrorBoundary';
-import { LuPlus, LuLogOut, LuUser, LuChevronRight, LuCalendar, LuFileText, LuSmartphone, LuShare2, LuDownload, LuSave, LuTrash2, LuMenu, LuX } from "react-icons/lu";
+import { LuPlus, LuLogOut, LuUser, LuChevronRight, LuCalendar, LuFileText, LuSmartphone, LuShare2, LuDownload, LuSave, LuTrash2, LuMenu, LuX, LuSettings } from "react-icons/lu";
 
 import { useAuth } from './context/AuthContext';
 import Login from './Components/Login';
 import ResetPassword from './Components/ResetPassword';
 import CVScoringModal from './Components/CVScoringModal';
 import EmptyState from './Components/EmptyState';
+import SystemSetupModal from './Components/SystemSetupModal';
 import { SpeedInsights } from "@vercel/speed-insights/react";
 
 function App() {
   const { user, getUserId } = useAuth();
   const [resetToken, setResetToken] = useState(null);
+
+  // System settings state (available after login)
+  const [existingConfig, setExistingConfig] = useState(null);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   useEffect(() => {
     // Check if URL is a reset password link
@@ -77,6 +82,24 @@ function App() {
         });
     };
     checkBackend();
+
+    // After login: check if system settings have been configured.
+    // If not → auto-open the settings modal so the user sets them up first.
+    const token = localStorage.getItem('token');
+    fetch(`${import.meta.env.VITE_API_URL}/api/config`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+      .then(r => r.json())
+      .then(cfg => {
+        setExistingConfig(cfg);
+        if (!cfg.isConfigured) {
+          // Settings not yet configured — open the settings modal automatically
+          setIsSettingsOpen(true);
+        }
+      })
+      .catch(() => {
+        // If config fetch fails, don't block the user — proceed normally
+      });
 
     const userId = getUserId();
     if (!userId) return;
@@ -333,6 +356,22 @@ function App() {
             >
               <LuPlus size={16} /> Create CV
             </button>
+            <button
+              className="settings-gear-btn"
+              onClick={() => {
+                const token = localStorage.getItem('token');
+                fetch(`${import.meta.env.VITE_API_URL}/api/config`, {
+                  headers: { 'Authorization': `Bearer ${token}` }
+                })
+                  .then(r => r.json())
+                  .then(cfg => { setExistingConfig(cfg); setIsSettingsOpen(true); })
+                  .catch(() => setIsSettingsOpen(true));
+              }}
+              title="System Settings"
+              aria-label="System Settings"
+            >
+              <LuSettings size={18} />
+            </button>
           </div>
         </header>
 
@@ -376,6 +415,21 @@ function App() {
         onClose={() => setIsScoringModalOpen(false)} 
         markdown={currentNote.desc} 
       />
+
+      {/* System Settings Modal — auto-opens on first login if not configured */}
+      {isSettingsOpen && (
+        <SystemSetupModal
+          isEditMode={true}
+          existingConfig={existingConfig}
+          allowClose={existingConfig?.isConfigured === true}
+          onConfigured={(cfg) => {
+            setExistingConfig(cfg);
+            setIsSettingsOpen(false);
+          }}
+          onClose={() => setIsSettingsOpen(false)}
+        />
+      )}
+
       <SpeedInsights />
     </div>
   );

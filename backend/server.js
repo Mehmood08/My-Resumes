@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import authRoutes from './api/auth.js';
 import resumeRoutes from './api/resumes.js';
+import configRoutes from './api/config.js';
 
 dotenv.config();
 
@@ -84,6 +85,7 @@ app.use(async (req, res, next) => {
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/resumes', resumeRoutes);
+app.use('/api/config', configRoutes);
 
 // Root route
 app.get('/', (req, res) => {
