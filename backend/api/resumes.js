@@ -122,8 +122,8 @@ router.post('/generate', async (req, res) => {
     try {
         const { education, year, school, schoolCity, summary, jd, fullName, email, phone, city, linkedin, github, experienceYears } = req.body;
 
-        if (!education || !jd) {
-            return res.status(400).json({ message: "Education and Job Description are required" });
+        if (!education || !jd || !fullName || !email || !phone || !city || !school || !schoolCity || !year || !summary) {
+            return res.status(400).json({ message: "All required fields must be provided: name, contact info, education, job description, and experience summary" });
         }
 
         const truncatedJD = truncateJD(jd);

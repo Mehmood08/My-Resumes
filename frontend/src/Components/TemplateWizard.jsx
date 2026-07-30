@@ -1,14 +1,12 @@
 import React, { useState } from "react";
 import { LuX, LuChevronLeft, LuCheck } from "react-icons/lu";
-import { LiveThumbnail } from "./SharedLiveThumbnail";
-import { layouts } from "./templatesData";
+import { validateWizardAiFields, hasValidationErrors } from "../utils/cvValidation";
 
 const steps = [
     { id: "mode", title: "Choose Your Creation Mode" },
     { id: "education", title: "What is your education level?" },
     { id: "occupation", title: "What is your occupation?" },
     { id: "experience", title: "What is your experience level?" },
-    { id: "layout", title: "What layout suits you best?" },
     { id: "photo", title: "Will you be adding a photo?" },
 ];
 
@@ -85,6 +83,7 @@ export default function TemplateWizard({ isOpen, onClose, onCreate, initialMode 
     const [isGenerating, setIsGenerating] = useState(false);
     const [isSuggestingSummary, setIsSuggestingSummary] = useState(false);
     const [errorType, setErrorType] = useState(null); // null, 'quota', 'error'
+    const [fieldErrors, setFieldErrors] = useState({});
     const [selections, setSelections] = useState({
         education: "",
         occupation: "",
@@ -110,16 +109,20 @@ export default function TemplateWizard({ isOpen, onClose, onCreate, initialMode 
 
     const handleNext = async () => {
         if (wizardMode === "select") {
-            // Mode selection step handled in rendering
             return;
         }
 
         if (wizardMode === "ai") {
+            const errors = validateWizardAiFields(selections, currentStep);
+            if (hasValidationErrors(errors)) {
+                setFieldErrors(errors);
+                return;
+            }
+            setFieldErrors({});
+
             if (currentStep < aiSteps.length - 1) {
-                const nextStep = currentStep + 1;
-                setCurrentStep(nextStep);
+                setCurrentStep(currentStep + 1);
             } else {
-                // Final step in AI mode: Trigger Generation
                 await handleAiGenerate();
             }
             return;
@@ -257,6 +260,7 @@ ${selections.ai_summary || "Professional experience details regarding recent rol
             setCurrentStep(0);
             setWizardMode("select");
             setIsSuggestingSummary(false);
+            setFieldErrors({});
             setSelections({
                 education: "",
                 occupation: "",
@@ -281,6 +285,7 @@ ${selections.ai_summary || "Professional experience details regarding recent rol
     };
 
     const handleBack = () => {
+        setFieldErrors({});
         if (currentStep > 0) {
             setCurrentStep(currentStep - 1);
         } else {
@@ -290,6 +295,13 @@ ${selections.ai_summary || "Professional experience details regarding recent rol
 
     const updateSelection = (key, value) => {
         setSelections((prev) => ({ ...prev, [key]: value }));
+        if (fieldErrors[key]) {
+            setFieldErrors((prev) => {
+                const next = { ...prev };
+                delete next[key];
+                return next;
+            });
+        }
         // Auto-advance for list-based selections
         if (["education", "occupation", "experience", "photo"].includes(key)) {
             setTimeout(() => handleNext(), 200);
@@ -341,7 +353,7 @@ ${selections.ai_summary || "Professional experience details regarding recent rol
                     <div className="mode-card manual-standard" onClick={() => { setWizardMode("manual"); setCurrentStep(1); }}>
                         <div className="mode-icon">✍️</div>
                         <h4>Manual Setup</h4>
-                        <p>Choose a template and fill in your details yourself.</p>
+                        <p>Answer a few questions, then fill in your details yourself.</p>
                     </div>
                 </div>
             );
@@ -367,21 +379,28 @@ ${selections.ai_summary || "Professional experience details regarding recent rol
                                         </button>
                                     )}
                                     <textarea
-                                        className="wizard-textarea"
+                                        className={`wizard-textarea ${fieldErrors[f.id] ? "input-error" : ""}`}
                                         placeholder={f.placeholder}
                                         value={selections[f.id]}
                                         onChange={(e) => updateSelection(f.id, e.target.value)}
                                     />
+                                    {fieldErrors[f.id] && (
+                                        <span className="field-error-msg">{fieldErrors[f.id]}</span>
+                                    )}
                                 </div>
                             ) : (
-                                <input
-                                    key={f.id}
-                                    type={f.type}
-                                    className="wizard-input"
-                                    placeholder={f.placeholder}
-                                    value={selections[f.id]}
-                                    onChange={(e) => updateSelection(f.id, e.target.value)}
-                                />
+                                <div key={f.id} className="wizard-field-group">
+                                    <input
+                                        type={f.type}
+                                        className={`wizard-input ${fieldErrors[f.id] ? "input-error" : ""}`}
+                                        placeholder={f.placeholder}
+                                        value={selections[f.id]}
+                                        onChange={(e) => updateSelection(f.id, e.target.value)}
+                                    />
+                                    {fieldErrors[f.id] && (
+                                        <span className="field-error-msg">{fieldErrors[f.id]}</span>
+                                    )}
+                                </div>
                             )
                         ))}
                     </div>
@@ -390,22 +409,32 @@ ${selections.ai_summary || "Professional experience details regarding recent rol
             return (
                 <div className="ai-input-step">
                     {step.fieldType === "textarea" ? (
-                        <textarea
-                            className="wizard-textarea"
-                            placeholder={step.placeholder}
-                            value={selections[step.fieldId]}
-                            onChange={(e) => updateSelection(step.fieldId, e.target.value)}
-                            autoFocus
-                        />
+                        <>
+                            <textarea
+                                className={`wizard-textarea ${fieldErrors[step.fieldId] ? "input-error" : ""}`}
+                                placeholder={step.placeholder}
+                                value={selections[step.fieldId]}
+                                onChange={(e) => updateSelection(step.fieldId, e.target.value)}
+                                autoFocus
+                            />
+                            {fieldErrors[step.fieldId] && (
+                                <span className="field-error-msg">{fieldErrors[step.fieldId]}</span>
+                            )}
+                        </>
                     ) : (
-                        <input
-                            type={step.fieldType}
-                            className="wizard-input"
-                            placeholder={step.placeholder}
-                            value={selections[step.fieldId]}
-                            onChange={(e) => updateSelection(step.fieldId, e.target.value)}
-                            autoFocus
-                        />
+                        <>
+                            <input
+                                type={step.fieldType}
+                                className={`wizard-input ${fieldErrors[step.fieldId] ? "input-error" : ""}`}
+                                placeholder={step.placeholder}
+                                value={selections[step.fieldId]}
+                                onChange={(e) => updateSelection(step.fieldId, e.target.value)}
+                                autoFocus
+                            />
+                            {fieldErrors[step.fieldId] && (
+                                <span className="field-error-msg">{fieldErrors[step.fieldId]}</span>
+                            )}
+                        </>
                     )}
                 </div>
             );
@@ -468,28 +497,7 @@ ${selections.ai_summary || "Professional experience details regarding recent rol
                         ))}
                     </div>
                 );
-            case 4: // Layout
-                return (
-                    <div className="selection-grid large-scroll" style={{ maxHeight: '420px', overflowY: 'auto', paddingRight: '10px' }}>
-                        {layouts.map((layout) => (
-                            <div
-                                key={layout.id}
-                                className={`selection-card large ${selections.layout === layout.id ? "selected" : ""}`}
-                                onClick={() => updateSelection("layout", layout.id)}
-                            >
-                                <div className={`cv-thumbnail-container ${layout.filter || ''}`} style={{ position: 'relative', overflow: 'hidden', height: '180px' }}>
-                                    <LiveThumbnail
-                                        formatId={layout.id}
-                                        markdown="" /* Empty for generic samples */
-                                    />
-                                </div>
-                                <h4>{layout.name}</h4>
-                                <p style={{ fontSize: '11px' }}>{layout.description}</p>
-                            </div>
-                        ))}
-                    </div>
-                );
-            case 5: // Photo
+            case 4: // Photo
                 return (
                     <div className="selection-grid photo-step">
                         <div
@@ -572,9 +580,7 @@ ${selections.ai_summary || "Professional experience details regarding recent rol
                                 disabled={
                                     (wizardMode === "manual" && currentStep === 1 && !selections.education) ||
                                     (wizardMode === "manual" && currentStep === 2 && !selections.occupation) ||
-                                    (wizardMode === "manual" && currentStep === 3 && !selections.experience) ||
-                                    (wizardMode === "ai" && aiSteps[currentStep].type === "multi" && aiSteps[currentStep].fields.filter(f => !f.optional).some(f => !selections[f.id])) ||
-                                    (wizardMode === "ai" && aiSteps[currentStep].type === "single" && !selections[aiSteps[currentStep].fieldId])
+                                    (wizardMode === "manual" && currentStep === 3 && !selections.experience)
                                 }
                             >
                                 {wizardMode === "ai" && currentStep === aiSteps.length - 1 ? "Confirm & Generate CV ✨" : 

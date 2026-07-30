@@ -118,27 +118,21 @@ function App() {
   }, [user]);
 
   const handleCreateNote = async (parentId = "", selections = null) => {
-    let templateKey = "Blank Note";
-    let format = "America";
-    let templateContent = "";
-
     if (selections) {
-      // Direct Creation Flow (Using Selections or AI)
-      const { occupation, layout, education, aiGenerated, mode } = selections;
-      const format = layout || "Professional";
-      
+      const { occupation, education, aiGenerated, mode, photo } = selections;
+      const format = photo === "yes" ? "European" : "America";
+
       let templateContent = "";
       let newTitle = "New CV";
 
       if (mode === 'ai' && aiGenerated) {
         templateContent = aiGenerated;
         newTitle = "AI Generated CV";
-        setNeedsVerification(true); // Trigger GuidedEditor verification popup
+        setNeedsVerification(true);
       } else {
-        // Try to find template, fallback to a generated header so it's not empty
         templateContent = cvTemplates[occupation];
         if (!templateContent) {
-          templateContent = `# [Your Name] | ${occupation || 'Professional'}\n[Email] | [Phone]\n\n## Education\n- ${education || '[Degree]'}\n\n## Experience\n- [Job Title] | [Company Name]`;
+          templateContent = `# [Your Name] | ${occupation || 'Professional'}\n[City], [Province], [Zip] | [Email] | [Phone]\n\n## Education\n- ${education || '[Degree]'}\n\n## Experience\n- [Job Title] | [Company Name]`;
         }
         newTitle = occupation ? `${occupation} CV` : "New CV";
       }
@@ -149,7 +143,8 @@ function App() {
         script: "",
         id: null,
         parentId,
-        isDraft: true
+        isDraft: true,
+        cvFormat: format,
       });
       setCvFormat(format);
       setIsDirty(true);
@@ -213,7 +208,8 @@ function App() {
       ...currentNote,
       desc: descOverride ?? currentNote.desc,
       date: new Date().toLocaleDateString(),
-      userId: userId
+      userId: userId,
+      cvFormat: cvFormat,
     };
 
     if (currentNote.id) {
@@ -303,6 +299,7 @@ function App() {
       script: note.script || "",
       isDraft: false,
     });
+    setCvFormat(note.cvFormat || "European");
     setIsDirty(false);
     if (window.innerWidth <= 768) setIsSidebarOpen(false);
   };

@@ -36,6 +36,8 @@ export default function MarkdownEditor({
   }, [localMarkdown, onMarkdownChange]);
 
   const handleSave = () => {
+    const isValid = guidedEditorRef.current?.validate?.() ?? true;
+    if (!isValid) return;
     const latest = guidedEditorRef.current?.getMarkdown?.() ?? localMarkdown;
     setLocalMarkdown(latest);
     onMarkdownChange(latest);

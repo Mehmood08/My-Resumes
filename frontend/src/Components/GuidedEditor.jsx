@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef } f
 import GuidedHelper from './GuidedHelper';
 import ImageCropperModal from './ImageCropperModal';
 import { LuPlus, LuInfo, LuLightbulb, LuTrash2, LuChevronLeft, LuCheck, LuBold, LuItalic, LuHeading, LuList, LuListOrdered } from "react-icons/lu";
+import { validateHeadingFields, hasValidationErrors } from '../utils/cvValidation';
 
 const GuidedEditor = forwardRef(({ markdown, onChange, onSave, onStartWizard, needsVerification, onVerificationDismissed, onMetaUpdate, onVerifyStateChange }, ref) => {
     const [currentStep, setCurrentStep] = useState(0);
@@ -14,6 +15,8 @@ const GuidedEditor = forwardRef(({ markdown, onChange, onSave, onStartWizard, ne
     const [verifiedSections, setVerifiedSections] = useState({});
     const [cropperData, setCropperData] = useState(null);
     const isVerificationInitialized = useRef(false);
+    const [fieldErrors, setFieldErrors] = useState({});
+    const [showValidationToast, setShowValidationToast] = useState(false);
 
     // Show verification popup when AI CV is loaded
     useEffect(() => {
@@ -107,8 +110,31 @@ const GuidedEditor = forwardRef(({ markdown, onChange, onSave, onStartWizard, ne
     const currentStepRef = useRef(currentStep);
     useEffect(() => { currentStepRef.current = currentStep; }, [currentStep]);
 
+    useEffect(() => {
+        if (!hasValidationErrors(fieldErrors)) {
+            setShowValidationToast(false);
+        }
+    }, [fieldErrors]);
+
+    useEffect(() => {
+        if (!showValidationToast) return;
+        const timer = setTimeout(() => setShowValidationToast(false), 4000);
+        return () => clearTimeout(timer);
+    }, [showValidationToast]);
+
     useImperativeHandle(ref, () => ({
         getMarkdown: () => buildMarkdown(personalInfoRef.current, sectionsRef.current),
+        validate: () => {
+            const errors = validateHeadingFields(personalInfoRef.current);
+            setFieldErrors(errors);
+            if (hasValidationErrors(errors)) {
+                setCurrentStep(0);
+                setShowValidationToast(true);
+                return false;
+            }
+            setShowValidationToast(false);
+            return true;
+        },
         verifyCurrentSection: () => {
             const step = currentStepRef.current;
             const stepId = steps[step]?.id;
@@ -348,6 +374,13 @@ const GuidedEditor = forwardRef(({ markdown, onChange, onSave, onStartWizard, ne
         const updated = { ...personalInfo, [field]: value };
         setPersonalInfo(updated);
         updateMarkdown(updated, sections);
+        if (fieldErrors[field]) {
+            setFieldErrors(prev => {
+                const next = { ...prev };
+                delete next[field];
+                return next;
+            });
+        }
     };
 
     const handleImageUpload = (e) => {
@@ -503,10 +536,6 @@ const GuidedEditor = forwardRef(({ markdown, onChange, onSave, onStartWizard, ne
         if (step.id === 'heading') {
             return (
                 <div className="wizard-form fadeIn">
-                    <div className="wizard-header">
-                        <h2>Let's start with your header</h2>
-                    </div>
-                    
                     <div className="photo-upload-container">
                         <label className="photo-upload-label">Profile Photo (Optional)</label>
                         <div className="photo-upload-box">
@@ -526,40 +555,48 @@ const GuidedEditor = forwardRef(({ markdown, onChange, onSave, onStartWizard, ne
 
                     <div className="form-grid">
                         <div className="form-group">
-                            <label>First Name</label>
+                            <label>First Name <span className="required-mark">*</span></label>
                             <input
                                 type="text"
+                                className={fieldErrors.firstName ? 'input-error' : ''}
                                 value={personalInfo.firstName}
                                 onChange={(e) => handleInfoChange('firstName', e.target.value)}
                                 placeholder="e.g Mehmood"
                             />
+                            {fieldErrors.firstName && <span className="field-error-msg">{fieldErrors.firstName}</span>}
                         </div>
                         <div className="form-group">
-                            <label>Surname</label>
+                            <label>Surname <span className="required-mark">*</span></label>
                             <input
                                 type="text"
+                                className={fieldErrors.lastName ? 'input-error' : ''}
                                 value={personalInfo.lastName}
                                 onChange={(e) => handleInfoChange('lastName', e.target.value)}
                                 placeholder="e.g. Shah"
                             />
+                            {fieldErrors.lastName && <span className="field-error-msg">{fieldErrors.lastName}</span>}
                         </div>
                         <div className="form-group full-width">
-                            <label>Profession</label>
+                            <label>Profession <span className="required-mark">*</span></label>
                             <input
                                 type="text"
+                                className={fieldErrors.profession ? 'input-error' : ''}
                                 value={personalInfo.profession}
                                 onChange={(e) => handleInfoChange('profession', e.target.value)}
                                 placeholder="e.g. Software Engineering"
                             />
+                            {fieldErrors.profession && <span className="field-error-msg">{fieldErrors.profession}</span>}
                         </div>
                         <div className="form-group">
-                            <label>City</label>
+                            <label>City <span className="required-mark">*</span></label>
                             <input
                                 type="text"
+                                className={fieldErrors.city ? 'input-error' : ''}
                                 value={personalInfo.city}
                                 onChange={(e) => handleInfoChange('city', e.target.value)}
                                 placeholder="e.g. Peshawar"
                             />
+                            {fieldErrors.city && <span className="field-error-msg">{fieldErrors.city}</span>}
                         </div>
                         <div className="form-group">
                             <label>Zip Code</label>
@@ -580,40 +617,48 @@ const GuidedEditor = forwardRef(({ markdown, onChange, onSave, onStartWizard, ne
                             />
                         </div>
                         <div className="form-group">
-                            <label>Phone</label>
+                            <label>Phone <span className="required-mark">*</span></label>
                             <input
-                                type="text"
+                                type="tel"
+                                className={fieldErrors.phone ? 'input-error' : ''}
                                 value={personalInfo.phone}
                                 onChange={(e) => handleInfoChange('phone', e.target.value)}
                                 placeholder="e.g. 0345 1234567"
                             />
+                            {fieldErrors.phone && <span className="field-error-msg">{fieldErrors.phone}</span>}
                         </div>
                         <div className="form-group full-width">
-                            <label>Email </label>
+                            <label>Email <span className="required-mark">*</span></label>
                             <input
                                 type="email"
+                                className={fieldErrors.email ? 'input-error' : ''}
                                 value={personalInfo.email}
                                 onChange={(e) => handleInfoChange('email', e.target.value)}
                                 placeholder="e.g example@gmail.com"
                             />
+                            {fieldErrors.email && <span className="field-error-msg">{fieldErrors.email}</span>}
                         </div>
                         <div className="form-group">
                             <label>LinkedIn URL</label>
                             <input
                                 type="url"
+                                className={fieldErrors.link1 ? 'input-error' : ''}
                                 value={personalInfo.link1}
                                 onChange={(e) => handleInfoChange('link1', e.target.value)}
                                 placeholder="https://linkedin.com/in/..."
                             />
+                            {fieldErrors.link1 && <span className="field-error-msg">{fieldErrors.link1}</span>}
                         </div>
                         <div className="form-group">
                             <label>Portfolio URL</label>
                             <input
                                 type="url"
+                                className={fieldErrors.link2 ? 'input-error' : ''}
                                 value={personalInfo.link2}
                                 onChange={(e) => handleInfoChange('link2', e.target.value)}
                                 placeholder="https://github.com/..."
                             />
+                            {fieldErrors.link2 && <span className="field-error-msg">{fieldErrors.link2}</span>}
                         </div>
                     </div>
                 </div>
@@ -725,7 +770,7 @@ const GuidedEditor = forwardRef(({ markdown, onChange, onSave, onStartWizard, ne
         });
     };
 
-    const headingFields = ['firstName', 'lastName', 'profession', 'city', 'province', 'zip', 'phone', 'email'];
+    const headingFields = ['firstName', 'lastName', 'profession', 'email', 'phone', 'city'];
 
     const getStepFillRatio = (stepId) => {
         if (stepId === 'heading') {
@@ -763,6 +808,12 @@ const GuidedEditor = forwardRef(({ markdown, onChange, onSave, onStartWizard, ne
 
     return (
         <div className="wizard-container">
+            {showValidationToast && (
+                <div className="app-toast app-toast-error" role="alert">
+                    Please fill in all required fields marked with * before saving.
+                </div>
+            )}
+
             {/* AI Verification Popup */}
             {showVerificationPopup && (
                 <div className="verification-popup-overlay">
