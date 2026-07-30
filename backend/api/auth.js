@@ -92,7 +92,7 @@ router.post('/register', async (req, res) => {
         console.log(`New user registered: ${email}`);
 
         const { config } = await getSystemConfig();
-        const token = jwt.sign({ id: user._id, email: user.email }, config.JWT_SECRET || 'secret', { expiresIn: '7d' });
+        const token = jwt.sign({ id: user._id, email: user.email }, config.JWT_SECRET, { expiresIn: '7d' });
         const userData = { ...user._doc, googleId: user.googleId || user._id.toString() };
         res.status(201).json({ token, user: userData });
     } catch (err) {
@@ -123,7 +123,7 @@ router.post('/login', async (req, res) => {
         }
 
         const { config } = await getSystemConfig();
-        const token = jwt.sign({ id: user._id, email: user.email }, config.JWT_SECRET || 'secret', { expiresIn: '7d' });
+        const token = jwt.sign({ id: user._id, email: user.email }, config.JWT_SECRET, { expiresIn: '7d' });
 
         const userData = { ...user._doc, googleId: user.googleId || user._id.toString() };
         res.json({ token, user: userData });

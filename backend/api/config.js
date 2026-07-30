@@ -16,10 +16,11 @@ const requireAuth = async (req, res, next) => {
         return res.status(401).json({ message: 'Authentication required to access system settings.' });
     }
     try {
-        // Must use getSystemConfig() — same resolution logic used when signing the token in auth.js.
-        // Using process.env directly could give the raw placeholder string, causing a secret mismatch.
         const { config } = await getSystemConfig();
-        const secret = config.JWT_SECRET || 'secret';
+        const secret = config.JWT_SECRET;
+        if (!secret) {
+            return res.status(500).json({ message: 'JWT_SECRET is not configured. Please set it in your backend .env file.' });
+        }
         const decoded = jwt.verify(token, secret);
         req.userId = decoded.id;
         next();
