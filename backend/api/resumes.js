@@ -1,10 +1,24 @@
 import express from 'express';
+import multer from 'multer';
 import Resume from '../models/Resume.js';
 import mongoose from 'mongoose';
 import { GoogleGenAI } from '@google/genai';
 import { getSystemConfig, DEFAULT_GEMINI_MODEL } from '../utils/configHelper.js';
+import { extractContentFromFile, getFileExtension, importCvFromContent } from '../utils/cvImport.js';
 
 const router = express.Router();
+
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: (_req, file, cb) => {
+        if (getFileExtension(file.originalname)) {
+            cb(null, true);
+            return;
+        }
+        cb(new Error('Unsupported file type. Please upload a PDF, DOC, or DOCX file.'));
+    },
+});
 
 /**
  * Truncates long Job Descriptions to stay within Gemini token limits.
@@ -272,6 +286,44 @@ router.post('/suggest-experience', async (req, res) => {
             return res.status(429).json({ message: "Quota Full (429)", error: "Gemini API limits reached." });
         }
         res.status(500).json({ message: "Failed to generate suggestion.", error: err.message });
+    }
+});
+
+// POST Import CV from PDF/Word
+router.post('/import', (req, res, next) => {
+    upload.single('file')(req, res, (err) => {
+        if (err) {
+            const message = err.code === 'LIMIT_FILE_SIZE'
+                ? 'File is too large. Maximum size is 10 MB.'
+                : err.message;
+            return res.status(400).json({ message });
+        }
+        next();
+    });
+}, async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: 'No file uploaded. Please select a PDF, DOC, or DOCX file.' });
+        }
+
+        const content = await extractContentFromFile(req.file.buffer, req.file.originalname);
+        const result = await importCvFromContent(content, req.file.originalname);
+
+        res.json(result);
+    } catch (err) {
+        console.error('CV Import Error:', err);
+        if (err.message?.includes('Unsupported file type')) {
+            return res.status(400).json({ message: err.message });
+        }
+        if (err.status === 429 || err.message?.includes('429') || err.message?.includes('quota')) {
+            return res.status(429).json({ message: err.message || 'Gemini API quota reached. Please try again shortly.' });
+        }
+        if (err.message?.includes('Gemini API key')) {
+            return res.status(503).json({ message: err.message });
+        }
+        res.status(500).json({
+            message: err.message || 'Failed to import CV. Please try another file.',
+        });
     }
 });
 

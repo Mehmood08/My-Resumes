@@ -119,7 +119,7 @@ function App() {
 
   const handleCreateNote = async (parentId = "", selections = null) => {
     if (selections) {
-      const { occupation, education, aiGenerated, mode, photo } = selections;
+      const { occupation, education, aiGenerated, mode, photo, importedTitle } = selections;
       const format = photo === "yes" ? "European" : "America";
 
       let templateContent = "";
@@ -129,6 +129,52 @@ function App() {
         templateContent = aiGenerated;
         newTitle = "AI Generated CV";
         setNeedsVerification(true);
+      } else if (mode === 'import' && aiGenerated) {
+        templateContent = aiGenerated;
+        newTitle = importedTitle || "Imported CV";
+        setNeedsVerification(false);
+
+        const userId = getUserId();
+        if (!userId) return;
+
+        const newNote = {
+          id: uuidv4(),
+          title: newTitle,
+          desc: templateContent,
+          script: "",
+          date: new Date().toLocaleDateString(),
+          parentId,
+          cvFormat: "America",
+          userId,
+        };
+
+        try {
+          const res = await fetch(`${import.meta.env.VITE_API_URL}/api/resumes`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newNote),
+          });
+          if (!res.ok) throw new Error('Save failed');
+          const savedNote = await res.json();
+          setNotes([savedNote, ...notes]);
+          setCurrentNote(savedNote);
+          setCvFormat("America");
+          setIsDirty(false);
+        } catch (err) {
+          console.error('Auto-save after import failed:', err);
+          setCurrentNote({
+            title: newTitle,
+            desc: templateContent,
+            script: "",
+            id: null,
+            parentId,
+            isDraft: true,
+            cvFormat: "America",
+          });
+          setCvFormat("America");
+          setIsDirty(true);
+        }
+        return;
       } else {
         templateContent = cvTemplates[occupation];
         if (!templateContent) {
@@ -170,7 +216,7 @@ function App() {
   const handleOpenWizardFromEmpty = (mode) => {
     setWizardOptions({ 
       mode: mode, 
-      step: mode === 'ai' ? 0 : 1 
+      step: mode === 'manual' ? 1 : 0 
     });
     setIsWizardOpen(true);
   };
