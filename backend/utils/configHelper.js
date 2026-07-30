@@ -1,5 +1,7 @@
 import SystemConfig from '../models/SystemConfig.js';
 
+export const DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash-lite';
+
 const PLACEHOLDERS = [
     'your_jwt_secret_key',
     'your_google_gemini_api_key',
@@ -29,6 +31,7 @@ export const getSystemConfig = async () => {
             configDoc = await SystemConfig.create({
                 JWT_SECRET:     process.env.JWT_SECRET     || '',
                 GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
+                GEMINI_MODEL:   process.env.GEMINI_MODEL   || DEFAULT_GEMINI_MODEL,
                 RESEND_API_KEY: process.env.RESEND_API_KEY || '',
                 EMAIL_FROM:     process.env.EMAIL_FROM     || '',
                 isConfigured:   false
@@ -38,6 +41,7 @@ export const getSystemConfig = async () => {
         // DB takes priority over process.env; no hardcoded fallback strings
         const jwtSecret     = !isPlaceholderOrEmpty(configDoc.JWT_SECRET)     ? configDoc.JWT_SECRET     : process.env.JWT_SECRET     || '';
         const geminiApiKey  = !isPlaceholderOrEmpty(configDoc.GEMINI_API_KEY)  ? configDoc.GEMINI_API_KEY  : process.env.GEMINI_API_KEY  || '';
+        const geminiModel   = !isPlaceholderOrEmpty(configDoc.GEMINI_MODEL)    ? configDoc.GEMINI_MODEL    : process.env.GEMINI_MODEL    || DEFAULT_GEMINI_MODEL;
         const resendApiKey  = !isPlaceholderOrEmpty(configDoc.RESEND_API_KEY)  ? configDoc.RESEND_API_KEY  : process.env.RESEND_API_KEY  || '';
         const emailFrom     = !isPlaceholderOrEmpty(configDoc.EMAIL_FROM)      ? configDoc.EMAIL_FROM      : process.env.EMAIL_FROM      || '';
 
@@ -47,6 +51,7 @@ export const getSystemConfig = async () => {
                 GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',  // always from .env
                 JWT_SECRET:       jwtSecret,
                 GEMINI_API_KEY:   geminiApiKey,
+                GEMINI_MODEL:     geminiModel,
                 RESEND_API_KEY:   resendApiKey,
                 EMAIL_FROM:       emailFrom,
                 isConfigured:     configDoc.isConfigured,
@@ -62,6 +67,7 @@ export const getSystemConfig = async () => {
                 GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
                 JWT_SECRET:       process.env.JWT_SECRET        || '',
                 GEMINI_API_KEY:   process.env.GEMINI_API_KEY    || '',
+                GEMINI_MODEL:     process.env.GEMINI_MODEL      || DEFAULT_GEMINI_MODEL,
                 RESEND_API_KEY:   process.env.RESEND_API_KEY    || '',
                 EMAIL_FROM:       process.env.EMAIL_FROM        || '',
                 isConfigured:     false,

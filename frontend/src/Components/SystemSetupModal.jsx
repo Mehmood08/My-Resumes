@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { LuEye, LuEyeOff, LuSave, LuSettings, LuKey, LuBot, LuMail, LuLoader } from 'react-icons/lu';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash-lite';
 
 const FIELD_META = [
     {
@@ -72,9 +73,14 @@ const SystemSetupModal = ({ onConfigured, existingConfig = null, isEditMode = fa
     const [form, setForm] = useState(() => ({
         JWT_SECRET:     existingConfig?.JWT_SECRET     || '',
         GEMINI_API_KEY: existingConfig?.GEMINI_API_KEY || '',
+        GEMINI_MODEL:   existingConfig?.GEMINI_MODEL   || DEFAULT_GEMINI_MODEL,
         RESEND_API_KEY: existingConfig?.RESEND_API_KEY || '',
         EMAIL_FROM:     existingConfig?.EMAIL_FROM     || '',
     }));
+
+    const [availableModels, setAvailableModels] = useState([]);
+    const [modelsLoading, setModelsLoading] = useState(false);
+    const [modelsError, setModelsError] = useState('');
 
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
@@ -90,6 +96,55 @@ const SystemSetupModal = ({ onConfigured, existingConfig = null, isEditMode = fa
     const toggleShowPassword = (key) => {
         setShowPasswords(prev => ({ ...prev, [key]: !prev[key] }));
     };
+
+    const fetchAvailableModels = useCallback(async (apiKey) => {
+        if (!apiKey?.trim()) {
+            setAvailableModels([]);
+            setModelsError('');
+            return;
+        }
+
+        setModelsLoading(true);
+        setModelsError('');
+        try {
+            const token = localStorage.getItem('token');
+            const params = new URLSearchParams({ apiKey: apiKey.trim() });
+            const res = await fetch(`${API_URL}/api/config/models?${params}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+
+            if (!res.ok) {
+                setAvailableModels([]);
+                setModelsError(data.message || 'Could not load models. Check your API key.');
+                return;
+            }
+
+            setAvailableModels(data.models || []);
+            setForm(prev => {
+                if (data.models?.length && !data.models.some(m => m.id === prev.GEMINI_MODEL)) {
+                    const preferred = data.models.find(m => m.id === DEFAULT_GEMINI_MODEL) || data.models[0];
+                    return { ...prev, GEMINI_MODEL: preferred.id };
+                }
+                return prev;
+            });
+        } catch {
+            setAvailableModels([]);
+            setModelsError('Could not load models. Ensure the backend is running.');
+        } finally {
+            setModelsLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (!form.GEMINI_API_KEY?.trim()) return;
+
+        const timer = setTimeout(() => {
+            fetchAvailableModels(form.GEMINI_API_KEY);
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [form.GEMINI_API_KEY, fetchAvailableModels]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -205,6 +260,45 @@ const SystemSetupModal = ({ onConfigured, existingConfig = null, isEditMode = fa
                                         {field.hint && <p className="setup-hint">{field.hint}</p>}
                                     </div>
                                 ))}
+
+                                {section.section === 'AI (Gemini API)' && (
+                                    <div className="setup-field">
+                                        <label className="setup-label" htmlFor="setup-GEMINI_MODEL">
+                                            Gemini Model
+                                        </label>
+                                        <div className="setup-input-wrapper">
+                                            <select
+                                                id="setup-GEMINI_MODEL"
+                                                className="setup-input setup-select"
+                                                value={form.GEMINI_MODEL || DEFAULT_GEMINI_MODEL}
+                                                onChange={e => handleChange('GEMINI_MODEL', e.target.value)}
+                                                disabled={modelsLoading || !form.GEMINI_API_KEY?.trim()}
+                                            >
+                                                {modelsLoading && (
+                                                    <option value={form.GEMINI_MODEL || DEFAULT_GEMINI_MODEL}>
+                                                        Loading models...
+                                                    </option>
+                                                )}
+                                                {!modelsLoading && availableModels.length === 0 && (
+                                                    <option value={form.GEMINI_MODEL || DEFAULT_GEMINI_MODEL}>
+                                                        {form.GEMINI_MODEL || DEFAULT_GEMINI_MODEL}
+                                                    </option>
+                                                )}
+                                                {!modelsLoading && availableModels.map(model => (
+                                                    <option key={model.id} value={model.id}>
+                                                        {model.displayName}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        {modelsError && <p className="setup-hint setup-hint-error">{modelsError}</p>}
+                                        {!modelsError && (
+                                            <p className="setup-hint">
+                                                Models are loaded from your Google account. Used for CV scoring, generation, and suggestions.
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ))}

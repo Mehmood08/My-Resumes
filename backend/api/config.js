@@ -1,7 +1,7 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import SystemConfig from '../models/SystemConfig.js';
-import { getSystemConfig, isPlaceholderOrEmpty } from '../utils/configHelper.js';
+import { getSystemConfig, isPlaceholderOrEmpty, DEFAULT_GEMINI_MODEL } from '../utils/configHelper.js';
 
 const router = express.Router();
 
@@ -37,6 +37,46 @@ router.get('/status', (req, res) => {
     });
 });
 
+// ─── GET /api/config/models ──────────────────────────────────────────────────
+// Protected: Lists Gemini models available for the configured (or provided) API key.
+router.get('/models', requireAuth, async (req, res) => {
+    try {
+        const { config } = await getSystemConfig();
+        const apiKey = (req.query.apiKey || config.GEMINI_API_KEY || '').trim();
+
+        if (isPlaceholderOrEmpty(apiKey)) {
+            return res.status(400).json({ message: 'Gemini API Key is required to list available models.' });
+        }
+
+        const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}`;
+        const response = await fetch(url);
+
+        if (!response.ok) {
+            const errBody = await response.text();
+            console.error('Gemini models list error:', response.status, errBody);
+            return res.status(response.status).json({
+                message: 'Failed to fetch models from Google. Check your API key.',
+                error: errBody
+            });
+        }
+
+        const data = await response.json();
+        const models = (data.models || [])
+            .filter(m => m.supportedGenerationMethods?.includes('generateContent'))
+            .map(m => ({
+                id: m.name.replace(/^models\//, ''),
+                displayName: m.displayName || m.name.replace(/^models\//, ''),
+                description: m.description || ''
+            }))
+            .sort((a, b) => a.displayName.localeCompare(b.displayName));
+
+        res.json({ models, selectedModel: config.GEMINI_MODEL || DEFAULT_GEMINI_MODEL });
+    } catch (err) {
+        console.error('GET /api/config/models Error:', err);
+        res.status(500).json({ message: 'Failed to fetch Gemini models', error: err.message });
+    }
+});
+
 // ─── GET /api/config ─────────────────────────────────────────────────────────
 // Protected: Returns current settings for the logged-in user to view/edit.
 router.get('/', requireAuth, async (req, res) => {
@@ -54,7 +94,7 @@ router.get('/', requireAuth, async (req, res) => {
 // Protected: Save / update system settings.
 router.post('/', requireAuth, async (req, res) => {
     try {
-        const { JWT_SECRET, GEMINI_API_KEY, RESEND_API_KEY, EMAIL_FROM } = req.body;
+        const { JWT_SECRET, GEMINI_API_KEY, GEMINI_MODEL, RESEND_API_KEY, EMAIL_FROM } = req.body;
 
         if (isPlaceholderOrEmpty(GEMINI_API_KEY)) {
             return res.status(400).json({ message: 'Gemini API Key is required to enable AI features.' });
@@ -65,6 +105,7 @@ router.post('/', requireAuth, async (req, res) => {
 
         if (JWT_SECRET     !== undefined) configDoc.JWT_SECRET     = JWT_SECRET.trim();
         if (GEMINI_API_KEY !== undefined) configDoc.GEMINI_API_KEY = GEMINI_API_KEY.trim();
+        if (GEMINI_MODEL   !== undefined) configDoc.GEMINI_MODEL   = (GEMINI_MODEL || DEFAULT_GEMINI_MODEL).trim();
         if (RESEND_API_KEY !== undefined) configDoc.RESEND_API_KEY = RESEND_API_KEY.trim();
         if (EMAIL_FROM     !== undefined) configDoc.EMAIL_FROM     = EMAIL_FROM.trim();
 
@@ -79,6 +120,7 @@ router.post('/', requireAuth, async (req, res) => {
             config: {
                 JWT_SECRET:     configDoc.JWT_SECRET,
                 GEMINI_API_KEY: configDoc.GEMINI_API_KEY,
+                GEMINI_MODEL:   configDoc.GEMINI_MODEL,
                 RESEND_API_KEY: configDoc.RESEND_API_KEY,
                 EMAIL_FROM:     configDoc.EMAIL_FROM,
                 isConfigured:   true,

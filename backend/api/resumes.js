@@ -2,7 +2,7 @@ import express from 'express';
 import Resume from '../models/Resume.js';
 import mongoose from 'mongoose';
 import { GoogleGenAI } from '@google/genai';
-import { getSystemConfig } from '../utils/configHelper.js';
+import { getSystemConfig, DEFAULT_GEMINI_MODEL } from '../utils/configHelper.js';
 
 const router = express.Router();
 
@@ -97,9 +97,10 @@ ${markdown}
         }
 
         const ai = new GoogleGenAI({ apiKey: config.GEMINI_API_KEY });
+        const model = config.GEMINI_MODEL || DEFAULT_GEMINI_MODEL;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-lite',
+            model,
             contents: prompt,
             config: {
                 responseMimeType: 'application/json'
@@ -188,11 +189,11 @@ ${linksLine}
         }
 
         const ai = new GoogleGenAI({ apiKey: config.GEMINI_API_KEY });
-        const model = ai.models;
+        const geminiModel = config.GEMINI_MODEL || DEFAULT_GEMINI_MODEL;
 
         try {
-            const response = await model.generateContent({
-                model: 'gemini-2.5-flash-lite',
+            const response = await ai.models.generateContent({
+                model: geminiModel,
                 contents: prompt,
                 config: {
                     maxOutputTokens: 1000
@@ -255,8 +256,9 @@ router.post('/suggest-experience', async (req, res) => {
         }
 
         const ai = new GoogleGenAI({ apiKey: config.GEMINI_API_KEY });
+        const geminiModel = config.GEMINI_MODEL || DEFAULT_GEMINI_MODEL;
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-lite',
+            model: geminiModel,
             contents: prompt,
             config: {
                 maxOutputTokens: 250 // small max since it's just a summary
