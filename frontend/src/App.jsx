@@ -7,7 +7,6 @@ import { v4 as uuidv4 } from 'uuid';
 import html2pdf from 'html2pdf.js';
 import { cvTemplates } from './data/cvTemplates';
 import ErrorBoundary from './Components/ErrorBoundary';
-import { LuPlus } from "react-icons/lu";
 
 import { useAuth } from './context/AuthContext';
 import Login from './Components/Login';
@@ -360,8 +359,6 @@ function App() {
       .catch(() => setIsSettingsOpen(true));
   };
 
-  const resumeCount = notes.filter(n => !n.parentId).length;
-
   if (resetToken) return <ResetPassword token={resetToken} onBackToLogin={handleBackToLogin} />;
   if (!user) return <Login />;
 
@@ -379,8 +376,8 @@ function App() {
           activeNoteId={currentNote.id}
           isSidebarOpen={isSidebarOpen}
           onToggleSidebar={toggleSidebar}
-          resumeCount={resumeCount}
           onOpenSettings={openSettings}
+          onCreateResume={openCreateWizard}
         />
       </ErrorBoundary>
 
@@ -406,20 +403,7 @@ function App() {
             </ErrorBoundary>
           </div>
         ) : (
-          <>
-            <EmptyState hasResumes={hasResumes} onSelectMode={handleOpenWizardFromEmpty} />
-            <div className="floating-actions floating-actions-empty">
-              <button
-                type="button"
-                className="fab-round fab-add"
-                onClick={openCreateWizard}
-                title="Create new resume"
-                aria-label="Create new resume"
-              >
-                <LuPlus size={24} />
-              </button>
-            </div>
-          </>
+          <EmptyState hasResumes={hasResumes} onSelectMode={handleOpenWizardFromEmpty} />
         )}
       </main>
       <TemplateWizard

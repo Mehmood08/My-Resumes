@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { LuLogOut, LuCrown, LuChevronDown, LuSettings } from 'react-icons/lu';
+import { LuLogOut, LuUser } from 'react-icons/lu';
 
-export default function ProfileMenu({ resumeCount = 0, variant = 'default', onOpenSettings }) {
+export default function ProfileMenu({ variant = 'default' }) {
   const { user, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -21,9 +21,9 @@ export default function ProfileMenu({ resumeCount = 0, variant = 'default', onOp
 
   if (!user) return null;
 
-  const initial = user.name?.charAt(0).toUpperCase() || 'U';
   const isMini = variant === 'mini';
   const isSidebar = variant === 'sidebar';
+  const iconSize = isMini ? 20 : 18;
 
   return (
     <>
@@ -37,65 +37,24 @@ export default function ProfileMenu({ resumeCount = 0, variant = 'default', onOp
           onClick={() => setIsOpen(prev => !prev)}
           aria-expanded={isOpen}
           aria-haspopup="true"
+          aria-label="Profile menu"
           title={user.name}
         >
-          {user.picture ? (
-            <img src={user.picture} alt="" className="profile-menu-avatar" />
-          ) : (
-            <span className="profile-menu-avatar-fallback">{initial}</span>
-          )}
-          {isSidebar && (
-            <>
-              <span className="profile-menu-trigger-name">{user.name}</span>
-              <LuChevronDown size={14} className="profile-menu-chevron" />
-            </>
-          )}
-          {!isMini && !isSidebar && (
-            <LuChevronDown size={14} className="profile-menu-chevron" />
-          )}
+          <LuUser size={iconSize} className="profile-menu-icon" />
+          {isSidebar && <span>Profile</span>}
         </button>
 
         {isOpen && (
-          <div className={`profile-menu-dropdown profile-menu-dropdown--${variant}`}>
-            <div className="profile-menu-header">
-              {user.picture ? (
-                <img src={user.picture} alt="" className="profile-menu-dropdown-avatar" />
-              ) : (
-                <div className="profile-menu-dropdown-avatar-fallback">{initial}</div>
-              )}
-              <div className="profile-menu-user-info">
-                <span className="profile-menu-name">{user.name}</span>
-                {user.email && <span className="profile-menu-email">{user.email}</span>}
-                <span className="profile-menu-badge">
-                  <LuCrown size={11} /> Pro Member
-                </span>
-              </div>
+          <div className={`profile-menu-dropdown profile-menu-dropdown--${variant}`} role="menu">
+            <div className="profile-menu-context-user">
+              <span className="profile-menu-name">{user.name}</span>
+              {user.email && <span className="profile-menu-email">{user.email}</span>}
             </div>
-
-            <div className="profile-menu-stats">
-              <span className="profile-menu-stats-label">Resumes created</span>
-              <span className="profile-menu-stats-value">{resumeCount}</span>
-            </div>
-
             <div className="profile-menu-divider" />
-
-            {onOpenSettings && (
-              <button
-                type="button"
-                className="profile-menu-settings"
-                onClick={() => {
-                  setIsOpen(false);
-                  onOpenSettings();
-                }}
-              >
-                <LuSettings size={16} />
-                API Settings
-              </button>
-            )}
-
             <button
               type="button"
               className="profile-menu-signout"
+              role="menuitem"
               onClick={() => {
                 setIsOpen(false);
                 setShowLogoutConfirm(true);

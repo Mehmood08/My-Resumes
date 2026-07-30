@@ -3,7 +3,7 @@ import "./professionalEditor.css";
 import CVPreview from "./CVPreview";
 import GuidedEditor from "./GuidedEditor";
 import { layouts } from "./templatesData";
-import { LuEye, LuDownload, LuPlus, LuPenLine, LuSave, LuCheck, LuSparkles } from "react-icons/lu";
+import { LuEye, LuDownload, LuPenLine, LuSave, LuCheck, LuSparkles } from "react-icons/lu";
 
 export default function MarkdownEditor({
   markdownValue,
@@ -166,15 +166,6 @@ export default function MarkdownEditor({
             </button>
           </>
         )}
-        <button
-          type="button"
-          className="fab-round fab-add"
-          onClick={onStartWizard}
-          title="Create new resume"
-          aria-label="Create new resume"
-        >
-          <LuPlus size={24} />
-        </button>
       </div>
     </div>
   );

@@ -46,7 +46,7 @@
     color: var(--sidebar-text);
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow: visible;
     border-right: 1px solid var(--sidebar-border);
     flex-shrink: 0;
     z-index: 10;
@@ -76,21 +76,37 @@
     width: 100%;
     padding: 10px 0;
     gap: 4px;
+    overflow-x: hidden;
 }
 
 .sidebar-collapsed-mode .sidebar-mini-rail {
     display: flex;
 }
 
-.sidebar-mini-btn,
 .sidebar-mini-resume-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     border: none;
-    border-radius: 10px;
+    border-radius: 12px;
+    background: transparent;
+    color: var(--sidebar-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    padding: 0;
+}
+
+.sidebar-mini-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 12px;
     background: transparent;
     color: var(--sidebar-muted);
     cursor: pointer;
@@ -105,8 +121,13 @@
 }
 
 .sidebar-mini-resume-btn.active {
-    background: var(--sidebar-active-bg);
-    color: var(--sidebar-active-text);
+    background: var(--primary);
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+}
+
+.sidebar-mini-resume-btn.active .cv-letter-avatar {
+    background: rgba(255, 255, 255, 0.22) !important;
+    color: #ffffff !important;
 }
 
 .sidebar-mini-divider {
@@ -123,10 +144,22 @@
     align-items: center;
     gap: 4px;
     overflow-y: auto;
+    overflow-x: hidden;
     flex: 1;
     min-height: 0;
     width: 100%;
-    padding: 0 8px;
+    padding: 0;
+    scrollbar-width: thin;
+    scrollbar-color: var(--sidebar-border) transparent;
+}
+
+.sidebar-mini-resumes::-webkit-scrollbar {
+    width: 4px;
+}
+
+.sidebar-mini-resumes::-webkit-scrollbar-thumb {
+    background: var(--sidebar-border);
+    border-radius: 4px;
 }
 
 .sidebar-mini-spacer {
@@ -136,13 +169,97 @@
 .sidebar-mini-footer {
     flex-shrink: 0;
     padding-bottom: 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
 }
 
 .sidebar-footer {
-    padding: 12px;
+    padding: 8px 12px 12px;
     border-top: 1px solid var(--sidebar-border);
     flex-shrink: 0;
     background: var(--sidebar-bg);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    position: relative;
+    z-index: 5;
+}
+
+.sidebar-new-resume-wrap {
+    padding: 0 12px 8px;
+    flex-shrink: 0;
+}
+
+.sidebar-new-resume-wrap .sidebar-settings-btn {
+    width: 100%;
+}
+
+.sidebar-settings-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 11px 14px;
+    border: none;
+    border-radius: 12px;
+    background: transparent;
+    color: var(--sidebar-muted);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+}
+
+.sidebar-settings-btn:hover {
+    background: var(--sidebar-hover);
+    color: var(--sidebar-text);
+}
+
+.sidebar-add-btn {
+    color: var(--primary);
+}
+
+.sidebar-add-btn:hover {
+    color: var(--primary-hover);
+}
+
+.sidebar-mini-add-btn {
+    color: var(--primary);
+}
+
+.sidebar-mini-add-btn:hover {
+    background: #e0e7ff;
+    color: var(--primary-hover);
+}
+
+.cv-letter-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    flex-shrink: 0;
+    transition: all 0.2s;
+}
+
+.cv-letter-avatar--sm {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+    border-radius: 8px;
+}
+
+.cv-letter-avatar--mini {
+    width: 32px;
+    height: 32px;
+    font-size: 13px;
+    border-radius: 10px;
 }
 
 .sidebar-header {
@@ -168,23 +285,11 @@
     min-width: 0;
 }
 
-.sidebar-brand-icon {
-    background: #e0e7ff;
-    color: #4f46e5;
-    padding: 6px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
 .sidebar-brand-title {
     margin: 0;
-    font-size: 12px;
+    font-size: 17px;
     font-weight: 700;
-    letter-spacing: 0.4px;
-    text-transform: uppercase;
+    letter-spacing: -0.02em;
     color: var(--sidebar-text);
 }
 
@@ -320,13 +425,12 @@
 }
 
 .section-label {
-    padding: 0 24px;
+    padding: 0 20px;
     margin-bottom: 8px;
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 600;
     color: var(--sidebar-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.02em;
 }
 
 .notes-list {
@@ -340,9 +444,10 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 14px;
+    gap: 12px;
+    padding: 10px 12px;
     margin-bottom: 4px;
-    border-radius: 8px;
+    border-radius: 12px;
     cursor: pointer;
     color: var(--sidebar-muted);
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -355,9 +460,29 @@
 }
 
 .note-item.active {
-    background: var(--sidebar-active-bg);
-    color: var(--sidebar-active-text);
-    border-left: 3px solid var(--primary);
+    background: var(--primary);
+    color: #ffffff;
+    border-left: none;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+}
+
+.note-item.active .note-date {
+    color: rgba(255, 255, 255, 0.75);
+    opacity: 1;
+}
+
+.note-item.active .cv-letter-avatar {
+    background: rgba(255, 255, 255, 0.22) !important;
+    color: #ffffff !important;
+}
+
+.note-item.active .delete-btn {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.note-item.active .delete-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
 }
 
 .note-info {
@@ -1896,11 +2021,28 @@
     transition: all 0.2s;
 }
 
+.profile-menu-trigger--sidebar,
+.profile-menu-trigger--mini {
+    border: none;
+    border-radius: 12px;
+    background: transparent;
+    box-shadow: none;
+}
+
 .profile-menu-trigger:hover,
 .profile-menu-trigger.open {
     border-color: #c7d2fe;
     background: #f8fafc;
     box-shadow: 0 2px 8px rgba(79, 70, 229, 0.1);
+}
+
+.profile-menu-trigger--sidebar:hover,
+.profile-menu-trigger--sidebar.open,
+.profile-menu-trigger--mini:hover,
+.profile-menu-trigger--mini.open {
+    border-color: transparent;
+    background: var(--sidebar-hover);
+    box-shadow: none;
 }
 
 .profile-menu-avatar,
@@ -1936,14 +2078,15 @@
     position: absolute;
     top: calc(100% + 8px);
     right: 0;
-    width: 280px;
+    width: 240px;
     background: white;
     border: 1px solid var(--border);
-    border-radius: 14px;
-    box-shadow: 0 12px 40px rgba(15, 23, 42, 0.12), 0 4px 12px rgba(15, 23, 42, 0.06);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12), 0 2px 8px rgba(15, 23, 42, 0.06);
     z-index: 1000;
     overflow: hidden;
-    animation: profileMenuIn 0.18s ease-out;
+    animation: profileMenuIn 0.15s ease-out;
+    padding: 4px 0;
 }
 
 @keyframes profileMenuIn {
@@ -1958,36 +2101,42 @@
 
 .profile-menu-trigger--sidebar {
     width: 100%;
-    padding: 10px 12px;
-    border-radius: 10px;
-    border: 1px solid var(--sidebar-border);
-    background: white;
-    gap: 10px;
-}
-
-.profile-menu-trigger--sidebar:hover,
-.profile-menu-trigger--sidebar.open {
-    border-color: #c7d2fe;
-    background: #f8fafc;
-}
-
-.profile-menu-trigger-name {
-    flex: 1;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--sidebar-text);
+    padding: 11px 14px;
+    border-radius: 12px;
+    border: none;
+    background: transparent;
+    gap: 12px;
+    color: var(--sidebar-muted);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
     text-align: left;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+}
+
+.profile-menu-trigger--sidebar .profile-menu-icon {
+    flex-shrink: 0;
+    color: inherit;
+}
+
+.profile-menu-trigger--mini .profile-menu-icon {
+    color: var(--sidebar-muted);
+}
+
+.profile-menu-trigger--mini:hover .profile-menu-icon,
+.profile-menu-trigger--mini.open .profile-menu-icon {
+    color: var(--sidebar-text);
 }
 
 .profile-menu-dropdown--sidebar {
-    bottom: calc(100% + 8px);
+    bottom: calc(100% + 6px);
     top: auto;
     left: 0;
-    right: 0;
-    width: auto;
+    right: auto;
+    width: min(240px, calc(100vw - 24px));
+    min-width: 200px;
 }
 
 /* Mini rail profile */
@@ -1999,8 +2148,13 @@
 .profile-menu-trigger--mini {
     padding: 0;
     border: none;
-    border-radius: 10px;
+    border-radius: 12px;
     background: transparent;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .profile-menu-trigger--mini:hover,
@@ -2011,8 +2165,45 @@
 
 .profile-menu-trigger--mini .profile-menu-avatar,
 .profile-menu-trigger--mini .profile-menu-avatar-fallback {
-    width: 36px;
-    height: 36px;
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+}
+
+.profile-menu-icon {
+    flex-shrink: 0;
+}
+
+.profile-menu-trigger-name {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
+    color: inherit;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.profile-menu-context-user {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 10px 12px 8px;
+    min-width: 0;
+}
+
+.profile-menu-dropdown--sidebar .profile-menu-name {
+    font-size: 13px;
+}
+
+.profile-menu-dropdown--sidebar .profile-menu-email {
+    font-size: 11px;
+}
+
+.profile-menu-dropdown--sidebar .profile-menu-signout {
+    padding: 10px 12px;
+    font-size: 13px;
 }
 
 .profile-menu-dropdown--mini {
@@ -2020,6 +2211,12 @@
     bottom: 0;
     top: auto;
     right: auto;
+    width: 220px;
+}
+
+.profile-menu-dropdown--mini .profile-menu-signout {
+    padding: 10px 12px;
+    font-size: 13px;
 }
 
 .sidebar-overlay {
@@ -2119,15 +2316,16 @@
     align-items: center;
     gap: 10px;
     width: 100%;
-    padding: 12px 16px;
+    padding: 10px 12px;
     border: none;
     background: transparent;
     color: #ef4444;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     cursor: pointer;
     transition: background 0.15s;
     text-align: left;
+    border-radius: 0;
 }
 
 .profile-menu-signout:hover {
