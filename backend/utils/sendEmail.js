@@ -1,39 +1,32 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import { getSystemConfig } from './configHelper.js';
 
 const sendEmail = async (options) => {
     const { config } = await getSystemConfig();
 
-    const host = config.EMAIL_HOST || 'smtp.gmail.com';
-    const port = config.EMAIL_PORT || 465;
-    const user = config.EMAIL_USER || process.env.EMAIL_USER;
-    const pass = config.EMAIL_PASSWORD || process.env.EMAIL_PASSWORD;
-    const from = config.EMAIL_FROM || user || 'noreply@cvbuilder.com';
+    const apiKey  = config.RESEND_API_KEY;
+    const from    = config.EMAIL_FROM || 'CV Builder <onboarding@resend.dev>';
 
-    // 1) Create a transporter
-    const transporter = nodemailer.createTransport({
-        host,
-        port,
-        secure: port === 465, // SSL if 465
-        auth: {
-            user,
-            pass
-        }
+    if (!apiKey) {
+        throw new Error('RESEND_API_KEY is not configured. Please add it in System Settings.');
+    }
+
+    const resend = new Resend(apiKey);
+
+    const { data, error } = await resend.emails.send({
+        from,
+        to:      options.email,
+        subject: options.subject,
+        text:    options.message,
+        html:    options.html,
     });
 
-    // 2) Define the email options
-    const mailOptions = {
-        from: `CV Builder <${from}>`,
-        to: options.email,
-        subject: options.subject,
-        text: options.message,
-        html: options.html
-    };
+    if (error) {
+        console.error('Resend error:', error);
+        throw new Error(error.message || 'Failed to send email via Resend.');
+    }
 
-    // 3) Actually send the email
-    console.log(`Sending email via ${host}...`);
-    const info = await transporter.sendMail(mailOptions);
-    console.log('Email Info:', info.messageId);
+    console.log(`✅ Email sent via Resend. ID: ${data.id}`);
 };
 
 export default sendEmail;

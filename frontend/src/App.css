@@ -1720,6 +1720,12 @@
     animation: spin 0.7s linear infinite;
 }
 
+.setup-spinner-icon {
+    display: inline-block;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+}
+
 /* Responsive */
 @media (max-width: 640px) {
     .setup-modal-header {

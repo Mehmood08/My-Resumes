@@ -39,11 +39,9 @@ router.get('/status', (req, res) => {
 
 // ─── GET /api/config ─────────────────────────────────────────────────────────
 // Protected: Returns current settings for the logged-in user to view/edit.
-// Sensitive values are returned — only accessible after login.
 router.get('/', requireAuth, async (req, res) => {
     try {
         const { config } = await getSystemConfig();
-        // Never expose GOOGLE_CLIENT_ID from DB — it's env-only
         const { GOOGLE_CLIENT_ID, ...editableConfig } = config;
         res.json(editableConfig);
     } catch (err) {
@@ -53,41 +51,25 @@ router.get('/', requireAuth, async (req, res) => {
 });
 
 // ─── POST /api/config ────────────────────────────────────────────────────────
-// Protected: Save / update system settings. Stores updatedBy = userId.
+// Protected: Save / update system settings.
 router.post('/', requireAuth, async (req, res) => {
     try {
-        const {
-            JWT_SECRET,
-            GEMINI_API_KEY,
-            EMAIL_HOST,
-            EMAIL_PORT,
-            EMAIL_USER,
-            EMAIL_PASSWORD,
-            EMAIL_FROM
-        } = req.body;
+        const { JWT_SECRET, GEMINI_API_KEY, RESEND_API_KEY, EMAIL_FROM } = req.body;
 
-        // At least Gemini API Key should be provided
         if (isPlaceholderOrEmpty(GEMINI_API_KEY)) {
-            return res.status(400).json({
-                message: 'Gemini API Key is required to enable AI features.'
-            });
+            return res.status(400).json({ message: 'Gemini API Key is required to enable AI features.' });
         }
 
         let configDoc = await SystemConfig.findOne();
-        if (!configDoc) {
-            configDoc = new SystemConfig();
-        }
+        if (!configDoc) configDoc = new SystemConfig();
 
         if (JWT_SECRET     !== undefined) configDoc.JWT_SECRET     = JWT_SECRET.trim();
         if (GEMINI_API_KEY !== undefined) configDoc.GEMINI_API_KEY = GEMINI_API_KEY.trim();
-        if (EMAIL_HOST     !== undefined) configDoc.EMAIL_HOST     = EMAIL_HOST.trim();
-        if (EMAIL_PORT     !== undefined) configDoc.EMAIL_PORT     = Number(EMAIL_PORT) || 465;
-        if (EMAIL_USER     !== undefined) configDoc.EMAIL_USER     = EMAIL_USER.trim();
-        if (EMAIL_PASSWORD !== undefined) configDoc.EMAIL_PASSWORD = EMAIL_PASSWORD.trim();
+        if (RESEND_API_KEY !== undefined) configDoc.RESEND_API_KEY = RESEND_API_KEY.trim();
         if (EMAIL_FROM     !== undefined) configDoc.EMAIL_FROM     = EMAIL_FROM.trim();
 
         configDoc.isConfigured = true;
-        configDoc.updatedBy    = req.userId;  // track who last updated
+        configDoc.updatedBy    = req.userId;
 
         await configDoc.save();
         console.log(`✅ System config saved by user: ${req.userId}`);
@@ -97,10 +79,7 @@ router.post('/', requireAuth, async (req, res) => {
             config: {
                 JWT_SECRET:     configDoc.JWT_SECRET,
                 GEMINI_API_KEY: configDoc.GEMINI_API_KEY,
-                EMAIL_HOST:     configDoc.EMAIL_HOST,
-                EMAIL_PORT:     configDoc.EMAIL_PORT,
-                EMAIL_USER:     configDoc.EMAIL_USER,
-                EMAIL_PASSWORD: configDoc.EMAIL_PASSWORD,
+                RESEND_API_KEY: configDoc.RESEND_API_KEY,
                 EMAIL_FROM:     configDoc.EMAIL_FROM,
                 isConfigured:   true,
                 updatedBy:      configDoc.updatedBy

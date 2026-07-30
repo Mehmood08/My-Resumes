@@ -1,25 +1,28 @@
 import React, { useState } from 'react';
+import { LuEye, LuEyeOff, LuSave, LuSettings, LuKey, LuBot, LuMail, LuLoader } from 'react-icons/lu';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const FIELD_META = [
     {
         section: 'JWT Authentication',
-        icon: '🔑',
+        icon: <LuKey size={15} />,
+
         fields: [
             {
                 key: 'JWT_SECRET',
                 label: 'JWT Secret Key',
                 type: 'password',
-                placeholder: 'A long random secret string...',
+                placeholder: 'A long random secret string (32+ chars)...',
                 required: true,
-                hint: 'Used to sign user session tokens. Use any long, random string (32+ chars recommended).'
+                hint: 'Used to sign user session tokens. Use any long, random string.'
             },
         ]
     },
     {
         section: 'AI (Gemini API)',
-        icon: '🤖',
+        icon: <LuBot size={15} />,
+
         fields: [
             {
                 key: 'GEMINI_API_KEY',
@@ -32,14 +35,35 @@ const FIELD_META = [
         ]
     },
     {
-        section: 'Email / SMTP (for Password Reset)',
-        icon: '📧',
+        section: 'Email (Resend)',
+        icon: <LuMail size={15} />,
+
         fields: [
-            { key: 'EMAIL_HOST',     label: 'SMTP Host',                       type: 'text',     placeholder: 'smtp.gmail.com',       required: false, hint: 'Default: smtp.gmail.com' },
-            { key: 'EMAIL_PORT',     label: 'SMTP Port',                       type: 'number',   placeholder: '465',                  required: false, hint: '465 for SSL, 587 for TLS' },
-            { key: 'EMAIL_USER',     label: 'Email Username',                  type: 'email',    placeholder: 'yourname@gmail.com',   required: false, hint: 'The Gmail / SMTP account used to send emails' },
-            { key: 'EMAIL_PASSWORD', label: 'Email Password / App Password',   type: 'password', placeholder: 'xxxx xxxx xxxx xxxx',  required: false, hint: 'Use a Gmail App Password (not your regular password)' },
-            { key: 'EMAIL_FROM',     label: 'From Email Address',              type: 'email',    placeholder: 'yourname@gmail.com',   required: false, hint: 'Display "From" address for sent emails' },
+            {
+                key: 'RESEND_API_KEY',
+                label: 'Resend API Key',
+                type: 'password',
+                placeholder: 're_xxxxxxxxxxxxxxxxxxxx',
+                required: false,
+                hint: (
+                    <>
+                        Get your free API key at{' '}
+                        <a href="https://resend.com" target="_blank" rel="noreferrer"
+                            style={{ color: '#818cf8', textDecoration: 'underline' }}>
+                            resend.com
+                        </a>
+                        . Required for password reset emails. No SMTP password needed.
+                    </>
+                )
+            },
+            {
+                key: 'EMAIL_FROM',
+                label: 'From Email Address',
+                type: 'email',
+                placeholder: 'CV Builder <noreply@yourdomain.com>',
+                required: false,
+                hint: 'The "From" address for sent emails. Must be a verified domain in Resend. Leave blank to use Resend\'s sandbox address (for testing).'
+            },
         ]
     }
 ];
@@ -48,10 +72,7 @@ const SystemSetupModal = ({ onConfigured, existingConfig = null, isEditMode = fa
     const [form, setForm] = useState(() => ({
         JWT_SECRET:     existingConfig?.JWT_SECRET     || '',
         GEMINI_API_KEY: existingConfig?.GEMINI_API_KEY || '',
-        EMAIL_HOST:     existingConfig?.EMAIL_HOST     || 'smtp.gmail.com',
-        EMAIL_PORT:     existingConfig?.EMAIL_PORT     || 465,
-        EMAIL_USER:     existingConfig?.EMAIL_USER     || '',
-        EMAIL_PASSWORD: existingConfig?.EMAIL_PASSWORD || '',
+        RESEND_API_KEY: existingConfig?.RESEND_API_KEY || '',
         EMAIL_FROM:     existingConfig?.EMAIL_FROM     || '',
     }));
 
@@ -119,14 +140,14 @@ const SystemSetupModal = ({ onConfigured, existingConfig = null, isEditMode = fa
                 {/* Header */}
                 <div className="setup-modal-header">
                     <div className="setup-modal-title-group">
-                        <div className="setup-modal-icon">⚙️</div>
+                        <div className="setup-modal-icon"><LuSettings size={22} /></div>
                         <div>
                             <h1 className="setup-modal-title">
                                 {allowClose ? 'System Settings' : '👋 Welcome! Set Up Your App'}
                             </h1>
                             <p className="setup-modal-subtitle">
                                 {allowClose
-                                    ? 'Update your API keys and SMTP credentials. Stored securely in MongoDB.'
+                                    ? 'Update your API keys. Stored securely in MongoDB.'
                                     : 'Before you start, please configure the required API keys below. You can update these later via the ⚙️ gear icon.'
                                 }
                                 <br />
@@ -177,7 +198,7 @@ const SystemSetupModal = ({ onConfigured, existingConfig = null, isEditMode = fa
                                                     onClick={() => toggleShowPassword(field.key)}
                                                     aria-label={showPasswords[field.key] ? 'Hide' : 'Show'}
                                                 >
-                                                    {showPasswords[field.key] ? '🙈' : '👁️'}
+                                                    {showPasswords[field.key] ? <LuEyeOff size={16} /> : <LuEye size={16} />}
                                                 </button>
                                             )}
                                         </div>
@@ -199,8 +220,8 @@ const SystemSetupModal = ({ onConfigured, existingConfig = null, isEditMode = fa
                         )}
                         <button type="submit" className="setup-save-btn" disabled={saving}>
                             {saving
-                                ? <><span className="setup-spinner"></span> Saving...</>
-                                : '💾 Save Settings'
+                                ? <><LuLoader size={15} className="setup-spinner-icon" /> Saving...</>
+                                : <><LuSave size={15} /> Save Settings</>
                             }
                         </button>
                     </div>
