@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
 import GuidedHelper from './GuidedHelper';
 import ImageCropperModal from './ImageCropperModal';
 import { LuPlus, LuInfo, LuLightbulb, LuTrash2, LuChevronLeft, LuCheck, LuBold, LuItalic, LuHeading, LuList, LuListOrdered } from "react-icons/lu";
 
-const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerification, onVerificationDismissed, onMetaUpdate }) => {
+const GuidedEditor = forwardRef(({ markdown, onChange, onSave, onStartWizard, needsVerification, onVerificationDismissed, onMetaUpdate, onVerifyStateChange }, ref) => {
     const [currentStep, setCurrentStep] = useState(0);
     const [showHelper, setShowHelper] = useState(false);
     const isInternalChange = useRef(false);
@@ -56,6 +56,31 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerifica
     });
 
     const [sections, setSections] = useState([]);
+    const personalInfoRef = useRef(personalInfo);
+    const sectionsRef = useRef(sections);
+
+    useEffect(() => { personalInfoRef.current = personalInfo; }, [personalInfo]);
+    useEffect(() => { sectionsRef.current = sections; }, [sections]);
+
+    const buildMarkdown = (newPersonalInfo, newSections) => {
+        let md = '';
+        if (newPersonalInfo.photo) {
+            md += `![Profile](${newPersonalInfo.photo})\n`;
+        }
+        md += `# ${newPersonalInfo.firstName} ${newPersonalInfo.lastName} | ${newPersonalInfo.profession}\n`;
+        md += `${newPersonalInfo.city}, ${newPersonalInfo.province}, ${newPersonalInfo.zip} | ${newPersonalInfo.email} | ${newPersonalInfo.phone}\n`;
+
+        if (newPersonalInfo.link1 || newPersonalInfo.link2) {
+            md += `${newPersonalInfo.link1 || ''} | ${newPersonalInfo.link2 || ''}\n`;
+        }
+        md += '\n';
+
+        newSections.forEach(sec => {
+            md += `## ${sec.title}\n${sec.content}\n\n`;
+        });
+
+        return md.trim();
+    };
 
     // Sync metadata with parent for auto-titling
     useEffect(() => {
@@ -78,6 +103,22 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerifica
         { id: 'languages', label: 'Languages', emoji: '🌐', helper: 'languages' },
         { id: 'certifications', label: 'Certifications', emoji: '🏆', helper: 'certifications' }
     ];
+
+    const currentStepRef = useRef(currentStep);
+    useEffect(() => { currentStepRef.current = currentStep; }, [currentStep]);
+
+    useImperativeHandle(ref, () => ({
+        getMarkdown: () => buildMarkdown(personalInfoRef.current, sectionsRef.current),
+        verifyCurrentSection: () => {
+            const step = currentStepRef.current;
+            const stepId = steps[step]?.id;
+            if (!stepId) return;
+            setVerifiedSections(prev => ({ ...prev, [stepId]: true }));
+            if (step < steps.length - 1) {
+                setTimeout(() => setCurrentStep(step + 1), 300);
+            }
+        },
+    }));
 
     // Parse Markdown into state — but SKIP if this change came from the user typing
     useEffect(() => {
@@ -298,25 +339,9 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerifica
     };
 
     const updateMarkdown = (newPersonalInfo, newSections) => {
-        let md = '';
-        if (newPersonalInfo.photo) {
-            md += `![Profile](${newPersonalInfo.photo})\n`;
-        }
-        md += `# ${newPersonalInfo.firstName} ${newPersonalInfo.lastName} | ${newPersonalInfo.profession}\n`;
-        md += `${newPersonalInfo.city}, ${newPersonalInfo.province}, ${newPersonalInfo.zip} | ${newPersonalInfo.email} | ${newPersonalInfo.phone}\n`;
-
-        if (newPersonalInfo.link1 || newPersonalInfo.link2) {
-            md += `${newPersonalInfo.link1 || ''} | ${newPersonalInfo.link2 || ''}\n`;
-        }
-        md += '\n';
-
-        newSections.forEach(sec => {
-            md += `## ${sec.title}\n${sec.content}\n\n`;
-        });
-
-        // Mark this as an internal change so the parser useEffect won't overwrite user's input
+        const md = buildMarkdown(newPersonalInfo, newSections);
         isInternalChange.current = true;
-        onChange(md.trim());
+        onChange(md);
     };
 
     const handleInfoChange = (field, value) => {
@@ -692,7 +717,30 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerifica
         );
     };
 
-    const completionPercent = Math.round(((currentStep + 1) / steps.length) * 100);
+    const findSectionForStep = (stepId) => {
+        return sections.find(s => {
+            const title = s.title.toUpperCase();
+            const id = stepId.toUpperCase();
+            return title.includes(id) || (id === 'SUMMARY' && title.includes('PROFESSIONAL'));
+        });
+    };
+
+    const headingFields = ['firstName', 'lastName', 'profession', 'city', 'province', 'zip', 'phone', 'email'];
+
+    const getStepFillRatio = (stepId) => {
+        if (stepId === 'heading') {
+            const filled = headingFields.filter(f => personalInfo[f]?.trim()).length;
+            return filled / headingFields.length;
+        }
+        const section = findSectionForStep(stepId);
+        return section?.content?.trim() ? 1 : 0;
+    };
+
+    const isStepComplete = (stepId) => getStepFillRatio(stepId) === 1;
+
+    const completionPercent = Math.round(
+        (steps.reduce((sum, s) => sum + getStepFillRatio(s.id), 0) / steps.length) * 100
+    );
 
     const allVerified = needsVerification && Object.keys(verifiedSections).length > 0 && Object.values(verifiedSections).every(v => v);
     const verifiedCount = Object.values(verifiedSections).filter(v => v).length;
@@ -704,6 +752,14 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerifica
             onVerificationDismissed();
         }
     }, [allVerified, onVerificationDismissed]);
+
+    useEffect(() => {
+        if (!onVerifyStateChange) return;
+        onVerifyStateChange({
+            active: needsVerification && currentStep >= 0,
+            verified: !!verifiedSections[steps[currentStep]?.id],
+        });
+    }, [needsVerification, currentStep, verifiedSections, onVerifyStateChange, steps]);
 
     return (
         <div className="wizard-container">
@@ -735,12 +791,13 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerifica
                 </div>
             )}
             <aside className="wizard-sidebar">
+                <div className="wizard-sidebar-header">CV Sections</div>
                 <div className="wizard-steps-list">
 
                     {steps.map((step, idx) => (
                         <div
                             key={step.id}
-                            className={`wizard-step-item ${idx === currentStep ? 'active' : ''} ${idx < currentStep ? 'completed' : ''}`}
+                            className={`wizard-step-item ${idx === currentStep ? 'active' : ''} ${isStepComplete(step.id) ? 'completed' : ''}`}
                             onClick={() => setCurrentStep(idx)}
                         >
                             <div className="step-number">
@@ -805,56 +862,6 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerifica
                 <div className="wizard-content-scroll">
                     {renderStepContent()}
                 </div>
-
-                {currentStep !== -1 && (
-                    <div className="wizard-actions">
-                        <button
-                            className={`go-back-link-footer ${currentStep === 0 ? 'hidden' : ''}`}
-                            onClick={() => currentStep > 0 && setCurrentStep(currentStep - 1)}
-                        >
-                            ← Go Back
-                        </button>
-
-                        <div className="wizard-actions-right">
-                            {/* Verify button — only in verification mode */}
-                            {needsVerification && currentStep >= 0 && (
-                                <button
-                                    className={`verify-section-btn ${verifiedSections[steps[currentStep]?.id] ? 'verified' : ''}`}
-                                    onClick={() => {
-                                        const stepId = steps[currentStep].id;
-                                        setVerifiedSections(prev => ({ ...prev, [stepId]: true }));
-                                        // Auto-advance to next section
-                                        if (currentStep < steps.length - 1) {
-                                            setTimeout(() => setCurrentStep(currentStep + 1), 300);
-                                        }
-                                    }}
-                                >
-                                    {verifiedSections[steps[currentStep]?.id] ? '✓ Verified' : 'Verify ✓'}
-                                </button>
-                            )}
-
-                            {!needsVerification && currentStep < steps.length - 1 && (
-                                <button className="continue-btn" onClick={() => setCurrentStep(currentStep + 1)}>
-                                    Next: {steps[currentStep + 1].label} →
-                                </button>
-                            )}
-                            {!needsVerification && currentStep === steps.length - 1 && (
-                                <button className="continue-btn" onClick={() => { onSave(); alert("Resume Saved Successfully! ✨"); }}>
-                                    Finish ✨
-                                </button>
-                            )}
-
-
-
-                            {/* Next button even in verification mode */}
-                            {needsVerification && !allVerified && currentStep < steps.length - 1 && !verifiedSections[steps[currentStep]?.id] && (
-                                <button className="continue-btn ghost" onClick={() => setCurrentStep(currentStep + 1)}>
-                                    Skip →
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                )}
             </main>
 
             {/* Professional Image Cropper Modal */}
@@ -867,7 +874,9 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerifica
             )}
         </div>
     );
-};
+});
+
+GuidedEditor.displayName = 'GuidedEditor';
 
 export default GuidedEditor;
 

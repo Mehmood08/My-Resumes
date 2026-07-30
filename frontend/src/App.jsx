@@ -7,7 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 import html2pdf from 'html2pdf.js';
 import { cvTemplates } from './data/cvTemplates';
 import ErrorBoundary from './Components/ErrorBoundary';
-import { LuPlus, LuLogOut, LuUser, LuChevronRight, LuCalendar, LuFileText, LuSmartphone, LuShare2, LuDownload, LuSave, LuTrash2, LuMenu, LuX, LuSettings } from "react-icons/lu";
+import { LuPlus } from "react-icons/lu";
 
 import { useAuth } from './context/AuthContext';
 import Login from './Components/Login';
@@ -41,9 +41,8 @@ function App() {
   const [notes, setNotes] = useState([]);
 
   const [currentNote, setCurrentNote] = useState({ title: "", desc: "", script: "", id: null, parentId: "", isDraft: false });
-  const [isEditing, setIsEditing] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
 
-  const [activeTab, setActiveTab] = useState("Guided");
   const [cvFormat, setCvFormat] = useState("European");
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [isScoringModalOpen, setIsScoringModalOpen] = useState(false);
@@ -56,7 +55,7 @@ function App() {
     if (!user) {
       setNotes([]);
       setCurrentNote({ title: "", desc: "", script: "", id: null, parentId: "" });
-      setIsEditing(false);
+      setIsDirty(false);
       return;
     }
 
@@ -153,8 +152,7 @@ function App() {
         isDraft: true
       });
       setCvFormat(format);
-      setIsEditing(false);
-      setActiveTab("Guided"); // Switch to editor tab immediately
+      setIsDirty(true);
     } else {
 
       // Manual creation (Initial state or empty)
@@ -168,7 +166,7 @@ function App() {
         isDraft: true
       });
       setCvFormat("America");
-      setIsEditing(false);
+      setIsDirty(false);
       setWizardOptions({ mode: 'select', step: 0 });
       setIsWizardOpen(true);
     }
@@ -197,11 +195,12 @@ function App() {
       const newTitle = `${firstName} ${lastName} ${profession ? '- ' + profession : ''}`.trim();
       if (newTitle && newTitle !== currentTitle) {
         setCurrentNote(prev => ({ ...prev, title: newTitle }));
+        setIsDirty(true);
       }
     }
   };
 
-  const handleSaveNote = () => {
+  const handleSaveNote = (descOverride) => {
     if (!currentNote.title.trim()) {
       alert("Please provide a title for your resume.");
       return;
@@ -212,6 +211,7 @@ function App() {
 
     const noteToSave = {
       ...currentNote,
+      desc: descOverride ?? currentNote.desc,
       date: new Date().toLocaleDateString(),
       userId: userId
     };
@@ -225,7 +225,8 @@ function App() {
         .then(res => res.json())
         .then(updatedNote => {
           setNotes(notes.map(n => (n.id === updatedNote.id ? updatedNote : n)));
-          setIsEditing(true);
+          setCurrentNote(updatedNote);
+          setIsDirty(false);
         })
         .catch(err => alert("Failed to save changes"));
     } else {
@@ -239,7 +240,7 @@ function App() {
         .then(savedNote => {
           setNotes([savedNote, ...notes]);
           setCurrentNote(savedNote);
-          setIsEditing(true);
+          setIsDirty(false);
         })
         .catch(err => alert("Failed to create resume"));
     }
@@ -255,7 +256,7 @@ function App() {
             setNotes(notes.filter(n => n.id !== id));
             if (currentNote.id === id) {
               setCurrentNote({ title: "", desc: "", script: "", id: null, parentId: "", isDraft: false });
-              setIsEditing(false);
+              setIsDirty(false);
             }
           }
         })
@@ -284,12 +285,45 @@ function App() {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
+  const openCreateWizard = () => {
+    setWizardOptions({ mode: 'select', step: 0 });
+    setIsWizardOpen(true);
+  };
+
+  const updateCurrentNote = (updates) => {
+    setCurrentNote(prev => ({ ...prev, ...updates }));
+    setIsDirty(true);
+  };
+
+  const selectNote = (note) => {
+    setCurrentNote({
+      ...note,
+      title: note.title || "",
+      desc: note.desc || "",
+      script: note.script || "",
+      isDraft: false,
+    });
+    setIsDirty(false);
+    if (window.innerWidth <= 768) setIsSidebarOpen(false);
+  };
+
+  const openSettings = () => {
+    const token = localStorage.getItem('token');
+    fetch(`${import.meta.env.VITE_API_URL}/api/config`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+      .then(r => r.json())
+      .then(cfg => { setExistingConfig(cfg); setIsSettingsOpen(true); })
+      .catch(() => setIsSettingsOpen(true));
+  };
+
+  const resumeCount = notes.filter(n => !n.parentId).length;
+
   if (resetToken) return <ResetPassword token={resetToken} onBackToLogin={handleBackToLogin} />;
   if (!user) return <Login />;
 
   const hasResumes = notes.length > 0;
-  const isCreatingNew = currentNote.title !== "" || currentNote.desc !== "" || isWizardOpen || currentNote.id !== null || currentNote.isDraft;
-  const shouldShowEditor = hasResumes || isCreatingNew;
+  const shouldShowEditor = currentNote.id !== null || currentNote.isDraft;
 
   return (
     <div className={`app-layout ${isSidebarOpen ? 'sidebar-open' : 'sidebar-collapsed'}`}>
@@ -297,98 +331,28 @@ function App() {
       <ErrorBoundary>
         <Sidebar
           notes={notes}
-          onCreateNote={() => {
-            setWizardOptions({ mode: 'select', step: 0 });
-            handleCreateNote();
-            if (window.innerWidth <= 768) setIsSidebarOpen(false);
-          }}
-          onSelectNote={(note) => {
-            setCurrentNote({ ...note, title: note.title || "", desc: note.desc || "", script: note.script || "" });
-            setIsEditing(true);
-            if (window.innerWidth <= 768) setIsSidebarOpen(false);
-          }}
+          onSelectNote={selectNote}
           onDeleteNote={handleDeleteNote}
           activeNoteId={currentNote.id}
           isSidebarOpen={isSidebarOpen}
-          onCloseSidebar={toggleSidebar}
+          onToggleSidebar={toggleSidebar}
+          resumeCount={resumeCount}
+          onOpenSettings={openSettings}
         />
       </ErrorBoundary>
 
-      <main className="main-content">
-        <header className="top-bar">
-          <div className="top-bar-left">
-            {!isSidebarOpen && (
-              <button className="desktop-toggle-btn" onClick={toggleSidebar} title="Open Sidebar">
-                <LuMenu />
-              </button>
-            )}
-            {!isSidebarOpen && <div className="divider-vertical"></div>}
-            <input
-              type="text"
-              className="title-input-flat"
-              placeholder="Resume Title..."
-              value={currentNote.title || ""}
-              onChange={(e) => setCurrentNote({ ...currentNote, title: e.target.value })}
-              disabled={!shouldShowEditor}
-            />
-            <div className="divider-vertical"></div>
-            <span className={`editor-status ${isEditing ? "status-saved" : "status-unsaved"}`}>
-              {isEditing ? "SAVED" : "UNSAVED"}
-            </span>
-            <div className="divider-vertical"></div>
-            <span
-              className={`editor-status ${backendStatus === "connected" ? "status-saved" : (backendStatus === "waking-up" ? "status-waking" : "status-unsaved")}`}
-              title="Backend Connection"
-              style={backendStatus === "waking-up" ? { background: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd' } : {}}
-            >
-              {backendStatus === "connected" ? "ONLINE" : (backendStatus === "waking-up" ? "WAKING UP..." : "OFFLINE")}
-            </span>
-          </div>
-
-          <div className="top-bar-right">
-            <button
-              className="create-cv-btn-top"
-              onClick={() => {
-                setWizardOptions({ mode: 'select', step: 0 });
-                setIsWizardOpen(true);
-              }}
-              title="Create New CV"
-            >
-              <LuPlus size={16} /> Create CV
-            </button>
-            <button
-              className="settings-gear-btn"
-              onClick={() => {
-                const token = localStorage.getItem('token');
-                fetch(`${import.meta.env.VITE_API_URL}/api/config`, {
-                  headers: { 'Authorization': `Bearer ${token}` }
-                })
-                  .then(r => r.json())
-                  .then(cfg => { setExistingConfig(cfg); setIsSettingsOpen(true); })
-                  .catch(() => setIsSettingsOpen(true));
-              }}
-              title="System Settings"
-              aria-label="System Settings"
-            >
-              <LuSettings size={18} />
-            </button>
-          </div>
-        </header>
-
+      <main className="main-content main-content-full">
         {shouldShowEditor ? (
-          <div className="editor-workspace">
+          <div className="editor-workspace editor-workspace-full">
             <ErrorBoundary>
               <MarkdownEditor
+                key={currentNote.id || (currentNote.isDraft ? 'draft' : 'new')}
                 markdownValue={currentNote.desc}
-                onMarkdownChange={(val) => setCurrentNote({ ...currentNote, desc: val })}
-                scriptValue={currentNote.script}
-                onScriptChange={(val) => setCurrentNote({ ...currentNote, script: val })}
-                activeTab={activeTab}
-                onTabChange={setActiveTab}
+                onMarkdownChange={(val) => updateCurrentNote({ desc: val })}
                 cvFormat={cvFormat}
                 onFormatChange={setCvFormat}
                 onSave={handleSaveNote}
-                onStartWizard={() => setIsWizardOpen(true)}
+                onStartWizard={openCreateWizard}
                 needsVerification={needsVerification}
                 onVerificationDismissed={() => setNeedsVerification(false)}
                 onMetaUpdate={handleAutoTitleUpdate}
@@ -399,7 +363,20 @@ function App() {
             </ErrorBoundary>
           </div>
         ) : (
-          <EmptyState onSelectMode={handleOpenWizardFromEmpty} />
+          <>
+            <EmptyState hasResumes={hasResumes} onSelectMode={handleOpenWizardFromEmpty} />
+            <div className="floating-actions floating-actions-empty">
+              <button
+                type="button"
+                className="fab-round fab-add"
+                onClick={openCreateWizard}
+                title="Create new resume"
+                aria-label="Create new resume"
+              >
+                <LuPlus size={24} />
+              </button>
+            </div>
+          </>
         )}
       </main>
       <TemplateWizard

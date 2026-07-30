@@ -2,7 +2,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: calc(100vh - 64px);
+    min-height: 100vh;
     width: 100%;
     padding: 40px;
     background-color: #f8fafc;
@@ -50,6 +50,26 @@
     justify-content: center;
     gap: 20px;
     margin-bottom: 48px;
+}
+
+.empty-state-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 20px;
+    margin-bottom: 32px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    color: #64748b;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+
+.empty-state-hint svg {
+    color: #4f46e5;
+    flex-shrink: 0;
 }
 
 .btn-primary-large, .btn-secondary-large {
@@ -103,6 +123,9 @@
     font-size: 13px;
     font-weight: 600;
     color: #475569;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
 }
 
 @media (max-width: 768px) {

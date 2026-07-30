@@ -70,7 +70,7 @@ const CVPreview = ({ markdown, format }) => {
                     phone = parts[2] || "";
                 }
                 // Don't set isHeaderParsing = false here, continue parsing for links
-                continue;``
+                continue;
             }
 
             if (line.startsWith('## ')) {
