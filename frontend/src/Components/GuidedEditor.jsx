@@ -144,6 +144,35 @@ const GuidedEditor = forwardRef(({ markdown, onChange, onSave, onStartWizard, ne
                 setTimeout(() => setCurrentStep(step + 1), 300);
             }
         },
+        applySectionSuggestion: (sectionId, content) => {
+            if (!sectionId || !content?.trim()) return false;
+
+            const matchTitle = sectionId === 'summary' ? 'PROFESSIONAL SUMMARY' :
+                sectionId === 'experience' ? 'EXPERIENCE' :
+                    sectionId === 'projects' ? 'PROJECTS' :
+                        sectionId === 'education' ? 'EDUCATION' :
+                            sectionId === 'skills' ? 'SKILLS' :
+                                sectionId === 'languages' ? 'LANGUAGES' :
+                                    sectionId === 'certifications' ? 'CERTIFICATIONS' :
+                                        sectionId.toUpperCase();
+
+            const sectionIndex = sectionsRef.current.findIndex(s => {
+                const title = s.title.toUpperCase();
+                const id = sectionId.toUpperCase();
+                return title.includes(id) || (id === 'SUMMARY' && title.includes('PROFESSIONAL'));
+            });
+
+            const updatedSections = [...sectionsRef.current];
+            if (sectionIndex !== -1) {
+                updatedSections[sectionIndex] = { ...updatedSections[sectionIndex], content: content.trim() };
+            } else {
+                updatedSections.push({ title: matchTitle, content: content.trim() });
+            }
+
+            setSections(updatedSections);
+            updateMarkdown(personalInfoRef.current, updatedSections);
+            return true;
+        },
     }));
 
     // Parse Markdown into state — but SKIP if this change came from the user typing

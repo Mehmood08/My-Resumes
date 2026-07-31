@@ -1,0 +1,349 @@
+.analyse-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.analyse-modal {
+    background: #ffffff;
+    border-radius: 20px;
+    width: 92%;
+    max-width: 680px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    position: relative;
+    overflow-y: auto;
+    overflow-x: hidden;
+    max-height: 90vh;
+    padding: 28px;
+}
+
+.analyse-modal::-webkit-scrollbar {
+    width: 6px;
+}
+
+.analyse-modal::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.analyse-close-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: #f1f5f9;
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    color: #64748b;
+    transition: all 0.2s;
+    z-index: 2;
+}
+
+.analyse-close-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+}
+
+.analyse-modal-header {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    padding-right: 36px;
+}
+
+.analyse-header-icon {
+    color: #7c3aed;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.analyse-modal-header h2 {
+    margin: 0 0 6px;
+    font-size: 1.35rem;
+    color: #0f172a;
+}
+
+.analyse-modal-header p {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.92rem;
+    line-height: 1.5;
+}
+
+.analyse-jd-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.analyse-jd-input {
+    width: 100%;
+    min-height: 180px;
+    padding: 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.5;
+    resize: vertical;
+    margin-bottom: 12px;
+}
+
+.analyse-jd-input:focus {
+    outline: none;
+    border-color: #a78bfa;
+    box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.2);
+}
+
+.analyse-inline-error {
+    color: #dc2626;
+    font-size: 13px;
+    margin: 0 0 12px;
+}
+
+.analyse-run-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #7c3aed, #6366f1);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.analyse-run-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.35);
+}
+
+.analyse-loading,
+.analyse-error {
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.analyse-loading h3,
+.analyse-error h3 {
+    font-size: 20px;
+    color: #0f172a;
+    margin-bottom: 8px;
+}
+
+.analyse-loading p,
+.analyse-error p {
+    font-size: 14px;
+    color: #64748b;
+}
+
+.analyse-retry-btn {
+    margin-top: 16px;
+    padding: 10px 24px;
+    background: #7c3aed;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.analyse-score-header {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-right: 36px;
+}
+
+.analyse-score-badge {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.analyse-score-badge.green {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.analyse-score-badge.yellow {
+    background: #fef9c3;
+    color: #a16207;
+}
+
+.analyse-score-badge.red {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.analyse-score-header h2 {
+    margin: 0 0 4px;
+    font-size: 1.2rem;
+    color: #0f172a;
+}
+
+.analyse-score-header p {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+.analyse-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.analyse-section-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 16px;
+    background: #f8fafc;
+}
+
+.analyse-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.analyse-section-head h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: #0f172a;
+}
+
+.analyse-applied-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #059669;
+    background: #ecfdf5;
+    padding: 4px 8px;
+    border-radius: 999px;
+}
+
+.analyse-improvements {
+    list-style: none;
+    margin: 0 0 12px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.analyse-improvements li {
+    display: flex;
+    gap: 6px;
+    align-items: flex-start;
+    font-size: 13px;
+    color: #475569;
+    line-height: 1.45;
+}
+
+.analyse-improvements li svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+    color: #7c3aed;
+}
+
+.analyse-suggestion-preview {
+    margin-bottom: 12px;
+}
+
+.analyse-suggestion-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748b;
+    margin-bottom: 6px;
+}
+
+.analyse-suggestion-preview pre {
+    margin: 0;
+    padding: 12px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 12px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: #334155;
+    max-height: 160px;
+    overflow-y: auto;
+}
+
+.analyse-apply-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: white;
+    border: 1px solid #c4b5fd;
+    color: #6d28d9;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.analyse-apply-btn:hover:not(:disabled) {
+    background: #f5f3ff;
+    border-color: #a78bfa;
+}
+
+.analyse-apply-btn.applied,
+.analyse-apply-btn:disabled {
+    opacity: 0.7;
+    cursor: default;
+    background: #ecfdf5;
+    border-color: #86efac;
+    color: #059669;
+}
+
+.analyse-footer-note {
+    margin-top: 16px;
+    padding: 12px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 10px;
+    font-size: 12px;
+    color: #92400e;
+    text-align: center;
+}

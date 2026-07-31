@@ -131,6 +131,87 @@ ${markdown}
     }
 });
 
+// POST AI Analyse CV against Job Description
+router.post('/analyse', async (req, res) => {
+    try {
+        const { markdown, jobDescription } = req.body;
+        if (!markdown || markdown.trim() === '') {
+            return res.status(400).json({ message: 'CV content required for analysis' });
+        }
+        if (!jobDescription || jobDescription.trim() === '') {
+            return res.status(400).json({ message: 'Job description is required' });
+        }
+
+        const truncatedJD = truncateJD(jobDescription);
+
+        const prompt = `Act as an expert CV coach and ATS specialist. Compare the candidate's CV against the Target Job Description and suggest concrete improvements section by section.
+
+Return ONLY valid JSON in this exact format:
+{
+  "matchScore": 72,
+  "summary": "One sentence overall fit assessment against the job.",
+  "sections": [
+    {
+      "id": "summary",
+      "title": "Summary",
+      "improvements": [
+        "Specific improvement tied to the JD",
+        "Another actionable improvement"
+      ],
+      "suggestedContent": "Full rewritten section body in markdown (bullets allowed). Do NOT include the ## heading line."
+    }
+  ]
+}
+
+Rules:
+- Include only sections that exist in the CV OR that are clearly important for this job (summary, experience, projects, education, skills, languages, certifications).
+- Use id values: summary, experience, projects, education, skills, languages, certifications (lowercase).
+- improvements: 2-4 specific, non-generic bullets per section referencing JD keywords/requirements.
+- suggestedContent: complete replacement text for that section only, tailored to the job, preserving truthful facts from the CV — do NOT invent employers, dates, or degrees.
+- matchScore: 0-100 indicating alignment with the job description.
+- Prioritize sections with the weakest JD alignment.
+
+Target Job Description:
+${truncatedJD}
+
+CV Content (markdown):
+${markdown}
+`;
+
+        const { config } = await getSystemConfig();
+        if (!config.GEMINI_API_KEY) {
+            return res.status(500).json({ message: 'Gemini API Key not configured in system settings.' });
+        }
+
+        const ai = new GoogleGenAI({ apiKey: config.GEMINI_API_KEY });
+        const model = config.GEMINI_MODEL || DEFAULT_GEMINI_MODEL;
+
+        const response = await ai.models.generateContent({
+            model,
+            contents: prompt,
+            config: {
+                responseMimeType: 'application/json',
+                maxOutputTokens: 4096,
+            },
+        });
+
+        const cleanText = response.text.replace(/```json|```/g, '').trim();
+        const result = JSON.parse(cleanText);
+
+        if (!Array.isArray(result.sections)) {
+            throw new Error('Invalid analysis response format');
+        }
+
+        res.json(result);
+    } catch (err) {
+        console.error('Analyse Error:', err);
+        if (err.message?.includes('429')) {
+            return res.status(429).json({ message: 'Gemini API quota reached. Please try again shortly.' });
+        }
+        res.status(500).json({ message: 'Failed to analyse CV. Please try again.', error: err.message });
+    }
+});
+
 // POST AI Generation
 router.post('/generate', async (req, res) => {
     try {

@@ -11,7 +11,6 @@ import ErrorBoundary from './Components/ErrorBoundary';
 import { useAuth } from './context/AuthContext';
 import Login from './Components/Login';
 import ResetPassword from './Components/ResetPassword';
-import CVScoringModal from './Components/CVScoringModal';
 import EmptyState from './Components/EmptyState';
 import SystemSetupModal from './Components/SystemSetupModal';
 import { SpeedInsights } from "@vercel/speed-insights/react";
@@ -45,7 +44,6 @@ function App() {
 
   const [cvFormat, setCvFormat] = useState("European");
   const [isWizardOpen, setIsWizardOpen] = useState(false);
-  const [isScoringModalOpen, setIsScoringModalOpen] = useState(false);
   const [backendStatus, setBackendStatus] = useState("checking");
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
   const [needsVerification, setNeedsVerification] = useState(false);
@@ -461,7 +459,6 @@ function App() {
                 onVerificationDismissed={() => setNeedsVerification(false)}
                 onMetaUpdate={handleAutoTitleUpdate}
                 onDownloadPDF={handleDownloadPDF}
-                onScoreCV={() => setIsScoringModalOpen(true)}
                 currentNoteId={currentNote.id}
                 isPreview={isPreviewMode}
                 onPreviewChange={setIsPreviewMode}
@@ -478,12 +475,6 @@ function App() {
         onCreate={(selections) => handleCreateNote("", selections)}
         initialMode={wizardOptions.mode}
         initialStep={wizardOptions.step}
-      />
-
-      <CVScoringModal 
-        isOpen={isScoringModalOpen} 
-        onClose={() => setIsScoringModalOpen(false)} 
-        markdown={currentNote.desc} 
       />
 
       {/* System Settings Modal — auto-opens on first login if not configured */}
