@@ -1,6 +1,10 @@
 import SystemConfig from '../models/SystemConfig.js';
+import UserConfig from '../models/UserConfig.js';
 
 export const DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash-lite';
+export const MASKED_SENTINEL = '__MASKED__';
+export const SENSITIVE_CONFIG_FIELDS = ['JWT_SECRET', 'GEMINI_API_KEY', 'RESEND_API_KEY'];
+export const MASKABLE_CONFIG_FIELDS = [...SENSITIVE_CONFIG_FIELDS, 'EMAIL_FROM'];
 
 const PLACEHOLDERS = [
     'your_jwt_secret_key',
@@ -17,6 +21,65 @@ export const isPlaceholderOrEmpty = (val) => {
     const trimmed = val.trim();
     if (trimmed === '') return true;
     return PLACEHOLDERS.some(p => trimmed.toLowerCase() === p.toLowerCase());
+};
+
+const buildConfigObject = (source, extras = {}) => ({
+    GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
+    JWT_SECRET: source.JWT_SECRET || '',
+    GEMINI_API_KEY: source.GEMINI_API_KEY || '',
+    GEMINI_MODEL: source.GEMINI_MODEL || DEFAULT_GEMINI_MODEL,
+    RESEND_API_KEY: source.RESEND_API_KEY || '',
+    EMAIL_FROM: source.EMAIL_FROM || '',
+    isConfigured: Boolean(source.isConfigured),
+    updatedBy: source.updatedBy || source.userId || '',
+    ...extras,
+});
+
+export const maskConfigForClient = (config, maskedFields = []) => {
+    const clientConfig = { ...config };
+    for (const field of maskedFields) {
+        if (clientConfig[field]) {
+            clientConfig[field] = MASKED_SENTINEL;
+        }
+    }
+    clientConfig.maskedFields = maskedFields;
+    clientConfig.hasUserConfig = Boolean(config.hasUserConfig);
+    return clientConfig;
+};
+
+/**
+ * Returns config for a specific user (UserConfig) or falls back to global SystemConfig.
+ */
+export const getEffectiveConfig = async (userId = null) => {
+    try {
+        if (userId) {
+            const userConfigDoc = await UserConfig.findOne({ userId: String(userId) });
+            if (userConfigDoc) {
+                return {
+                    configDoc: userConfigDoc,
+                    isUserConfig: true,
+                    config: buildConfigObject(userConfigDoc, {
+                        hasUserConfig: true,
+                        maskedFields: userConfigDoc.maskedFields || [],
+                    }),
+                };
+            }
+        }
+
+        const system = await getSystemConfig();
+        return {
+            ...system,
+            isUserConfig: false,
+            config: {
+                ...system.config,
+                hasUserConfig: false,
+                maskedFields: [],
+            },
+        };
+    } catch (err) {
+        console.error('getEffectiveConfig Error:', err);
+        return getSystemConfig();
+    }
 };
 
 /**

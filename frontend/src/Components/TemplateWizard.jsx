@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { LuX, LuChevronLeft, LuCheck } from "react-icons/lu";
 import { validateWizardAiFields, hasValidationErrors } from "../utils/cvValidation";
+import { useAuth } from "../context/AuthContext";
 
 const steps = [
     { id: "mode", title: "Choose Your Creation Mode" },
@@ -69,6 +70,7 @@ const experienceLevels = [
 
 
 export default function TemplateWizard({ isOpen, onClose, onCreate, initialMode = "select", initialStep = 0 }) {
+    const { getUserId } = useAuth();
     const [currentStep, setCurrentStep] = useState(initialStep);
     const [wizardMode, setWizardMode] = useState(initialMode); // 'select', 'manual', 'ai'
 
@@ -161,7 +163,8 @@ export default function TemplateWizard({ isOpen, onClose, onCreate, initialMode 
                     city: selections.city,
                     linkedin: selections.linkedin,
                     github: selections.github,
-                    experienceYears: selections.experienceYears
+                    experienceYears: selections.experienceYears,
+                    userId: getUserId(),
                 })
             });
 
@@ -203,7 +206,8 @@ export default function TemplateWizard({ isOpen, onClose, onCreate, initialMode 
                     qualification: selections.ai_education,
                     years: selections.experienceYears,
                     institute: selections.ai_school,
-                    jd: selections.ai_jd
+                    jd: selections.ai_jd,
+                    userId: getUserId(),
                 })
             });
 

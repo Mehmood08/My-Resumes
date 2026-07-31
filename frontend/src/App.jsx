@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Sidebar from "./Components/Sidebar";
 import MarkdownEditor from "./Components/MarkdownEditor";
 import TemplateWizard from "./Components/TemplateWizard";
@@ -19,17 +19,22 @@ import { LuTrash2 } from "react-icons/lu";
 function App() {
   const { user, getUserId } = useAuth();
   const [resetToken, setResetToken] = useState(null);
+  const [inviteToken, setInviteToken] = useState(null);
 
   // System settings state (available after login)
   const [existingConfig, setExistingConfig] = useState(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   useEffect(() => {
-    // Check if URL is a reset password link
     const path = window.location.pathname;
     if (path.startsWith('/reset-password/')) {
       const token = path.split('/').pop();
       if (token) setResetToken(token);
+    }
+    if (path.startsWith('/register')) {
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get('invite');
+      if (token) setInviteToken(token);
     }
   }, []);
 
@@ -50,6 +55,10 @@ function App() {
   const [wizardOptions, setWizardOptions] = useState({ mode: 'select', step: 0 });
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+
+  const handleVerificationDismissed = useCallback(() => {
+    setNeedsVerification(false);
+  }, []);
 
   useEffect(() => {
     if (!user) {
@@ -421,7 +430,7 @@ function App() {
   };
 
   if (resetToken) return <ResetPassword token={resetToken} onBackToLogin={handleBackToLogin} />;
-  if (!user) return <Login />;
+  if (!user) return <Login inviteToken={inviteToken} />;
 
   const hasResumes = notes.length > 0;
   const shouldShowEditor = currentNote.id !== null || currentNote.isDraft;
@@ -456,7 +465,7 @@ function App() {
                 onSave={handleSaveNote}
                 onStartWizard={openCreateWizard}
                 needsVerification={needsVerification}
-                onVerificationDismissed={() => setNeedsVerification(false)}
+                onVerificationDismissed={handleVerificationDismissed}
                 onMetaUpdate={handleAutoTitleUpdate}
                 onDownloadPDF={handleDownloadPDF}
                 currentNoteId={currentNote.id}

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import './CVAnalyseModal.css';
 import { LuX, LuSparkles, LuCheck, LuInfo, LuChevronRight } from 'react-icons/lu';
+import { useAuth } from '../context/AuthContext';
 
 export default function CVAnalyseModal({ isOpen, onClose, markdown, onApplySection }) {
+    const { getUserId } = useAuth();
     const [jobDescription, setJobDescription] = useState('');
     const [status, setStatus] = useState('input'); // input, loading, success, error
     const [analysis, setAnalysis] = useState(null);
@@ -35,7 +37,7 @@ export default function CVAnalyseModal({ isOpen, onClose, markdown, onApplySecti
             const response = await fetch(`${import.meta.env.VITE_API_URL}/api/resumes/analyse`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ markdown, jobDescription: jobDescription.trim() }),
+                body: JSON.stringify({ markdown, jobDescription: jobDescription.trim(), userId: getUserId() }),
             });
 
             const data = await response.json();

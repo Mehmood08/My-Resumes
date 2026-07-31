@@ -4,6 +4,17 @@ import ImageCropperModal from './ImageCropperModal';
 import { LuPlus, LuInfo, LuLightbulb, LuTrash2, LuChevronLeft, LuCheck, LuBold, LuItalic, LuHeading, LuList, LuListOrdered } from "react-icons/lu";
 import { validateHeadingFields, hasValidationErrors } from '../utils/cvValidation';
 
+const WIZARD_STEPS = [
+    { id: 'heading', label: 'Heading', emoji: '👤' },
+    { id: 'summary', label: 'Summary', emoji: '📝', tip: "Keep it brief (3-4 sentences). Focus on your biggest achievements." },
+    { id: 'experience', label: 'Experience', emoji: '💼', helper: 'experience', tip: "Use action verbs (e.g., 'Led', 'Developed'). Quantify results where possible." },
+    { id: 'projects', label: 'Projects', emoji: '🚀', helper: 'projects', tip: "Highlight the tech stack and the problem you solved." },
+    { id: 'education', label: 'Education', emoji: '🎓', helper: 'education', tip: "List your most recent degree first." },
+    { id: 'skills', label: 'Skills', emoji: '⚡', helper: 'skills', tip: "Mix hard skills (e.g., Python) and soft skills (e.g., Leadership)." },
+    { id: 'languages', label: 'Languages', emoji: '🌐', helper: 'languages' },
+    { id: 'certifications', label: 'Certifications', emoji: '🏆', helper: 'certifications' }
+];
+
 const GuidedEditor = forwardRef(({ markdown, onChange, onSave, onStartWizard, needsVerification, onVerificationDismissed, onMetaUpdate, onVerifyStateChange }, ref) => {
     const [currentStep, setCurrentStep] = useState(0);
     const [showHelper, setShowHelper] = useState(false);
@@ -25,7 +36,7 @@ const GuidedEditor = forwardRef(({ markdown, onChange, onSave, onStartWizard, ne
             if (!isVerificationInitialized.current && markdown && currentStep !== -1) {
                 setShowVerificationPopup(true); // Safely trigger side-effect outside of updater
                 const initial = {};
-                steps.forEach(s => { initial[s.id] = false; });
+                WIZARD_STEPS.forEach(s => { initial[s.id] = false; });
                 setVerifiedSections(initial);
                 isVerificationInitialized.current = true;
             }
@@ -96,17 +107,6 @@ const GuidedEditor = forwardRef(({ markdown, onChange, onSave, onStartWizard, ne
         }
     }, [personalInfo.firstName, personalInfo.lastName, personalInfo.profession]);
 
-    const steps = [
-        { id: 'heading', label: 'Heading', emoji: '👤' },
-        { id: 'summary', label: 'Summary', emoji: '📝', tip: "Keep it brief (3-4 sentences). Focus on your biggest achievements." },
-        { id: 'experience', label: 'Experience', emoji: '💼', helper: 'experience', tip: "Use action verbs (e.g., 'Led', 'Developed'). Quantify results where possible." },
-        { id: 'projects', label: 'Projects', emoji: '🚀', helper: 'projects', tip: "Highlight the tech stack and the problem you solved." },
-        { id: 'education', label: 'Education', emoji: '🎓', helper: 'education', tip: "List your most recent degree first." },
-        { id: 'skills', label: 'Skills', emoji: '⚡', helper: 'skills', tip: "Mix hard skills (e.g., Python) and soft skills (e.g., Leadership)." },
-        { id: 'languages', label: 'Languages', emoji: '🌐', helper: 'languages' },
-        { id: 'certifications', label: 'Certifications', emoji: '🏆', helper: 'certifications' }
-    ];
-
     const currentStepRef = useRef(currentStep);
     useEffect(() => { currentStepRef.current = currentStep; }, [currentStep]);
 
@@ -137,10 +137,10 @@ const GuidedEditor = forwardRef(({ markdown, onChange, onSave, onStartWizard, ne
         },
         verifyCurrentSection: () => {
             const step = currentStepRef.current;
-            const stepId = steps[step]?.id;
+            const stepId = WIZARD_STEPS[step]?.id;
             if (!stepId) return;
             setVerifiedSections(prev => ({ ...prev, [stepId]: true }));
-            if (step < steps.length - 1) {
+            if (step < WIZARD_STEPS.length - 1) {
                 setTimeout(() => setCurrentStep(step + 1), 300);
             }
         },
@@ -317,7 +317,7 @@ const GuidedEditor = forwardRef(({ markdown, onChange, onSave, onStartWizard, ne
         const start = toolbarState.selectionStart;
         const end = toolbarState.selectionEnd;
         
-        const step = steps[currentStep];
+        const step = WIZARD_STEPS[currentStep];
         const suggestedTitle = step.label.toUpperCase();
         const sectionIndex = sections.findIndex(s => {
             const title = s.title.toUpperCase();
@@ -454,7 +454,7 @@ const GuidedEditor = forwardRef(({ markdown, onChange, onSave, onStartWizard, ne
     };
 
     const handleHelperSave = (content) => {
-        const step = steps[currentStep];
+        const step = WIZARD_STEPS[currentStep];
         const matchTitle = step.id === 'summary' ? 'PROFESSIONAL SUMMARY' :
             step.id === 'experience' ? 'EXPERIENCE' :
                 step.id === 'projects' ? 'PROJECTS' :
@@ -560,7 +560,7 @@ const GuidedEditor = forwardRef(({ markdown, onChange, onSave, onStartWizard, ne
     };
 
     const renderStepContent = () => {
-        const step = steps[currentStep];
+        const step = WIZARD_STEPS[currentStep];
 
         if (step.id === 'heading') {
             return (
@@ -815,12 +815,14 @@ const GuidedEditor = forwardRef(({ markdown, onChange, onSave, onStartWizard, ne
     const isStepComplete = (stepId) => getStepFillRatio(stepId) === 1;
 
     const completionPercent = Math.round(
-        (steps.reduce((sum, s) => sum + getStepFillRatio(s.id), 0) / steps.length) * 100
+        (WIZARD_STEPS.reduce((sum, s) => sum + getStepFillRatio(s.id), 0) / WIZARD_STEPS.length) * 100
     );
 
     const allVerified = needsVerification && Object.keys(verifiedSections).length > 0 && Object.values(verifiedSections).every(v => v);
     const verifiedCount = Object.values(verifiedSections).filter(v => v).length;
-    const totalSections = steps.length;
+    const totalSections = WIZARD_STEPS.length;
+
+    const lastVerifyStateRef = useRef({ active: false, verified: false });
 
     // Auto-unlock main save button when all sections are verified
     useEffect(() => {
@@ -831,11 +833,15 @@ const GuidedEditor = forwardRef(({ markdown, onChange, onSave, onStartWizard, ne
 
     useEffect(() => {
         if (!onVerifyStateChange) return;
-        onVerifyStateChange({
+        const next = {
             active: needsVerification && currentStep >= 0,
-            verified: !!verifiedSections[steps[currentStep]?.id],
-        });
-    }, [needsVerification, currentStep, verifiedSections, onVerifyStateChange, steps]);
+            verified: !!verifiedSections[WIZARD_STEPS[currentStep]?.id],
+        };
+        const prev = lastVerifyStateRef.current;
+        if (prev.active === next.active && prev.verified === next.verified) return;
+        lastVerifyStateRef.current = next;
+        onVerifyStateChange(next);
+    }, [needsVerification, currentStep, verifiedSections, onVerifyStateChange]);
 
     return (
         <div className="wizard-container">
@@ -876,7 +882,7 @@ const GuidedEditor = forwardRef(({ markdown, onChange, onSave, onStartWizard, ne
                 <div className="wizard-sidebar-header">CV Sections</div>
                 <div className="wizard-steps-list">
 
-                    {steps.map((step, idx) => (
+                    {WIZARD_STEPS.map((step, idx) => (
                         <div
                             key={step.id}
                             className={`wizard-step-item ${idx === currentStep ? 'active' : ''} ${isStepComplete(step.id) ? 'completed' : ''}`}
@@ -936,8 +942,8 @@ const GuidedEditor = forwardRef(({ markdown, onChange, onSave, onStartWizard, ne
                 {/* Mobile-only context banner */}
                 {currentStep !== -1 && (
                     <div className="mobile-step-banner mobile-only">
-                        <span className="mb-step-indicator">STEP {currentStep + 1} OF {steps.length}</span>
-                        <h4 className="mb-step-title">{steps[currentStep].label}</h4>
+                        <span className="mb-step-indicator">STEP {currentStep + 1} OF {WIZARD_STEPS.length}</span>
+                        <h4 className="mb-step-title">{WIZARD_STEPS[currentStep].label}</h4>
                     </div>
                 )}
 

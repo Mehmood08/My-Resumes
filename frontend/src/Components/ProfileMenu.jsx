@@ -1,11 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { LuLogOut, LuUser } from 'react-icons/lu';
+import { LuLogOut, LuUser, LuUserPlus } from 'react-icons/lu';
+import InviteModal from './InviteModal';
 
 export default function ProfileMenu({ variant = 'default' }) {
   const { user, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [isInviteOpen, setIsInviteOpen] = useState(false);
   const menuRef = useRef(null);
 
   useEffect(() => {
@@ -57,6 +59,18 @@ export default function ProfileMenu({ variant = 'default' }) {
               role="menuitem"
               onClick={() => {
                 setIsOpen(false);
+                setIsInviteOpen(true);
+              }}
+            >
+              <LuUserPlus size={16} />
+              Invite User
+            </button>
+            <button
+              type="button"
+              className="profile-menu-signout"
+              role="menuitem"
+              onClick={() => {
+                setIsOpen(false);
                 setShowLogoutConfirm(true);
               }}
             >
@@ -86,6 +100,8 @@ export default function ProfileMenu({ variant = 'default' }) {
           </div>
         </div>
       )}
+
+      <InviteModal isOpen={isInviteOpen} onClose={() => setIsInviteOpen(false)} />
     </>
   );
 }

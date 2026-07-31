@@ -6,12 +6,35 @@ import crypto from 'crypto';
 import User from '../models/User.js';
 import sendEmail from '../utils/sendEmail.js';
 import { getSystemConfig } from '../utils/configHelper.js';
+import normalizeEmail from '../utils/normalizeEmail.js';
+import {
+    validateInviteToken,
+    acceptInvite,
+    copyInviterSettingsToUser,
+} from '../utils/inviteHelper.js';
 
 const router = express.Router();
 
+async function applyInviteToNewUser(user, inviteToken, email) {
+    if (!inviteToken) return;
+
+    const validation = await validateInviteToken(inviteToken);
+    if (!validation.valid) {
+        throw new Error(validation.message);
+    }
+    if (validation.email !== email) {
+        throw new Error('This invitation was sent to a different email address.');
+    }
+
+    user.invitedBy = validation.invite.fromUserId;
+    await user.save();
+    await copyInviterSettingsToUser(validation.invite.fromUserId, user._id.toString());
+    await acceptInvite(validation.invite, user._id.toString(), email);
+}
+
 // Google Auth
 router.post('/google', async (req, res) => {
-    const { token } = req.body;
+    const { token, inviteToken } = req.body;
     
     // GOOGLE_CLIENT_ID always comes from process.env (not DB)
     const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID ;
@@ -29,23 +52,41 @@ router.post('/google', async (req, res) => {
             audience: GOOGLE_CLIENT_ID
         });
 
-        const { sub, email, name, picture } = ticket.getPayload();
+        const { sub, email: rawEmail, name, picture } = ticket.getPayload();
+        const email = normalizeEmail(rawEmail);
+        if (!email) {
+            return res.status(400).json({ message: "No email provided by Google account." });
+        }
         console.log("✅ Token verified for:", email);
 
         let user = await User.findOne({ email });
-        // ... user creation logic remains same ...
+
         if (!user) {
+            if (inviteToken) {
+                const validation = await validateInviteToken(inviteToken);
+                if (!validation.valid) {
+                    return res.status(400).json({ message: validation.message });
+                }
+                if (validation.email !== email) {
+                    return res.status(400).json({ message: 'Google account email must match the invited address.' });
+                }
+            }
+
             user = new User({ googleId: sub, email, name, picture });
             await user.save();
+            if (inviteToken) {
+                await applyInviteToNewUser(user, inviteToken, email);
+            }
         } else if (!user.googleId) {
             user.googleId = sub;
             if (!user.picture) user.picture = picture;
             await user.save();
         }
 
+        const { config } = await getSystemConfig();
         const sessionToken = jwt.sign(
             { id: user._id, email: user.email },
-            config.JWT_SECRET ,
+            config.JWT_SECRET,
             { expiresIn: '7d' }
         );
 
@@ -74,21 +115,44 @@ router.post('/google', async (req, res) => {
 
 // Register
 router.post('/register', async (req, res) => {
-    const { email, password, name } = req.body;
+    const email = normalizeEmail(req.body.email);
+    const { password, name, confirmPassword, inviteToken } = req.body;
+    if (!email) {
+        return res.status(400).json({ message: "A valid email is required." });
+    }
+    if (!password || password.length < 6) {
+        return res.status(400).json({ message: "Password must be at least 6 characters." });
+    }
+    if (password !== confirmPassword) {
+        return res.status(400).json({ message: "Passwords do not match." });
+    }
     try {
+        if (inviteToken) {
+            const validation = await validateInviteToken(inviteToken);
+            if (!validation.valid) {
+                return res.status(400).json({ message: validation.message });
+            }
+            if (validation.email !== email) {
+                return res.status(400).json({ message: "Email must match the invited address." });
+            }
+        }
+
         let user = await User.findOne({ email });
         const hashedPassword = await bcrypt.hash(password, 10);
 
         if (user) {
-            // No matter if it's a Google account or Password account, don't allow registration
             return res.status(400).json({ message: "An account already exists with this email. Please Login instead or use Forgot Password." });
         }
 
-        // Case 3: Completely new user
         user = new User({ email, password: hashedPassword, name });
         await user.save();
-        user.googleId = user._id.toString(); // Fallback ID
+        user.googleId = user._id.toString();
         await user.save();
+
+        if (inviteToken) {
+            await applyInviteToNewUser(user, inviteToken, email);
+        }
+
         console.log(`New user registered: ${email}`);
 
         const { config } = await getSystemConfig();
@@ -97,13 +161,20 @@ router.post('/register', async (req, res) => {
         res.status(201).json({ token, user: userData });
     } catch (err) {
         console.error("Register Error:", err);
+        if (err.code === 11000) {
+            return res.status(400).json({ message: "An account already exists with this email. Please Login instead or use Forgot Password." });
+        }
         res.status(500).json({ message: "Server error during registration." });
     }
 });
 
 // Login
 router.post('/login', async (req, res) => {
-    const { email, password } = req.body;
+    const email = normalizeEmail(req.body.email);
+    const { password } = req.body;
+    if (!email) {
+        return res.status(400).json({ message: "A valid email is required." });
+    }
     try {
         const user = await User.findOne({ email });
         if (!user) {
@@ -135,8 +206,11 @@ router.post('/login', async (req, res) => {
 
 // Forgot Password
 router.post('/forgot-password', async (req, res) => {
-    const { email } = req.body;
+    const email = normalizeEmail(req.body.email);
     console.log('Forgot password request for:', email);
+    if (!email) {
+        return res.json({ message: "If an account exists with this email, a reset link has been sent." });
+    }
     try {
         const user = await User.findOne({ email });
         if (!user) {

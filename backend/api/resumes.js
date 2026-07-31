@@ -3,10 +3,16 @@ import multer from 'multer';
 import Resume from '../models/Resume.js';
 import mongoose from 'mongoose';
 import { GoogleGenAI } from '@google/genai';
-import { getSystemConfig, DEFAULT_GEMINI_MODEL } from '../utils/configHelper.js';
+import { getEffectiveConfig, DEFAULT_GEMINI_MODEL } from '../utils/configHelper.js';
 import { extractContentFromFile, getFileExtension, importCvFromContent } from '../utils/cvImport.js';
 
 const router = express.Router();
+
+const getAiConfig = async (req) => {
+    const userId = req.body?.userId || req.query?.userId || null;
+    const { config } = await getEffectiveConfig(userId);
+    return config;
+};
 
 const upload = multer({
     storage: multer.memoryStorage(),
@@ -105,7 +111,7 @@ CV Content:
 ${markdown}
 `;
 
-        const { config } = await getSystemConfig();
+        const config = await getAiConfig(req);
         if (!config.GEMINI_API_KEY) {
             return res.status(500).json({ message: "Gemini API Key not configured in system settings." });
         }
@@ -178,7 +184,7 @@ CV Content (markdown):
 ${markdown}
 `;
 
-        const { config } = await getSystemConfig();
+        const config = await getAiConfig(req);
         if (!config.GEMINI_API_KEY) {
             return res.status(500).json({ message: 'Gemini API Key not configured in system settings.' });
         }
@@ -277,7 +283,7 @@ ${linksLine}
 4. Return ONLY a JSON object: { "markdown": "CV_HERE" }
 `;
 
-        const { config } = await getSystemConfig();
+        const config = await getAiConfig(req);
         if (!config.GEMINI_API_KEY) {
             console.error("Missing GEMINI_API_KEY in system settings");
             return res.status(500).json({ message: "API Key not configured", error: "Please configure GEMINI_API_KEY in System Settings" });
@@ -345,7 +351,7 @@ router.post('/suggest-experience', async (req, res) => {
         ---` : ""}
         DO NOT invent company names, specific dates, or fake projects. Focus on highlighting skills and achievements that align with the job requirements. Keep it professional. DO NOT wrap the output in markdown blockquotes or json, just return the plain string text.`;
 
-        const { config } = await getSystemConfig();
+        const config = await getAiConfig(req);
         if (!config.GEMINI_API_KEY) {
             return res.status(500).json({ message: "API Key not configured" });
         }
