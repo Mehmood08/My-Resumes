@@ -18,10 +18,11 @@ export default function MarkdownEditor({
   onDownloadPDF,
   onScoreCV,
   currentNoteId,
+  isPreview,
+  onPreviewChange,
 }) {
   const [localMarkdown, setLocalMarkdown] = useState(markdownValue);
   const [previewMarkdown, setPreviewMarkdown] = useState(markdownValue);
-  const [isPreview, setIsPreview] = useState(false);
   const [verifyState, setVerifyState] = useState({ active: false, verified: false });
   const guidedEditorRef = useRef();
 
@@ -49,10 +50,10 @@ export default function MarkdownEditor({
     setPreviewMarkdown(latest);
     setLocalMarkdown(latest);
     onMarkdownChange(latest);
-    setIsPreview(true);
+    onPreviewChange?.(true);
   };
 
-  const closePreview = () => setIsPreview(false);
+  const closePreview = () => onPreviewChange?.(false);
 
   const togglePreview = () => {
     if (isPreview) closePreview();

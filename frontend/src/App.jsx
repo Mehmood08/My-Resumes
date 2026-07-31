@@ -49,6 +49,7 @@ function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
   const [needsVerification, setNeedsVerification] = useState(false);
   const [wizardOptions, setWizardOptions] = useState({ mode: 'select', step: 0 });
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -193,6 +194,7 @@ function App() {
       });
       setCvFormat(format);
       setIsDirty(true);
+      setIsPreviewMode(false);
     } else {
 
       // Manual creation (Initial state or empty)
@@ -297,6 +299,7 @@ function App() {
             setNotes(notes.filter(n => n.id !== id));
             if (currentNote.id === id) {
               setCurrentNote({ title: "", desc: "", script: "", id: null, parentId: "", isDraft: false });
+              setIsPreviewMode(false);
               setIsDirty(false);
             }
           }
@@ -399,6 +402,8 @@ function App() {
                 onDownloadPDF={handleDownloadPDF}
                 onScoreCV={() => setIsScoringModalOpen(true)}
                 currentNoteId={currentNote.id}
+                isPreview={isPreviewMode}
+                onPreviewChange={setIsPreviewMode}
               />
             </ErrorBoundary>
           </div>
