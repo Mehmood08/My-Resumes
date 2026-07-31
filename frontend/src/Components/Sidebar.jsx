@@ -67,7 +67,7 @@ function Sidebar({
         <div className="sidebar-header">
           <div className="sidebar-header-row">
             <div className="sidebar-brand">
-              <h3 className="sidebar-brand-title">Resume Builder</h3>
+              <h3 className="sidebar-brand-title">My Resumes</h3>
             </div>
             <button
               className="sidebar-collapse-btn"

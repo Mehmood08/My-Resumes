@@ -704,11 +704,6 @@ const GuidedEditor = forwardRef(({ markdown, onChange, onSave, onStartWizard, ne
                                 placeholder={suggestedTitle}
                             />
                         </div>
-                        {step.helper && (
-                            <button className="add-item-btn" onClick={() => setShowHelper(true)}>
-                                <LuPlus /> Add {step.label.slice(0, -1)}
-                            </button>
-                        )}
                     </div>
                 </div>
 
@@ -720,7 +715,14 @@ const GuidedEditor = forwardRef(({ markdown, onChange, onSave, onStartWizard, ne
                 )}
 
                 <div className="form-group full-width" style={{ position: 'relative' }}>
-                    <label>Section Content</label>
+                    <div className="section-content-header">
+                        <label>Section Content</label>
+                        {step.helper && (
+                            <button type="button" className="add-item-btn add-item-btn-inline" onClick={() => setShowHelper(true)}>
+                                <LuPlus size={14} /> Add {step.label.slice(0, -1)}
+                            </button>
+                        )}
+                    </div>
                     <textarea
                         ref={textAreaRef}
                         className="wizard-textarea"
