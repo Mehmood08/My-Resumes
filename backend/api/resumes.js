@@ -158,11 +158,26 @@ Return ONLY valid JSON in this exact format:
   "summary": "One sentence overall fit assessment against the job.",
   "sections": [
     {
-      "id": "summary",
-      "title": "Summary",
+      "id": "experience",
+      "title": "Experience",
       "improvements": [
         "Specific improvement tied to the JD",
         "Another actionable improvement"
+      ],
+      "existingBullets": [
+        "Strong bullet from the CV to keep (verbatim or lightly edited)"
+      ],
+      "newBullets": [
+        "Entirely new bullet addressing a JD gap — use placeholders like [Metric] if facts are unknown"
+      ],
+      "suggestedBullets": [
+        {
+          "original": "Weak or generic bullet currently in the CV",
+          "suggested": "Rewritten version tailored to the JD with stronger impact"
+        }
+      ],
+      "deletedBullets": [
+        "Bullet from the CV that should be removed for this job"
       ],
       "suggestedContent": "Full rewritten section body in markdown (bullets allowed). Do NOT include the ## heading line."
     }
@@ -173,7 +188,13 @@ Rules:
 - Include only sections that exist in the CV OR that are clearly important for this job (summary, experience, projects, education, skills, languages, certifications).
 - Use id values: summary, experience, projects, education, skills, languages, certifications (lowercase).
 - improvements: 2-4 specific, non-generic bullets per section referencing JD keywords/requirements.
-- suggestedContent: complete replacement text for that section only, tailored to the job, preserving truthful facts from the CV — do NOT invent employers, dates, or degrees.
+- existingBullets: bullets from the CV that already align well with the JD — keep wording close to the original.
+- newBullets: bullets NOT currently in the CV that would strengthen JD alignment — do NOT invent employers, dates, or degrees; use truthful facts or clear placeholders.
+- suggestedBullets: pairs where an existing CV bullet should be rewritten; "original" must reflect actual CV content.
+- deletedBullets: bullets currently in the CV that should be removed for this job (not kept, not rewritten).
+- For paragraph sections (e.g. summary), use existingBullets for the current paragraph text and put the rewritten paragraph in suggestedBullets[0].suggested (with original in suggestedBullets[0].original); newBullets may be empty.
+- For bulleted sections, each bullet in suggestedContent must appear in existingBullets, newBullets, or suggestedBullets.suggested — no duplicates.
+- suggestedContent: complete replacement text for that section only, merging kept + rewritten + new bullets in logical order — tailored to the job, preserving truthful facts.
 - matchScore: 0-100 indicating alignment with the job description.
 - Prioritize sections with the weakest JD alignment.
 

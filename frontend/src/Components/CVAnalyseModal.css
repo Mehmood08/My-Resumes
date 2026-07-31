@@ -13,7 +13,7 @@
     background: #ffffff;
     border-radius: 20px;
     width: 92%;
-    max-width: 680px;
+    max-width: 760px;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
     position: relative;
     overflow-y: auto;
@@ -219,6 +219,12 @@
     gap: 14px;
 }
 
+.analyse-section-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
 .analyse-section-card {
     border: 1px solid #e2e8f0;
     border-radius: 14px;
@@ -254,87 +260,152 @@
     border-radius: 999px;
 }
 
-.analyse-improvements {
+.analyse-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    background: #e2e8f0;
+    border-radius: 10px;
+    margin-bottom: 0;
+}
+
+.analyse-section-tips {
     list-style: none;
-    margin: 0 0 12px;
-    padding: 0;
+    margin: 10px 0 12px;
+    padding: 10px 12px;
     display: flex;
     flex-direction: column;
     gap: 6px;
+    background: #faf5ff;
+    border-radius: 10px;
+    border: 1px solid #e9d5ff;
 }
 
-.analyse-improvements li {
-    display: flex;
-    gap: 6px;
-    align-items: flex-start;
+.analyse-section-tips li {
+    position: relative;
+    padding-left: 14px;
     font-size: 13px;
-    color: #475569;
     line-height: 1.45;
+    font-weight: 500;
 }
 
-.analyse-improvements li svg {
-    flex-shrink: 0;
-    margin-top: 2px;
-    color: #7c3aed;
+.analyse-section-tips li::before {
+    content: '•';
+    position: absolute;
+    left: 0;
+    font-weight: 700;
 }
 
-.analyse-suggestion-preview {
-    margin-bottom: 12px;
+.analyse-tip-colour-0 { color: #7c3aed; }
+.analyse-tip-colour-0::before { color: #7c3aed; }
+
+.analyse-tip-colour-1 { color: #2563eb; }
+.analyse-tip-colour-1::before { color: #2563eb; }
+
+.analyse-tip-colour-2 { color: #059669; }
+.analyse-tip-colour-2::before { color: #059669; }
+
+.analyse-tip-colour-3 { color: #d97706; }
+.analyse-tip-colour-3::before { color: #d97706; }
+
+.analyse-tab {
+    flex: 1;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.15s;
 }
 
-.analyse-suggestion-label {
-    display: block;
+.analyse-tab.active {
+    background: white;
+    color: #0f172a;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.analyse-tab-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.analyse-field-label {
     font-size: 11px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.04em;
     color: #64748b;
-    margin-bottom: 6px;
 }
 
-.analyse-suggestion-preview pre {
-    margin: 0;
+.analyse-suggested-toolbar {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.analyse-section-textarea {
+    width: 100%;
+    min-height: 120px;
     padding: 12px;
-    background: white;
     border: 1px solid #e2e8f0;
     border-radius: 10px;
     font-family: inherit;
-    font-size: 12px;
+    font-size: 13px;
     line-height: 1.5;
-    white-space: pre-wrap;
-    word-break: break-word;
+    resize: vertical;
+    background: white;
     color: #334155;
-    max-height: 160px;
-    overflow-y: auto;
 }
 
-.analyse-apply-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 14px;
-    background: white;
-    border: 1px solid #c4b5fd;
-    color: #6d28d9;
+.analyse-section-textarea:focus {
+    outline: none;
+    border-color: #a78bfa;
+    box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.15);
+}
+
+.analyse-save-btn,
+.analyse-replace-btn {
+    align-self: flex-start;
+    padding: 8px 16px;
     border-radius: 8px;
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.15s;
+    border: none;
 }
 
-.analyse-apply-btn:hover:not(:disabled) {
-    background: #f5f3ff;
-    border-color: #a78bfa;
+.analyse-save-btn {
+    background: #059669;
+    color: white;
 }
 
-.analyse-apply-btn.applied,
-.analyse-apply-btn:disabled {
-    opacity: 0.7;
+.analyse-save-btn:hover:not(:disabled) {
+    background: #047857;
+}
+
+.analyse-save-btn:disabled {
+    background: #e2e8f0;
+    color: #94a3b8;
     cursor: default;
-    background: #ecfdf5;
-    border-color: #86efac;
-    color: #059669;
+}
+
+.analyse-replace-btn {
+    background: #2563eb;
+    color: white;
+}
+
+.analyse-replace-btn:hover:not(:disabled) {
+    background: #1d4ed8;
+}
+
+.analyse-replace-btn:disabled {
+    background: #e2e8f0;
+    color: #94a3b8;
+    cursor: default;
 }
 
 .analyse-footer-note {
