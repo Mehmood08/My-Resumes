@@ -1,83 +1,15 @@
 import React, { useState, useRef, useEffect } from "react";
-import MarkdownToolbar from "./MarkdownToolbar";
 import "./professionalEditor.css";
 import CVPreview from "./CVPreview";
 import GuidedEditor from "./GuidedEditor";
+import CVAnalyseModal from "./CVAnalyseModal";
+import CVScoringModal from "./CVScoringModal";
 import { layouts } from "./templatesData";
-import { LuCheck, LuDownload } from "react-icons/lu";
-
-/* =========================================================
-   MiniCVCard — Dynamically scales a full CV to fit any card.
-   Uses ResizeObserver for pixel-perfect, always-correct scale.
-========================================================= */
-const CV_NATIVE_WIDTH = 794; // A4 page at 96dpi in pixels
-const CV_NATIVE_HEIGHT = 750;  // Reduced to show top portion only, making cards more compact
-
-function MiniCVCard({ markdown, formatId }) {
-  const containerRef = useRef(null);
-  const [scale, setScale] = useState(0.3);
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const observer = new ResizeObserver(entries => {
-      const width = entries[0].contentRect.width;
-      if (width > 0) setScale(width / CV_NATIVE_WIDTH);
-    });
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  const containerHeight = Math.round(CV_NATIVE_HEIGHT * scale);
-
-  return (
-    <div
-      ref={containerRef}
-      style={{
-        width: '100%',
-        height: `${containerHeight}px`,
-        overflow: 'hidden',
-        position: 'relative',
-        borderRadius: '8px',
-        border: '1px solid #e2e8f0',
-        background: 'white',
-        flexShrink: 0,
-      }}
-    >
-      <div style={{
-        width: `${CV_NATIVE_WIDTH}px`,
-        transform: `scale(${scale})`,
-        transformOrigin: 'top left',
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        pointerEvents: 'none',
-      }}>
-        {/* Strip the CVPreview's own gray padding & background */}
-        <style>{`
-          .minicv-inner .cv-preview {
-            background: white !important;
-            padding: 0 !important;
-            min-height: 0 !important;
-            overflow: hidden !important;
-            align-items: flex-start !important;
-          }
-        `}</style>
-        <div className="minicv-inner">
-          <CVPreview markdown={markdown} format={formatId} />
-        </div>
-      </div>
-    </div>
-  );
-}
+import { LuEye, LuDownload, LuPenLine, LuSave, LuCheck, LuSparkles, LuChartBar } from "react-icons/lu";
 
 export default function MarkdownEditor({
   markdownValue,
   onMarkdownChange,
-  scriptValue,
-  onScriptChange,
-  activeTab,
-  onTabChange,
   cvFormat,
   onFormatChange,
   onSave,
@@ -86,163 +18,240 @@ export default function MarkdownEditor({
   onVerificationDismissed,
   onMetaUpdate,
   onDownloadPDF,
-  onScoreCV,
-  currentNoteId
+  currentNoteId,
+  isPreview,
+  onPreviewChange,
 }) {
   const [localMarkdown, setLocalMarkdown] = useState(markdownValue);
-  const [localScript, setLocalScript] = useState(scriptValue);
-  const textareaRef = useRef();
+  const [previewMarkdown, setPreviewMarkdown] = useState(markdownValue);
+  const [verifyState, setVerifyState] = useState({ active: false, verified: false });
+  const [isAnalyseOpen, setIsAnalyseOpen] = useState(false);
+  const [isScoreOpen, setIsScoreOpen] = useState(false);
+  const [hasAppliedSuggestions, setHasAppliedSuggestions] = useState(false);
+  const guidedEditorRef = useRef();
+  const pendingApplyRef = useRef(null);
 
-  // Sync with parent props
-  useEffect(() => setLocalMarkdown(markdownValue), [markdownValue]);
-  useEffect(() => setLocalScript(scriptValue), [scriptValue]);
+  useEffect(() => {
+    setLocalMarkdown(markdownValue);
+    setPreviewMarkdown(markdownValue);
+    setHasAppliedSuggestions(false);
+  }, [markdownValue]);
 
-  // Update parent with debounce
+  useEffect(() => {
+    if (isPreview || !pendingApplyRef.current) return;
+    const { sectionId, content } = pendingApplyRef.current;
+    pendingApplyRef.current = null;
+    guidedEditorRef.current?.applySectionSuggestion?.(sectionId, content);
+    setHasAppliedSuggestions(true);
+  }, [isPreview]);
+
   useEffect(() => {
     const handler = setTimeout(() => onMarkdownChange(localMarkdown), 200);
     return () => clearTimeout(handler);
   }, [localMarkdown, onMarkdownChange]);
 
-  const handleCommand = (cmd) => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selected = localMarkdown.substring(start, end);
-    let insert = "";
-
-    switch (cmd) {
-      case "bold": insert = `**${selected || "bold text"}**`; break;
-      case "italic": insert = `_${selected || "italic text"}_`; break;
-      case "heading": insert = `# ${selected || "Heading"}`; break;
-      case "ulist": insert = `- ${selected || "List item"}`; break;
-      case "olist": insert = `1. ${selected || "List item"}`; break;
-      case "code": insert = "```\n" + (selected || "code") + "\n```"; break;
-      case "table": insert = "| Col1 | Col2 |\n| --- | --- |\n| Data1 | Data2 |"; break;
-      default: insert = selected;
+  const getCurrentMarkdown = () => {
+    if (!isPreview) {
+      return guidedEditorRef.current?.getMarkdown?.() ?? localMarkdown;
     }
+    return previewMarkdown || localMarkdown;
+  };
 
-    const newText = localMarkdown.substring(0, start) + insert + localMarkdown.substring(end);
-    setLocalMarkdown(newText);
+  const handleSave = () => {
+    const isValid = guidedEditorRef.current?.validate?.() ?? true;
+    if (!isValid) return;
+    const latest = guidedEditorRef.current?.getMarkdown?.() ?? localMarkdown;
+    setLocalMarkdown(latest);
+    onMarkdownChange(latest);
+    onSave(latest);
+    setHasAppliedSuggestions(false);
+  };
 
-    setTimeout(() => {
-      textarea.selectionStart = textarea.selectionEnd = start + insert.length;
-      textarea.focus();
-    }, 0);
+  const openPreview = () => {
+    const latest = getCurrentMarkdown();
+    setPreviewMarkdown(latest);
+    setLocalMarkdown(latest);
+    onMarkdownChange(latest);
+    onPreviewChange?.(true);
+  };
+
+  const closePreview = () => onPreviewChange?.(false);
+
+  const togglePreview = () => {
+    if (isPreview) closePreview();
+    else openPreview();
+  };
+
+  const syncLatestMarkdown = () => {
+    const latest = getCurrentMarkdown();
+    setLocalMarkdown(latest);
+    setPreviewMarkdown(latest);
+    onMarkdownChange(latest);
+    return latest;
+  };
+
+  const openAnalyse = () => {
+    syncLatestMarkdown();
+    setIsAnalyseOpen(true);
+  };
+
+  const openScore = () => {
+    syncLatestMarkdown();
+    setIsScoreOpen(true);
+  };
+
+  const handleApplySection = (sectionId, content) => {
+    if (isPreview) {
+      pendingApplyRef.current = { sectionId, content };
+      onPreviewChange?.(false);
+      return;
+    }
+    guidedEditorRef.current?.applySectionSuggestion?.(sectionId, content);
+    setHasAppliedSuggestions(true);
   };
 
   return (
-    <div className="editor-container">
-      {/* Tabs */}
-      <div className="tabs">
-        <div className="tab-group">
-          {["Guided", "Templates", "Preview"].map(tab => (
-            <button
-              key={tab}
-              type="button"
-              className={activeTab === tab ? "active" : ""}
-              onClick={() => onTabChange(tab)}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
-
-        <div className="tab-actions">
-           {currentNoteId && (
-              <button 
-                className="tab-action-btn score-btn" 
-                onClick={onScoreCV}
-                title="Score CV with AI"
-              >
-                Score CV ✨
-              </button>
-           )}
-           <button 
-              className="tab-action-btn export-btn" 
-              onClick={onDownloadPDF}
-              title="Export PDF"
-           >
-             <LuDownload size={14} /> Export PDF
-           </button>
-        </div>
-      </div>
-
-      {/* Toolbar - Only for Markdown editing now */}
-      {activeTab === "Markdown" && (
-        <div className="toolbar-container">
-          <MarkdownToolbar onCommand={handleCommand} />
-        </div>
-      )}
-
-      {/* Editor Content */}
-      <div className="editor-content">
-        {/* GuidedEditor is always mounted to preserve 'Verified' state. We just hide it using display. */}
-        <div style={{ display: activeTab === "Guided" ? "block" : "none", height: "100%", width: "100%" }}>
+    <div className="editor-container editor-container-full">
+      <div className="editor-content editor-content-full">
+        <div style={{ display: !isPreview ? "block" : "none", height: "100%", width: "100%" }}>
           <GuidedEditor
+            ref={guidedEditorRef}
             markdown={localMarkdown}
             onChange={setLocalMarkdown}
-            onSave={onSave}
+            onSave={handleSave}
             onStartWizard={onStartWizard}
             needsVerification={needsVerification}
             onVerificationDismissed={onVerificationDismissed}
             onMetaUpdate={onMetaUpdate}
+            onVerifyStateChange={setVerifyState}
           />
         </div>
 
-        {activeTab === "Markdown" && (
-          <textarea
-            ref={textareaRef}
-            className="editor-textarea large-scroll"
-            value={localMarkdown}
-            onChange={(e) => setLocalMarkdown(e.target.value)}
-            placeholder="Write Markdown..."
-          />
-        )}
-
-        {activeTab === "Templates" && (
-          <div className="templates-tab-container">
-            <div className="templates-header">
-              <h2>Choose a Template</h2>
-              <p>Select a layout that best fits your industry and style. All templates are 100% professional and ATS-friendly.</p>
-            </div>
-            
-            <div className="templates-scroll-area">
-              <div className="templates-grid">
+        {isPreview && (
+          <div className="template-selection-container">
+            <div className="selection-split-layout">
+              <aside className="preview-template-picker">
+                <div className="preview-template-list">
                   {layouts.map(layout => (
-                    <div 
+                    <button
                       key={layout.id}
-                      className={`template-card-box ${cvFormat === layout.id ? 'active' : ''}`}
-                      onClick={() => {
-                         onFormatChange(layout.id);
-                         onTabChange("Preview"); // Auto switch so they can see it!
-                      }}
+                      type="button"
+                      className={`preview-template-item ${cvFormat === layout.id ? "selected" : ""}`}
+                      onClick={() => onFormatChange(layout.id)}
                     >
-                      {cvFormat === layout.id && (
-                         <div className="selection-check">
-                            <LuCheck size={18} strokeWidth={3} />
-                         </div>
-                      )}
-
-                      {/* Live Mini Preview using the self-scaling MiniCVCard */}
-                      <MiniCVCard markdown={localMarkdown} formatId={layout.id} />
-                      
-                      <div className="template-card-info">
-                          <h3>{layout.name}</h3>
-                          <p>{layout.description}</p>
-                      </div>
-                    </div>
+                      <span className="preview-template-item-name">{layout.name}</span>
+                      <span className="preview-template-item-desc">{layout.description}</span>
+                    </button>
                   ))}
+                </div>
+              </aside>
+
+              <div className="right-panel-preview">
+                <div className="preview-stage">
+                  <CVPreview markdown={previewMarkdown} format={cvFormat} />
+                </div>
               </div>
             </div>
           </div>
         )}
-
-        {activeTab === "Preview" && (
-          <CVPreview markdown={localMarkdown} format={cvFormat} />
-        )}
       </div>
+
+      <div className="floating-actions-cluster">
+        {hasAppliedSuggestions && (
+          <span className="unsaved-changes-badge">Unsaved</span>
+        )}
+        <div className="floating-actions floating-action-bar">
+          {!isPreview && (
+            <>
+              <span className="fab-tooltip-wrap" data-tooltip={needsVerification ? "Verify all sections before saving" : "Save resume"}>
+                <button
+                  type="button"
+                  className={`fab-bar-btn fab-save ${needsVerification ? "fab-save-locked" : ""}`}
+                  onClick={() => {
+                    if (needsVerification) return;
+                    handleSave();
+                  }}
+                  aria-label="Save resume"
+                  disabled={needsVerification}
+                >
+                  <LuSave size={20} />
+                </button>
+              </span>
+              {verifyState.active && !verifyState.verified && (
+                <span className="fab-tooltip-wrap" data-tooltip="Verify this section">
+                  <button
+                    type="button"
+                    className="fab-bar-btn fab-verify"
+                    onClick={() => guidedEditorRef.current?.verifyCurrentSection?.()}
+                    aria-label="Verify section"
+                  >
+                    <LuCheck size={20} />
+                  </button>
+                </span>
+              )}
+              <span className="floating-action-divider" aria-hidden="true" />
+            </>
+          )}
+          <span className="fab-tooltip-wrap" data-tooltip={isPreview ? "Back to edit" : "Preview CV"}>
+            <button
+              type="button"
+              className={`fab-bar-btn ${isPreview ? "fab-edit active" : "fab-preview"}`}
+              onClick={togglePreview}
+              aria-label={isPreview ? "Back to edit" : "Preview CV"}
+            >
+              {isPreview ? <LuPenLine size={20} /> : <LuEye size={20} />}
+            </button>
+          </span>
+          <span className="floating-action-divider" aria-hidden="true" />
+          <span className="fab-tooltip-wrap fab-tooltip-wrap--end" data-tooltip="Score CV with AI">
+            <button
+              type="button"
+              className="fab-bar-btn fab-score"
+              onClick={openScore}
+              aria-label="Score CV with AI"
+            >
+              <LuChartBar size={20} />
+            </button>
+          </span>
+          <span className="fab-tooltip-wrap fab-tooltip-wrap--end" data-tooltip="Analyse CV against job description">
+            <button
+              type="button"
+              className="fab-bar-btn fab-analyse"
+              onClick={openAnalyse}
+              aria-label="Analyse CV against job description"
+            >
+              <LuSparkles size={20} />
+            </button>
+          </span>
+          {isPreview && (
+            <>
+              <span className="floating-action-divider" aria-hidden="true" />
+              <span className="fab-tooltip-wrap" data-tooltip="Export as PDF">
+                <button
+                  type="button"
+                  className="fab-bar-btn fab-export"
+                  onClick={onDownloadPDF}
+                  aria-label="Export as PDF"
+                >
+                  <LuDownload size={20} />
+                </button>
+              </span>
+            </>
+          )}
+        </div>
+      </div>
+
+      <CVAnalyseModal
+        isOpen={isAnalyseOpen}
+        onClose={() => setIsAnalyseOpen(false)}
+        markdown={getCurrentMarkdown()}
+        onApplySection={handleApplySection}
+      />
+      <CVScoringModal
+        isOpen={isScoreOpen}
+        onClose={() => setIsScoreOpen(false)}
+        markdown={getCurrentMarkdown()}
+      />
     </div>
   );
 }

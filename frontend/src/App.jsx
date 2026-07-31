@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Sidebar from "./Components/Sidebar";
 import MarkdownEditor from "./Components/MarkdownEditor";
 import TemplateWizard from "./Components/TemplateWizard";
@@ -7,25 +7,34 @@ import { v4 as uuidv4 } from 'uuid';
 import html2pdf from 'html2pdf.js';
 import { cvTemplates } from './data/cvTemplates';
 import ErrorBoundary from './Components/ErrorBoundary';
-import { LuPlus, LuLogOut, LuUser, LuChevronRight, LuCalendar, LuFileText, LuSmartphone, LuShare2, LuDownload, LuSave, LuTrash2, LuMenu, LuX } from "react-icons/lu";
 
 import { useAuth } from './context/AuthContext';
 import Login from './Components/Login';
 import ResetPassword from './Components/ResetPassword';
-import CVScoringModal from './Components/CVScoringModal';
 import EmptyState from './Components/EmptyState';
+import SystemSetupModal from './Components/SystemSetupModal';
 import { SpeedInsights } from "@vercel/speed-insights/react";
+import { LuTrash2 } from "react-icons/lu";
 
 function App() {
   const { user, getUserId } = useAuth();
   const [resetToken, setResetToken] = useState(null);
+  const [inviteToken, setInviteToken] = useState(null);
+
+  // System settings state (available after login)
+  const [existingConfig, setExistingConfig] = useState(null);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   useEffect(() => {
-    // Check if URL is a reset password link
     const path = window.location.pathname;
     if (path.startsWith('/reset-password/')) {
       const token = path.split('/').pop();
       if (token) setResetToken(token);
+    }
+    if (path.startsWith('/register')) {
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get('invite');
+      if (token) setInviteToken(token);
     }
   }, []);
 
@@ -36,22 +45,26 @@ function App() {
   const [notes, setNotes] = useState([]);
 
   const [currentNote, setCurrentNote] = useState({ title: "", desc: "", script: "", id: null, parentId: "", isDraft: false });
-  const [isEditing, setIsEditing] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
 
-  const [activeTab, setActiveTab] = useState("Guided");
   const [cvFormat, setCvFormat] = useState("European");
   const [isWizardOpen, setIsWizardOpen] = useState(false);
-  const [isScoringModalOpen, setIsScoringModalOpen] = useState(false);
   const [backendStatus, setBackendStatus] = useState("checking");
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
   const [needsVerification, setNeedsVerification] = useState(false);
   const [wizardOptions, setWizardOptions] = useState({ mode: 'select', step: 0 });
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+
+  const handleVerificationDismissed = useCallback(() => {
+    setNeedsVerification(false);
+  }, []);
 
   useEffect(() => {
     if (!user) {
       setNotes([]);
       setCurrentNote({ title: "", desc: "", script: "", id: null, parentId: "" });
-      setIsEditing(false);
+      setIsDirty(false);
       return;
     }
 
@@ -78,6 +91,24 @@ function App() {
     };
     checkBackend();
 
+    // After login: check if system settings have been configured.
+    // If not → auto-open the settings modal so the user sets them up first.
+    const token = localStorage.getItem('token');
+    fetch(`${import.meta.env.VITE_API_URL}/api/config`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+      .then(r => r.json())
+      .then(cfg => {
+        setExistingConfig(cfg);
+        if (!cfg.isConfigured) {
+          // Settings not yet configured — open the settings modal automatically
+          setIsSettingsOpen(true);
+        }
+      })
+      .catch(() => {
+        // If config fetch fails, don't block the user — proceed normally
+      });
+
     const userId = getUserId();
     if (!userId) return;
     fetch(`${import.meta.env.VITE_API_URL}/api/resumes?userId=${userId}`)
@@ -96,27 +127,67 @@ function App() {
   }, [user]);
 
   const handleCreateNote = async (parentId = "", selections = null) => {
-    let templateKey = "Blank Note";
-    let format = "America";
-    let templateContent = "";
-
     if (selections) {
-      // Direct Creation Flow (Using Selections or AI)
-      const { occupation, layout, education, aiGenerated, mode } = selections;
-      const format = layout || "Professional";
-      
+      const { occupation, education, aiGenerated, mode, photo, importedTitle } = selections;
+      const format = photo === "yes" ? "European" : "America";
+
       let templateContent = "";
       let newTitle = "New CV";
 
       if (mode === 'ai' && aiGenerated) {
         templateContent = aiGenerated;
         newTitle = "AI Generated CV";
-        setNeedsVerification(true); // Trigger GuidedEditor verification popup
+        setNeedsVerification(true);
+      } else if (mode === 'import' && aiGenerated) {
+        templateContent = aiGenerated;
+        newTitle = importedTitle || "Imported CV";
+        setNeedsVerification(false);
+
+        const userId = getUserId();
+        if (!userId) return;
+
+        const newNote = {
+          id: uuidv4(),
+          title: newTitle,
+          desc: templateContent,
+          script: "",
+          date: new Date().toLocaleDateString(),
+          parentId,
+          cvFormat: "America",
+          userId,
+        };
+
+        try {
+          const res = await fetch(`${import.meta.env.VITE_API_URL}/api/resumes`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newNote),
+          });
+          if (!res.ok) throw new Error('Save failed');
+          const savedNote = await res.json();
+          setNotes([savedNote, ...notes]);
+          setCurrentNote(savedNote);
+          setCvFormat("America");
+          setIsDirty(false);
+        } catch (err) {
+          console.error('Auto-save after import failed:', err);
+          setCurrentNote({
+            title: newTitle,
+            desc: templateContent,
+            script: "",
+            id: null,
+            parentId,
+            isDraft: true,
+            cvFormat: "America",
+          });
+          setCvFormat("America");
+          setIsDirty(true);
+        }
+        return;
       } else {
-        // Try to find template, fallback to a generated header so it's not empty
         templateContent = cvTemplates[occupation];
         if (!templateContent) {
-          templateContent = `# [Your Name] | ${occupation || 'Professional'}\n[Email] | [Phone]\n\n## Education\n- ${education || '[Degree]'}\n\n## Experience\n- [Job Title] | [Company Name]`;
+          templateContent = `# [Your Name] | ${occupation || 'Professional'}\n[City], [Province], [Zip] | [Email] | [Phone]\n\n## Education\n- ${education || '[Degree]'}\n\n## Experience\n- [Job Title] | [Company Name]`;
         }
         newTitle = occupation ? `${occupation} CV` : "New CV";
       }
@@ -127,11 +198,12 @@ function App() {
         script: "",
         id: null,
         parentId,
-        isDraft: true
+        isDraft: true,
+        cvFormat: format,
       });
       setCvFormat(format);
-      setIsEditing(false);
-      setActiveTab("Guided"); // Switch to editor tab immediately
+      setIsDirty(true);
+      setIsPreviewMode(false);
     } else {
 
       // Manual creation (Initial state or empty)
@@ -145,7 +217,7 @@ function App() {
         isDraft: true
       });
       setCvFormat("America");
-      setIsEditing(false);
+      setIsDirty(false);
       setWizardOptions({ mode: 'select', step: 0 });
       setIsWizardOpen(true);
     }
@@ -154,7 +226,7 @@ function App() {
   const handleOpenWizardFromEmpty = (mode) => {
     setWizardOptions({ 
       mode: mode, 
-      step: mode === 'ai' ? 0 : 1 
+      step: mode === 'manual' ? 1 : 0 
     });
     setIsWizardOpen(true);
   };
@@ -174,11 +246,12 @@ function App() {
       const newTitle = `${firstName} ${lastName} ${profession ? '- ' + profession : ''}`.trim();
       if (newTitle && newTitle !== currentTitle) {
         setCurrentNote(prev => ({ ...prev, title: newTitle }));
+        setIsDirty(true);
       }
     }
   };
 
-  const handleSaveNote = () => {
+  const handleSaveNote = (descOverride) => {
     if (!currentNote.title.trim()) {
       alert("Please provide a title for your resume.");
       return;
@@ -189,8 +262,10 @@ function App() {
 
     const noteToSave = {
       ...currentNote,
+      desc: descOverride ?? currentNote.desc,
       date: new Date().toLocaleDateString(),
-      userId: userId
+      userId: userId,
+      cvFormat: cvFormat,
     };
 
     if (currentNote.id) {
@@ -202,7 +277,8 @@ function App() {
         .then(res => res.json())
         .then(updatedNote => {
           setNotes(notes.map(n => (n.id === updatedNote.id ? updatedNote : n)));
-          setIsEditing(true);
+          setCurrentNote(updatedNote);
+          setIsDirty(false);
         })
         .catch(err => alert("Failed to save changes"));
     } else {
@@ -216,29 +292,88 @@ function App() {
         .then(savedNote => {
           setNotes([savedNote, ...notes]);
           setCurrentNote(savedNote);
-          setIsEditing(true);
+          setIsDirty(false);
         })
         .catch(err => alert("Failed to create resume"));
     }
   };
 
-  const handleDeleteNote = (id) => {
+  const handleDuplicateNote = (id) => {
     const userId = getUserId();
     if (!userId) return;
-    if (window.confirm("Are you sure you want to delete this resume?")) {
-      fetch(`${import.meta.env.VITE_API_URL}/api/resumes/${id}?userId=${userId}`, { method: 'DELETE' })
-        .then(res => {
-          if (res.ok) {
-            setNotes(notes.filter(n => n.id !== id));
-            if (currentNote.id === id) {
-              setCurrentNote({ title: "", desc: "", script: "", id: null, parentId: "", isDraft: false });
-              setIsEditing(false);
-            }
-          }
-        })
-        .catch(err => alert("Failed to delete resume"));
-    }
+
+    const source = notes.find(n => n.id === id);
+    if (!source) return;
+
+    const copyTitle = source.title?.trim()
+      ? `${source.title.trim()} (Copy)`
+      : 'Untitled (Copy)';
+
+    const newNote = {
+      id: uuidv4(),
+      title: copyTitle,
+      desc: source.desc || '',
+      script: source.script || '',
+      date: new Date().toLocaleDateString(),
+      parentId: source.parentId || '',
+      cvFormat: source.cvFormat || cvFormat,
+      userId,
+    };
+
+    fetch(`${import.meta.env.VITE_API_URL}/api/resumes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newNote),
+    })
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to duplicate');
+        return res.json();
+      })
+      .then(savedNote => {
+        setNotes(prev => [savedNote, ...prev]);
+        setCurrentNote({
+          ...savedNote,
+          title: savedNote.title || '',
+          desc: savedNote.desc || '',
+          script: savedNote.script || '',
+          isDraft: false,
+        });
+        setCvFormat(savedNote.cvFormat || 'European');
+        setIsDirty(false);
+        if (window.innerWidth <= 768) setIsSidebarOpen(false);
+      })
+      .catch(() => alert('Failed to duplicate resume'));
   };
+
+  const handleDeleteNote = (id) => {
+    setDeleteConfirmId(id);
+  };
+
+  const confirmDeleteNote = () => {
+    const id = deleteConfirmId;
+    if (!id) return;
+
+    const userId = getUserId();
+    if (!userId) return;
+
+    fetch(`${import.meta.env.VITE_API_URL}/api/resumes/${id}?userId=${userId}`, { method: 'DELETE' })
+      .then(res => {
+        if (res.ok) {
+          setNotes(notes.filter(n => n.id !== id));
+          if (currentNote.id === id) {
+            setCurrentNote({ title: "", desc: "", script: "", id: null, parentId: "", isDraft: false });
+            setIsPreviewMode(false);
+            setIsDirty(false);
+          }
+          setDeleteConfirmId(null);
+        }
+      })
+      .catch(() => alert("Failed to delete resume"));
+  };
+
+  const pendingDeleteNote = deleteConfirmId
+    ? notes.find(n => n.id === deleteConfirmId)
+    : null;
 
   const handleDownloadPDF = () => {
     const element = document.querySelector(".cv-preview > div") || document.querySelector(".html-preview");
@@ -261,12 +396,44 @@ function App() {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
+  const openCreateWizard = () => {
+    setWizardOptions({ mode: 'select', step: 0 });
+    setIsWizardOpen(true);
+  };
+
+  const updateCurrentNote = (updates) => {
+    setCurrentNote(prev => ({ ...prev, ...updates }));
+    setIsDirty(true);
+  };
+
+  const selectNote = (note) => {
+    setCurrentNote({
+      ...note,
+      title: note.title || "",
+      desc: note.desc || "",
+      script: note.script || "",
+      isDraft: false,
+    });
+    setCvFormat(note.cvFormat || "European");
+    setIsDirty(false);
+    if (window.innerWidth <= 768) setIsSidebarOpen(false);
+  };
+
+  const openSettings = () => {
+    const token = localStorage.getItem('token');
+    fetch(`${import.meta.env.VITE_API_URL}/api/config`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+      .then(r => r.json())
+      .then(cfg => { setExistingConfig(cfg); setIsSettingsOpen(true); })
+      .catch(() => setIsSettingsOpen(true));
+  };
+
   if (resetToken) return <ResetPassword token={resetToken} onBackToLogin={handleBackToLogin} />;
-  if (!user) return <Login />;
+  if (!user) return <Login inviteToken={inviteToken} />;
 
   const hasResumes = notes.length > 0;
-  const isCreatingNew = currentNote.title !== "" || currentNote.desc !== "" || isWizardOpen || currentNote.id !== null || currentNote.isDraft;
-  const shouldShowEditor = hasResumes || isCreatingNew;
+  const shouldShowEditor = currentNote.id !== null || currentNote.isDraft;
 
   return (
     <div className={`app-layout ${isSidebarOpen ? 'sidebar-open' : 'sidebar-collapsed'}`}>
@@ -274,93 +441,41 @@ function App() {
       <ErrorBoundary>
         <Sidebar
           notes={notes}
-          onCreateNote={() => {
-            setWizardOptions({ mode: 'select', step: 0 });
-            handleCreateNote();
-            if (window.innerWidth <= 768) setIsSidebarOpen(false);
-          }}
-          onSelectNote={(note) => {
-            setCurrentNote({ ...note, title: note.title || "", desc: note.desc || "", script: note.script || "" });
-            setIsEditing(true);
-            if (window.innerWidth <= 768) setIsSidebarOpen(false);
-          }}
+          onSelectNote={selectNote}
           onDeleteNote={handleDeleteNote}
+          onDuplicateNote={handleDuplicateNote}
           activeNoteId={currentNote.id}
           isSidebarOpen={isSidebarOpen}
-          onCloseSidebar={toggleSidebar}
+          onToggleSidebar={toggleSidebar}
+          onOpenSettings={openSettings}
+          onCreateResume={openCreateWizard}
         />
       </ErrorBoundary>
 
-      <main className="main-content">
-        <header className="top-bar">
-          <div className="top-bar-left">
-            {!isSidebarOpen && (
-              <button className="desktop-toggle-btn" onClick={toggleSidebar} title="Open Sidebar">
-                <LuMenu />
-              </button>
-            )}
-            {!isSidebarOpen && <div className="divider-vertical"></div>}
-            <input
-              type="text"
-              className="title-input-flat"
-              placeholder="Resume Title..."
-              value={currentNote.title || ""}
-              onChange={(e) => setCurrentNote({ ...currentNote, title: e.target.value })}
-              disabled={!shouldShowEditor}
-            />
-            <div className="divider-vertical"></div>
-            <span className={`editor-status ${isEditing ? "status-saved" : "status-unsaved"}`}>
-              {isEditing ? "SAVED" : "UNSAVED"}
-            </span>
-            <div className="divider-vertical"></div>
-            <span
-              className={`editor-status ${backendStatus === "connected" ? "status-saved" : (backendStatus === "waking-up" ? "status-waking" : "status-unsaved")}`}
-              title="Backend Connection"
-              style={backendStatus === "waking-up" ? { background: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd' } : {}}
-            >
-              {backendStatus === "connected" ? "ONLINE" : (backendStatus === "waking-up" ? "WAKING UP..." : "OFFLINE")}
-            </span>
-          </div>
-
-          <div className="top-bar-right">
-            <button
-              className="create-cv-btn-top"
-              onClick={() => {
-                setWizardOptions({ mode: 'select', step: 0 });
-                setIsWizardOpen(true);
-              }}
-              title="Create New CV"
-            >
-              <LuPlus size={16} /> Create CV
-            </button>
-          </div>
-        </header>
-
+      <main className="main-content main-content-full">
         {shouldShowEditor ? (
-          <div className="editor-workspace">
+          <div className="editor-workspace editor-workspace-full">
             <ErrorBoundary>
               <MarkdownEditor
+                key={currentNote.id || (currentNote.isDraft ? 'draft' : 'new')}
                 markdownValue={currentNote.desc}
-                onMarkdownChange={(val) => setCurrentNote({ ...currentNote, desc: val })}
-                scriptValue={currentNote.script}
-                onScriptChange={(val) => setCurrentNote({ ...currentNote, script: val })}
-                activeTab={activeTab}
-                onTabChange={setActiveTab}
+                onMarkdownChange={(val) => updateCurrentNote({ desc: val })}
                 cvFormat={cvFormat}
                 onFormatChange={setCvFormat}
                 onSave={handleSaveNote}
-                onStartWizard={() => setIsWizardOpen(true)}
+                onStartWizard={openCreateWizard}
                 needsVerification={needsVerification}
-                onVerificationDismissed={() => setNeedsVerification(false)}
+                onVerificationDismissed={handleVerificationDismissed}
                 onMetaUpdate={handleAutoTitleUpdate}
                 onDownloadPDF={handleDownloadPDF}
-                onScoreCV={() => setIsScoringModalOpen(true)}
                 currentNoteId={currentNote.id}
+                isPreview={isPreviewMode}
+                onPreviewChange={setIsPreviewMode}
               />
             </ErrorBoundary>
           </div>
         ) : (
-          <EmptyState onSelectMode={handleOpenWizardFromEmpty} />
+          <EmptyState hasResumes={hasResumes} onSelectMode={handleOpenWizardFromEmpty} />
         )}
       </main>
       <TemplateWizard
@@ -371,11 +486,43 @@ function App() {
         initialStep={wizardOptions.step}
       />
 
-      <CVScoringModal 
-        isOpen={isScoringModalOpen} 
-        onClose={() => setIsScoringModalOpen(false)} 
-        markdown={currentNote.desc} 
-      />
+      {/* System Settings Modal — auto-opens on first login if not configured */}
+      {isSettingsOpen && (
+        <SystemSetupModal
+          isEditMode={true}
+          existingConfig={existingConfig}
+          allowClose={existingConfig?.isConfigured === true}
+          onConfigured={(cfg) => {
+            setExistingConfig(cfg);
+            setIsSettingsOpen(false);
+          }}
+          onClose={() => setIsSettingsOpen(false)}
+        />
+      )}
+
+      {deleteConfirmId && (
+        <div className="profile-logout-overlay" onClick={() => setDeleteConfirmId(null)}>
+          <div className="profile-logout-modal" onClick={e => e.stopPropagation()}>
+            <div className="profile-logout-icon">
+              <LuTrash2 size={28} />
+            </div>
+            <h3>Delete Resume</h3>
+            <p>
+              Are you sure you want to delete{' '}
+              <strong>{pendingDeleteNote?.title || 'this resume'}</strong>? This action cannot be undone.
+            </p>
+            <div className="profile-logout-actions">
+              <button type="button" className="profile-logout-cancel" onClick={() => setDeleteConfirmId(null)}>
+                Cancel
+              </button>
+              <button type="button" className="profile-logout-confirm" onClick={confirmDeleteNote}>
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <SpeedInsights />
     </div>
   );

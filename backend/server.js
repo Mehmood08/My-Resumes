@@ -4,6 +4,8 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import authRoutes from './api/auth.js';
 import resumeRoutes from './api/resumes.js';
+import configRoutes from './api/config.js';
+import inviteRoutes from './api/invites.js';
 
 dotenv.config();
 
@@ -84,6 +86,8 @@ app.use(async (req, res, next) => {
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/resumes', resumeRoutes);
+app.use('/api/config', configRoutes);
+app.use('/api/invites', inviteRoutes);
 
 // Root route
 app.get('/', (req, res) => {
@@ -114,6 +118,12 @@ app.get('/reset-password/:token', (req, res) => {
     const { token } = req.params;
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     res.redirect(`${frontendUrl}/reset-password/${token}`);
+});
+
+app.get('/register', (req, res) => {
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const query = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+    res.redirect(`${frontendUrl}/register${query}`);
 });
 
 app.listen(PORT, () => {

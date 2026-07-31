@@ -1,9 +1,21 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
 import GuidedHelper from './GuidedHelper';
 import ImageCropperModal from './ImageCropperModal';
 import { LuPlus, LuInfo, LuLightbulb, LuTrash2, LuChevronLeft, LuCheck, LuBold, LuItalic, LuHeading, LuList, LuListOrdered } from "react-icons/lu";
+import { validateHeadingFields, hasValidationErrors } from '../utils/cvValidation';
 
-const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerification, onVerificationDismissed, onMetaUpdate }) => {
+const WIZARD_STEPS = [
+    { id: 'heading', label: 'Heading', emoji: '👤' },
+    { id: 'summary', label: 'Summary', emoji: '📝', tip: "Keep it brief (3-4 sentences). Focus on your biggest achievements." },
+    { id: 'experience', label: 'Experience', emoji: '💼', helper: 'experience', tip: "Use action verbs (e.g., 'Led', 'Developed'). Quantify results where possible." },
+    { id: 'projects', label: 'Projects', emoji: '🚀', helper: 'projects', tip: "Highlight the tech stack and the problem you solved." },
+    { id: 'education', label: 'Education', emoji: '🎓', helper: 'education', tip: "List your most recent degree first." },
+    { id: 'skills', label: 'Skills', emoji: '⚡', helper: 'skills', tip: "Mix hard skills (e.g., Python) and soft skills (e.g., Leadership)." },
+    { id: 'languages', label: 'Languages', emoji: '🌐', helper: 'languages' },
+    { id: 'certifications', label: 'Certifications', emoji: '🏆', helper: 'certifications' }
+];
+
+const GuidedEditor = forwardRef(({ markdown, onChange, onSave, onStartWizard, needsVerification, onVerificationDismissed, onMetaUpdate, onVerifyStateChange }, ref) => {
     const [currentStep, setCurrentStep] = useState(0);
     const [showHelper, setShowHelper] = useState(false);
     const isInternalChange = useRef(false);
@@ -14,6 +26,8 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerifica
     const [verifiedSections, setVerifiedSections] = useState({});
     const [cropperData, setCropperData] = useState(null);
     const isVerificationInitialized = useRef(false);
+    const [fieldErrors, setFieldErrors] = useState({});
+    const [showValidationToast, setShowValidationToast] = useState(false);
 
     // Show verification popup when AI CV is loaded
     useEffect(() => {
@@ -22,7 +36,7 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerifica
             if (!isVerificationInitialized.current && markdown && currentStep !== -1) {
                 setShowVerificationPopup(true); // Safely trigger side-effect outside of updater
                 const initial = {};
-                steps.forEach(s => { initial[s.id] = false; });
+                WIZARD_STEPS.forEach(s => { initial[s.id] = false; });
                 setVerifiedSections(initial);
                 isVerificationInitialized.current = true;
             }
@@ -56,6 +70,31 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerifica
     });
 
     const [sections, setSections] = useState([]);
+    const personalInfoRef = useRef(personalInfo);
+    const sectionsRef = useRef(sections);
+
+    useEffect(() => { personalInfoRef.current = personalInfo; }, [personalInfo]);
+    useEffect(() => { sectionsRef.current = sections; }, [sections]);
+
+    const buildMarkdown = (newPersonalInfo, newSections) => {
+        let md = '';
+        if (newPersonalInfo.photo) {
+            md += `![Profile](${newPersonalInfo.photo})\n`;
+        }
+        md += `# ${newPersonalInfo.firstName} ${newPersonalInfo.lastName} | ${newPersonalInfo.profession}\n`;
+        md += `${newPersonalInfo.city}, ${newPersonalInfo.province}, ${newPersonalInfo.zip} | ${newPersonalInfo.email} | ${newPersonalInfo.phone}\n`;
+
+        if (newPersonalInfo.link1 || newPersonalInfo.link2) {
+            md += `${newPersonalInfo.link1 || ''} | ${newPersonalInfo.link2 || ''}\n`;
+        }
+        md += '\n';
+
+        newSections.forEach(sec => {
+            md += `## ${sec.title}\n${sec.content}\n\n`;
+        });
+
+        return md.trim();
+    };
 
     // Sync metadata with parent for auto-titling
     useEffect(() => {
@@ -68,16 +107,73 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerifica
         }
     }, [personalInfo.firstName, personalInfo.lastName, personalInfo.profession]);
 
-    const steps = [
-        { id: 'heading', label: 'Heading', emoji: '👤' },
-        { id: 'summary', label: 'Summary', emoji: '📝', tip: "Keep it brief (3-4 sentences). Focus on your biggest achievements." },
-        { id: 'experience', label: 'Experience', emoji: '💼', helper: 'experience', tip: "Use action verbs (e.g., 'Led', 'Developed'). Quantify results where possible." },
-        { id: 'projects', label: 'Projects', emoji: '🚀', helper: 'projects', tip: "Highlight the tech stack and the problem you solved." },
-        { id: 'education', label: 'Education', emoji: '🎓', helper: 'education', tip: "List your most recent degree first." },
-        { id: 'skills', label: 'Skills', emoji: '⚡', helper: 'skills', tip: "Mix hard skills (e.g., Python) and soft skills (e.g., Leadership)." },
-        { id: 'languages', label: 'Languages', emoji: '🌐', helper: 'languages' },
-        { id: 'certifications', label: 'Certifications', emoji: '🏆', helper: 'certifications' }
-    ];
+    const currentStepRef = useRef(currentStep);
+    useEffect(() => { currentStepRef.current = currentStep; }, [currentStep]);
+
+    useEffect(() => {
+        if (!hasValidationErrors(fieldErrors)) {
+            setShowValidationToast(false);
+        }
+    }, [fieldErrors]);
+
+    useEffect(() => {
+        if (!showValidationToast) return;
+        const timer = setTimeout(() => setShowValidationToast(false), 4000);
+        return () => clearTimeout(timer);
+    }, [showValidationToast]);
+
+    useImperativeHandle(ref, () => ({
+        getMarkdown: () => buildMarkdown(personalInfoRef.current, sectionsRef.current),
+        validate: () => {
+            const errors = validateHeadingFields(personalInfoRef.current);
+            setFieldErrors(errors);
+            if (hasValidationErrors(errors)) {
+                setCurrentStep(0);
+                setShowValidationToast(true);
+                return false;
+            }
+            setShowValidationToast(false);
+            return true;
+        },
+        verifyCurrentSection: () => {
+            const step = currentStepRef.current;
+            const stepId = WIZARD_STEPS[step]?.id;
+            if (!stepId) return;
+            setVerifiedSections(prev => ({ ...prev, [stepId]: true }));
+            if (step < WIZARD_STEPS.length - 1) {
+                setTimeout(() => setCurrentStep(step + 1), 300);
+            }
+        },
+        applySectionSuggestion: (sectionId, content) => {
+            if (!sectionId || !content?.trim()) return false;
+
+            const matchTitle = sectionId === 'summary' ? 'PROFESSIONAL SUMMARY' :
+                sectionId === 'experience' ? 'EXPERIENCE' :
+                    sectionId === 'projects' ? 'PROJECTS' :
+                        sectionId === 'education' ? 'EDUCATION' :
+                            sectionId === 'skills' ? 'SKILLS' :
+                                sectionId === 'languages' ? 'LANGUAGES' :
+                                    sectionId === 'certifications' ? 'CERTIFICATIONS' :
+                                        sectionId.toUpperCase();
+
+            const sectionIndex = sectionsRef.current.findIndex(s => {
+                const title = s.title.toUpperCase();
+                const id = sectionId.toUpperCase();
+                return title.includes(id) || (id === 'SUMMARY' && title.includes('PROFESSIONAL'));
+            });
+
+            const updatedSections = [...sectionsRef.current];
+            if (sectionIndex !== -1) {
+                updatedSections[sectionIndex] = { ...updatedSections[sectionIndex], content: content.trim() };
+            } else {
+                updatedSections.push({ title: matchTitle, content: content.trim() });
+            }
+
+            setSections(updatedSections);
+            updateMarkdown(personalInfoRef.current, updatedSections);
+            return true;
+        },
+    }));
 
     // Parse Markdown into state — but SKIP if this change came from the user typing
     useEffect(() => {
@@ -221,7 +317,7 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerifica
         const start = toolbarState.selectionStart;
         const end = toolbarState.selectionEnd;
         
-        const step = steps[currentStep];
+        const step = WIZARD_STEPS[currentStep];
         const suggestedTitle = step.label.toUpperCase();
         const sectionIndex = sections.findIndex(s => {
             const title = s.title.toUpperCase();
@@ -298,31 +394,22 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerifica
     };
 
     const updateMarkdown = (newPersonalInfo, newSections) => {
-        let md = '';
-        if (newPersonalInfo.photo) {
-            md += `![Profile](${newPersonalInfo.photo})\n`;
-        }
-        md += `# ${newPersonalInfo.firstName} ${newPersonalInfo.lastName} | ${newPersonalInfo.profession}\n`;
-        md += `${newPersonalInfo.city}, ${newPersonalInfo.province}, ${newPersonalInfo.zip} | ${newPersonalInfo.email} | ${newPersonalInfo.phone}\n`;
-
-        if (newPersonalInfo.link1 || newPersonalInfo.link2) {
-            md += `${newPersonalInfo.link1 || ''} | ${newPersonalInfo.link2 || ''}\n`;
-        }
-        md += '\n';
-
-        newSections.forEach(sec => {
-            md += `## ${sec.title}\n${sec.content}\n\n`;
-        });
-
-        // Mark this as an internal change so the parser useEffect won't overwrite user's input
+        const md = buildMarkdown(newPersonalInfo, newSections);
         isInternalChange.current = true;
-        onChange(md.trim());
+        onChange(md);
     };
 
     const handleInfoChange = (field, value) => {
         const updated = { ...personalInfo, [field]: value };
         setPersonalInfo(updated);
         updateMarkdown(updated, sections);
+        if (fieldErrors[field]) {
+            setFieldErrors(prev => {
+                const next = { ...prev };
+                delete next[field];
+                return next;
+            });
+        }
     };
 
     const handleImageUpload = (e) => {
@@ -367,7 +454,7 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerifica
     };
 
     const handleHelperSave = (content) => {
-        const step = steps[currentStep];
+        const step = WIZARD_STEPS[currentStep];
         const matchTitle = step.id === 'summary' ? 'PROFESSIONAL SUMMARY' :
             step.id === 'experience' ? 'EXPERIENCE' :
                 step.id === 'projects' ? 'PROJECTS' :
@@ -473,15 +560,11 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerifica
     };
 
     const renderStepContent = () => {
-        const step = steps[currentStep];
+        const step = WIZARD_STEPS[currentStep];
 
         if (step.id === 'heading') {
             return (
                 <div className="wizard-form fadeIn">
-                    <div className="wizard-header">
-                        <h2>Let's start with your header</h2>
-                    </div>
-                    
                     <div className="photo-upload-container">
                         <label className="photo-upload-label">Profile Photo (Optional)</label>
                         <div className="photo-upload-box">
@@ -501,40 +584,48 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerifica
 
                     <div className="form-grid">
                         <div className="form-group">
-                            <label>First Name</label>
+                            <label>First Name <span className="required-mark">*</span></label>
                             <input
                                 type="text"
+                                className={fieldErrors.firstName ? 'input-error' : ''}
                                 value={personalInfo.firstName}
                                 onChange={(e) => handleInfoChange('firstName', e.target.value)}
                                 placeholder="e.g Mehmood"
                             />
+                            {fieldErrors.firstName && <span className="field-error-msg">{fieldErrors.firstName}</span>}
                         </div>
                         <div className="form-group">
-                            <label>Surname</label>
+                            <label>Surname <span className="required-mark">*</span></label>
                             <input
                                 type="text"
+                                className={fieldErrors.lastName ? 'input-error' : ''}
                                 value={personalInfo.lastName}
                                 onChange={(e) => handleInfoChange('lastName', e.target.value)}
                                 placeholder="e.g. Shah"
                             />
+                            {fieldErrors.lastName && <span className="field-error-msg">{fieldErrors.lastName}</span>}
                         </div>
                         <div className="form-group full-width">
-                            <label>Profession</label>
+                            <label>Profession <span className="required-mark">*</span></label>
                             <input
                                 type="text"
+                                className={fieldErrors.profession ? 'input-error' : ''}
                                 value={personalInfo.profession}
                                 onChange={(e) => handleInfoChange('profession', e.target.value)}
                                 placeholder="e.g. Software Engineering"
                             />
+                            {fieldErrors.profession && <span className="field-error-msg">{fieldErrors.profession}</span>}
                         </div>
                         <div className="form-group">
-                            <label>City</label>
+                            <label>City <span className="required-mark">*</span></label>
                             <input
                                 type="text"
+                                className={fieldErrors.city ? 'input-error' : ''}
                                 value={personalInfo.city}
                                 onChange={(e) => handleInfoChange('city', e.target.value)}
                                 placeholder="e.g. Peshawar"
                             />
+                            {fieldErrors.city && <span className="field-error-msg">{fieldErrors.city}</span>}
                         </div>
                         <div className="form-group">
                             <label>Zip Code</label>
@@ -555,40 +646,48 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerifica
                             />
                         </div>
                         <div className="form-group">
-                            <label>Phone</label>
+                            <label>Phone <span className="required-mark">*</span></label>
                             <input
-                                type="text"
+                                type="tel"
+                                className={fieldErrors.phone ? 'input-error' : ''}
                                 value={personalInfo.phone}
                                 onChange={(e) => handleInfoChange('phone', e.target.value)}
                                 placeholder="e.g. 0345 1234567"
                             />
+                            {fieldErrors.phone && <span className="field-error-msg">{fieldErrors.phone}</span>}
                         </div>
                         <div className="form-group full-width">
-                            <label>Email </label>
+                            <label>Email <span className="required-mark">*</span></label>
                             <input
                                 type="email"
+                                className={fieldErrors.email ? 'input-error' : ''}
                                 value={personalInfo.email}
                                 onChange={(e) => handleInfoChange('email', e.target.value)}
                                 placeholder="e.g example@gmail.com"
                             />
+                            {fieldErrors.email && <span className="field-error-msg">{fieldErrors.email}</span>}
                         </div>
                         <div className="form-group">
                             <label>LinkedIn URL</label>
                             <input
                                 type="url"
+                                className={fieldErrors.link1 ? 'input-error' : ''}
                                 value={personalInfo.link1}
                                 onChange={(e) => handleInfoChange('link1', e.target.value)}
                                 placeholder="https://linkedin.com/in/..."
                             />
+                            {fieldErrors.link1 && <span className="field-error-msg">{fieldErrors.link1}</span>}
                         </div>
                         <div className="form-group">
                             <label>Portfolio URL</label>
                             <input
                                 type="url"
+                                className={fieldErrors.link2 ? 'input-error' : ''}
                                 value={personalInfo.link2}
                                 onChange={(e) => handleInfoChange('link2', e.target.value)}
                                 placeholder="https://github.com/..."
                             />
+                            {fieldErrors.link2 && <span className="field-error-msg">{fieldErrors.link2}</span>}
                         </div>
                     </div>
                 </div>
@@ -634,11 +733,6 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerifica
                                 placeholder={suggestedTitle}
                             />
                         </div>
-                        {step.helper && (
-                            <button className="add-item-btn" onClick={() => setShowHelper(true)}>
-                                <LuPlus /> Add {step.label.slice(0, -1)}
-                            </button>
-                        )}
                     </div>
                 </div>
 
@@ -650,7 +744,14 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerifica
                 )}
 
                 <div className="form-group full-width" style={{ position: 'relative' }}>
-                    <label>Section Content</label>
+                    <div className="section-content-header">
+                        <label>Section Content</label>
+                        {step.helper && (
+                            <button type="button" className="add-item-btn add-item-btn-inline" onClick={() => setShowHelper(true)}>
+                                <LuPlus size={14} /> Add {step.label.slice(0, -1)}
+                            </button>
+                        )}
+                    </div>
                     <textarea
                         ref={textAreaRef}
                         className="wizard-textarea"
@@ -692,11 +793,36 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerifica
         );
     };
 
-    const completionPercent = Math.round(((currentStep + 1) / steps.length) * 100);
+    const findSectionForStep = (stepId) => {
+        return sections.find(s => {
+            const title = s.title.toUpperCase();
+            const id = stepId.toUpperCase();
+            return title.includes(id) || (id === 'SUMMARY' && title.includes('PROFESSIONAL'));
+        });
+    };
+
+    const headingFields = ['firstName', 'lastName', 'profession', 'email', 'phone', 'city'];
+
+    const getStepFillRatio = (stepId) => {
+        if (stepId === 'heading') {
+            const filled = headingFields.filter(f => personalInfo[f]?.trim()).length;
+            return filled / headingFields.length;
+        }
+        const section = findSectionForStep(stepId);
+        return section?.content?.trim() ? 1 : 0;
+    };
+
+    const isStepComplete = (stepId) => getStepFillRatio(stepId) === 1;
+
+    const completionPercent = Math.round(
+        (WIZARD_STEPS.reduce((sum, s) => sum + getStepFillRatio(s.id), 0) / WIZARD_STEPS.length) * 100
+    );
 
     const allVerified = needsVerification && Object.keys(verifiedSections).length > 0 && Object.values(verifiedSections).every(v => v);
     const verifiedCount = Object.values(verifiedSections).filter(v => v).length;
-    const totalSections = steps.length;
+    const totalSections = WIZARD_STEPS.length;
+
+    const lastVerifyStateRef = useRef({ active: false, verified: false });
 
     // Auto-unlock main save button when all sections are verified
     useEffect(() => {
@@ -705,8 +831,26 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerifica
         }
     }, [allVerified, onVerificationDismissed]);
 
+    useEffect(() => {
+        if (!onVerifyStateChange) return;
+        const next = {
+            active: needsVerification && currentStep >= 0,
+            verified: !!verifiedSections[WIZARD_STEPS[currentStep]?.id],
+        };
+        const prev = lastVerifyStateRef.current;
+        if (prev.active === next.active && prev.verified === next.verified) return;
+        lastVerifyStateRef.current = next;
+        onVerifyStateChange(next);
+    }, [needsVerification, currentStep, verifiedSections, onVerifyStateChange]);
+
     return (
         <div className="wizard-container">
+            {showValidationToast && (
+                <div className="app-toast app-toast-error" role="alert">
+                    Please fill in all required fields marked with * before saving.
+                </div>
+            )}
+
             {/* AI Verification Popup */}
             {showVerificationPopup && (
                 <div className="verification-popup-overlay">
@@ -735,12 +879,13 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerifica
                 </div>
             )}
             <aside className="wizard-sidebar">
+                <div className="wizard-sidebar-header">CV Sections</div>
                 <div className="wizard-steps-list">
 
-                    {steps.map((step, idx) => (
+                    {WIZARD_STEPS.map((step, idx) => (
                         <div
                             key={step.id}
-                            className={`wizard-step-item ${idx === currentStep ? 'active' : ''} ${idx < currentStep ? 'completed' : ''}`}
+                            className={`wizard-step-item ${idx === currentStep ? 'active' : ''} ${isStepComplete(step.id) ? 'completed' : ''}`}
                             onClick={() => setCurrentStep(idx)}
                         >
                             <div className="step-number">
@@ -797,64 +942,14 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerifica
                 {/* Mobile-only context banner */}
                 {currentStep !== -1 && (
                     <div className="mobile-step-banner mobile-only">
-                        <span className="mb-step-indicator">STEP {currentStep + 1} OF {steps.length}</span>
-                        <h4 className="mb-step-title">{steps[currentStep].label}</h4>
+                        <span className="mb-step-indicator">STEP {currentStep + 1} OF {WIZARD_STEPS.length}</span>
+                        <h4 className="mb-step-title">{WIZARD_STEPS[currentStep].label}</h4>
                     </div>
                 )}
 
                 <div className="wizard-content-scroll">
                     {renderStepContent()}
                 </div>
-
-                {currentStep !== -1 && (
-                    <div className="wizard-actions">
-                        <button
-                            className={`go-back-link-footer ${currentStep === 0 ? 'hidden' : ''}`}
-                            onClick={() => currentStep > 0 && setCurrentStep(currentStep - 1)}
-                        >
-                            ← Go Back
-                        </button>
-
-                        <div className="wizard-actions-right">
-                            {/* Verify button — only in verification mode */}
-                            {needsVerification && currentStep >= 0 && (
-                                <button
-                                    className={`verify-section-btn ${verifiedSections[steps[currentStep]?.id] ? 'verified' : ''}`}
-                                    onClick={() => {
-                                        const stepId = steps[currentStep].id;
-                                        setVerifiedSections(prev => ({ ...prev, [stepId]: true }));
-                                        // Auto-advance to next section
-                                        if (currentStep < steps.length - 1) {
-                                            setTimeout(() => setCurrentStep(currentStep + 1), 300);
-                                        }
-                                    }}
-                                >
-                                    {verifiedSections[steps[currentStep]?.id] ? '✓ Verified' : 'Verify ✓'}
-                                </button>
-                            )}
-
-                            {!needsVerification && currentStep < steps.length - 1 && (
-                                <button className="continue-btn" onClick={() => setCurrentStep(currentStep + 1)}>
-                                    Next: {steps[currentStep + 1].label} →
-                                </button>
-                            )}
-                            {!needsVerification && currentStep === steps.length - 1 && (
-                                <button className="continue-btn" onClick={() => { onSave(); alert("Resume Saved Successfully! ✨"); }}>
-                                    Finish ✨
-                                </button>
-                            )}
-
-
-
-                            {/* Next button even in verification mode */}
-                            {needsVerification && !allVerified && currentStep < steps.length - 1 && !verifiedSections[steps[currentStep]?.id] && (
-                                <button className="continue-btn ghost" onClick={() => setCurrentStep(currentStep + 1)}>
-                                    Skip →
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                )}
             </main>
 
             {/* Professional Image Cropper Modal */}
@@ -867,7 +962,9 @@ const GuidedEditor = ({ markdown, onChange, onSave, onStartWizard, needsVerifica
             )}
         </div>
     );
-};
+});
+
+GuidedEditor.displayName = 'GuidedEditor';
 
 export default GuidedEditor;
 

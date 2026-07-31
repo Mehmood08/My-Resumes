@@ -1,14 +1,13 @@
 import React, { useState } from "react";
 import { LuX, LuChevronLeft, LuCheck } from "react-icons/lu";
-import { LiveThumbnail } from "./SharedLiveThumbnail";
-import { layouts } from "./templatesData";
+import { validateWizardAiFields, hasValidationErrors } from "../utils/cvValidation";
+import { useAuth } from "../context/AuthContext";
 
 const steps = [
     { id: "mode", title: "Choose Your Creation Mode" },
     { id: "education", title: "What is your education level?" },
     { id: "occupation", title: "What is your occupation?" },
     { id: "experience", title: "What is your experience level?" },
-    { id: "layout", title: "What layout suits you best?" },
     { id: "photo", title: "Will you be adding a photo?" },
 ];
 
@@ -71,6 +70,7 @@ const experienceLevels = [
 
 
 export default function TemplateWizard({ isOpen, onClose, onCreate, initialMode = "select", initialStep = 0 }) {
+    const { getUserId } = useAuth();
     const [currentStep, setCurrentStep] = useState(initialStep);
     const [wizardMode, setWizardMode] = useState(initialMode); // 'select', 'manual', 'ai'
 
@@ -83,8 +83,11 @@ export default function TemplateWizard({ isOpen, onClose, onCreate, initialMode 
     }, [isOpen, initialMode, initialStep]);
 
     const [isGenerating, setIsGenerating] = useState(false);
+    const [isImporting, setIsImporting] = useState(false);
+    const [importError, setImportError] = useState(null);
     const [isSuggestingSummary, setIsSuggestingSummary] = useState(false);
     const [errorType, setErrorType] = useState(null); // null, 'quota', 'error'
+    const [fieldErrors, setFieldErrors] = useState({});
     const [selections, setSelections] = useState({
         education: "",
         occupation: "",
@@ -110,16 +113,20 @@ export default function TemplateWizard({ isOpen, onClose, onCreate, initialMode 
 
     const handleNext = async () => {
         if (wizardMode === "select") {
-            // Mode selection step handled in rendering
             return;
         }
 
         if (wizardMode === "ai") {
+            const errors = validateWizardAiFields(selections, currentStep);
+            if (hasValidationErrors(errors)) {
+                setFieldErrors(errors);
+                return;
+            }
+            setFieldErrors({});
+
             if (currentStep < aiSteps.length - 1) {
-                const nextStep = currentStep + 1;
-                setCurrentStep(nextStep);
+                setCurrentStep(currentStep + 1);
             } else {
-                // Final step in AI mode: Trigger Generation
                 await handleAiGenerate();
             }
             return;
@@ -156,7 +163,8 @@ export default function TemplateWizard({ isOpen, onClose, onCreate, initialMode 
                     city: selections.city,
                     linkedin: selections.linkedin,
                     github: selections.github,
-                    experienceYears: selections.experienceYears
+                    experienceYears: selections.experienceYears,
+                    userId: getUserId(),
                 })
             });
 
@@ -198,7 +206,8 @@ export default function TemplateWizard({ isOpen, onClose, onCreate, initialMode 
                     qualification: selections.ai_education,
                     years: selections.experienceYears,
                     institute: selections.ai_school,
-                    jd: selections.ai_jd
+                    jd: selections.ai_jd,
+                    userId: getUserId(),
                 })
             });
 
@@ -214,6 +223,57 @@ export default function TemplateWizard({ isOpen, onClose, onCreate, initialMode 
             setErrorType('error');
         } finally {
             setIsSuggestingSummary(false);
+        }
+    };
+
+    const handleImportFile = async (file) => {
+        if (!file) return;
+
+        const ext = file.name.toLowerCase();
+        if (!ext.endsWith('.pdf') && !ext.endsWith('.doc') && !ext.endsWith('.docx')) {
+            setImportError('Please upload a PDF, DOC, or DOCX file.');
+            return;
+        }
+
+        if (file.size > 10 * 1024 * 1024) {
+            setImportError('File is too large. Maximum size is 10 MB.');
+            return;
+        }
+
+        setIsImporting(true);
+        setImportError(null);
+
+        try {
+            const apiUrl = import.meta.env.VITE_API_URL || '';
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const response = await fetch(`${apiUrl}/api/resumes/import`, {
+                method: 'POST',
+                body: formData,
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Failed to import CV.');
+            }
+
+            if (data.markdown) {
+                onCreate({
+                    mode: 'import',
+                    aiGenerated: data.markdown,
+                    importedTitle: data.title || file.name.replace(/\.[^.]+$/, ''),
+                });
+                handleClose();
+            } else {
+                throw new Error('No content could be extracted from this file.');
+            }
+        } catch (err) {
+            console.error('Import Error:', err);
+            setImportError(err.message || 'Failed to import CV. Please try another file.');
+        } finally {
+            setIsImporting(false);
         }
     };
 
@@ -257,6 +317,9 @@ ${selections.ai_summary || "Professional experience details regarding recent rol
             setCurrentStep(0);
             setWizardMode("select");
             setIsSuggestingSummary(false);
+            setIsImporting(false);
+            setImportError(null);
+            setFieldErrors({});
             setSelections({
                 education: "",
                 occupation: "",
@@ -281,6 +344,7 @@ ${selections.ai_summary || "Professional experience details regarding recent rol
     };
 
     const handleBack = () => {
+        setFieldErrors({});
         if (currentStep > 0) {
             setCurrentStep(currentStep - 1);
         } else {
@@ -290,6 +354,13 @@ ${selections.ai_summary || "Professional experience details regarding recent rol
 
     const updateSelection = (key, value) => {
         setSelections((prev) => ({ ...prev, [key]: value }));
+        if (fieldErrors[key]) {
+            setFieldErrors((prev) => {
+                const next = { ...prev };
+                delete next[key];
+                return next;
+            });
+        }
         // Auto-advance for list-based selections
         if (["education", "occupation", "experience", "photo"].includes(key)) {
             setTimeout(() => handleNext(), 200);
@@ -297,7 +368,7 @@ ${selections.ai_summary || "Professional experience details regarding recent rol
     };
 
     const renderStepContent = () => {
-        if (isGenerating) {
+        if (isGenerating || isImporting) {
             return (
                 <div className="ai-loading-container">
                     <div className="ai-anim-box">
@@ -305,8 +376,24 @@ ${selections.ai_summary || "Professional experience details regarding recent rol
                         <div className="sparkle s2">🪄</div>
                         <div className="sparkle s3">💎</div>
                     </div>
-                    <h3>Gemini is Thinking...</h3>
-                    <p>Analyzing JD and your verified profile to create a master-class CV.</p>
+                    <h3>{isImporting ? 'Importing your CV...' : 'Gemini is Thinking...'}</h3>
+                    <p>{isImporting
+                        ? 'Extracting content and mapping it to your CV sections.'
+                        : 'Analyzing JD and your verified profile to create a master-class CV.'}</p>
+                </div>
+            );
+        }
+
+        if (importError) {
+            return (
+                <div className="ai-error-fallback">
+                    <div className="error-icon">⚠️</div>
+                    <h3>Import failed</h3>
+                    <p>{importError}</p>
+                    <div className="fallback-options">
+                        <button className="fallback-btn secondary" onClick={() => setImportError(null)}>Try again</button>
+                        <button className="fallback-btn primary" onClick={() => { setImportError(null); setWizardMode('select'); }}>Back to options</button>
+                    </div>
                 </div>
             );
         }
@@ -341,8 +428,35 @@ ${selections.ai_summary || "Professional experience details regarding recent rol
                     <div className="mode-card manual-standard" onClick={() => { setWizardMode("manual"); setCurrentStep(1); }}>
                         <div className="mode-icon">✍️</div>
                         <h4>Manual Setup</h4>
-                        <p>Choose a template and fill in your details yourself.</p>
+                        <p>Answer a few questions, then fill in your details yourself.</p>
                     </div>
+                    <div className="mode-card import-option" onClick={() => { setWizardMode("import"); setCurrentStep(0); }}>
+                        <div className="mode-icon">📂</div>
+                        <h4>Import CV</h4>
+                        <p>Upload an existing PDF or Word document and we'll map it to your sections.</p>
+                    </div>
+                </div>
+            );
+        }
+
+        if (wizardMode === "import") {
+            return (
+                <div className="import-step">
+                    <div className="import-dropzone">
+                        <div className="import-icon">📄</div>
+                        <h4>Upload your CV</h4>
+                        <p>Supported formats: PDF, DOC, DOCX (max 10 MB). Content is mapped to sections with Gemini.</p>
+                        <label className="import-file-btn">
+                            <input
+                                type="file"
+                                accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                                onChange={(e) => handleImportFile(e.target.files?.[0])}
+                                hidden
+                            />
+                            Choose file
+                        </label>
+                    </div>
+                    <p className="import-hint">Gemini will map your content into CV sections and save automatically.</p>
                 </div>
             );
         }
@@ -367,21 +481,28 @@ ${selections.ai_summary || "Professional experience details regarding recent rol
                                         </button>
                                     )}
                                     <textarea
-                                        className="wizard-textarea"
+                                        className={`wizard-textarea ${fieldErrors[f.id] ? "input-error" : ""}`}
                                         placeholder={f.placeholder}
                                         value={selections[f.id]}
                                         onChange={(e) => updateSelection(f.id, e.target.value)}
                                     />
+                                    {fieldErrors[f.id] && (
+                                        <span className="field-error-msg">{fieldErrors[f.id]}</span>
+                                    )}
                                 </div>
                             ) : (
-                                <input
-                                    key={f.id}
-                                    type={f.type}
-                                    className="wizard-input"
-                                    placeholder={f.placeholder}
-                                    value={selections[f.id]}
-                                    onChange={(e) => updateSelection(f.id, e.target.value)}
-                                />
+                                <div key={f.id} className="wizard-field-group">
+                                    <input
+                                        type={f.type}
+                                        className={`wizard-input ${fieldErrors[f.id] ? "input-error" : ""}`}
+                                        placeholder={f.placeholder}
+                                        value={selections[f.id]}
+                                        onChange={(e) => updateSelection(f.id, e.target.value)}
+                                    />
+                                    {fieldErrors[f.id] && (
+                                        <span className="field-error-msg">{fieldErrors[f.id]}</span>
+                                    )}
+                                </div>
                             )
                         ))}
                     </div>
@@ -390,22 +511,32 @@ ${selections.ai_summary || "Professional experience details regarding recent rol
             return (
                 <div className="ai-input-step">
                     {step.fieldType === "textarea" ? (
-                        <textarea
-                            className="wizard-textarea"
-                            placeholder={step.placeholder}
-                            value={selections[step.fieldId]}
-                            onChange={(e) => updateSelection(step.fieldId, e.target.value)}
-                            autoFocus
-                        />
+                        <>
+                            <textarea
+                                className={`wizard-textarea ${fieldErrors[step.fieldId] ? "input-error" : ""}`}
+                                placeholder={step.placeholder}
+                                value={selections[step.fieldId]}
+                                onChange={(e) => updateSelection(step.fieldId, e.target.value)}
+                                autoFocus
+                            />
+                            {fieldErrors[step.fieldId] && (
+                                <span className="field-error-msg">{fieldErrors[step.fieldId]}</span>
+                            )}
+                        </>
                     ) : (
-                        <input
-                            type={step.fieldType}
-                            className="wizard-input"
-                            placeholder={step.placeholder}
-                            value={selections[step.fieldId]}
-                            onChange={(e) => updateSelection(step.fieldId, e.target.value)}
-                            autoFocus
-                        />
+                        <>
+                            <input
+                                type={step.fieldType}
+                                className={`wizard-input ${fieldErrors[step.fieldId] ? "input-error" : ""}`}
+                                placeholder={step.placeholder}
+                                value={selections[step.fieldId]}
+                                onChange={(e) => updateSelection(step.fieldId, e.target.value)}
+                                autoFocus
+                            />
+                            {fieldErrors[step.fieldId] && (
+                                <span className="field-error-msg">{fieldErrors[step.fieldId]}</span>
+                            )}
+                        </>
                     )}
                 </div>
             );
@@ -468,28 +599,7 @@ ${selections.ai_summary || "Professional experience details regarding recent rol
                         ))}
                     </div>
                 );
-            case 4: // Layout
-                return (
-                    <div className="selection-grid large-scroll" style={{ maxHeight: '420px', overflowY: 'auto', paddingRight: '10px' }}>
-                        {layouts.map((layout) => (
-                            <div
-                                key={layout.id}
-                                className={`selection-card large ${selections.layout === layout.id ? "selected" : ""}`}
-                                onClick={() => updateSelection("layout", layout.id)}
-                            >
-                                <div className={`cv-thumbnail-container ${layout.filter || ''}`} style={{ position: 'relative', overflow: 'hidden', height: '180px' }}>
-                                    <LiveThumbnail
-                                        formatId={layout.id}
-                                        markdown="" /* Empty for generic samples */
-                                    />
-                                </div>
-                                <h4>{layout.name}</h4>
-                                <p style={{ fontSize: '11px' }}>{layout.description}</p>
-                            </div>
-                        ))}
-                    </div>
-                );
-            case 5: // Photo
+            case 4: // Photo
                 return (
                     <div className="selection-grid photo-step">
                         <div
@@ -526,13 +636,15 @@ ${selections.ai_summary || "Professional experience details regarding recent rol
                 <div className="wizard-modal-header">
                     <div className="progress-container">
                         <div className="progress-label">
-                            {isGenerating ? "Generation in progress..." : (
+                            {isGenerating ? "Generation in progress..." : isImporting ? "Import in progress..." : (
                                 wizardMode === "select" ? "Selection Mode" : 
-                                (wizardMode === "ai" ? `AI Step ${currentStep + 1} of ${aiSteps.length}` : `Manual Step ${currentStep} of ${steps.length - 1}`)
+                                (wizardMode === "ai" ? `AI Step ${currentStep + 1} of ${aiSteps.length}` :
+                                 wizardMode === "import" ? "Import CV" :
+                                 `Manual Step ${currentStep} of ${steps.length - 1}`)
                             )}
                         </div>
                         <div className="progress-dots">
-                            {(wizardMode === "ai" ? aiSteps : steps).map((_, idx) => (
+                            {(wizardMode === "ai" ? aiSteps : wizardMode === "import" ? [{ id: "import" }] : steps).map((_, idx) => (
                                 <div key={idx} className={`dot ${idx === currentStep ? "active" : ""} ${idx < currentStep ? "completed" : ""}`} />
                             ))}
                         </div>
@@ -545,9 +657,11 @@ ${selections.ai_summary || "Professional experience details regarding recent rol
                 <div className="wizard-modal-content">
                     <div className="wizard-step-body animate-slide">
                         <h2>
-                            {isGenerating ? "Gemini is thinking..." : (
+                            {isGenerating ? "Gemini is thinking..." : isImporting ? "Importing your CV..." : (
                                 wizardMode === "select" ? "How would you like to build your CV?" : 
-                                (wizardMode === "ai" ? aiSteps[currentStep].title : steps[currentStep].title)
+                                (wizardMode === "ai" ? aiSteps[currentStep].title :
+                                 wizardMode === "import" ? "Import from PDF or Word" :
+                                 steps[currentStep].title)
                             )}
                         </h2>
                         <div className="wizard-main-selection">
@@ -558,23 +672,21 @@ ${selections.ai_summary || "Professional experience details regarding recent rol
 
                 <div className="wizard-modal-footer">
                     <button
-                        className={`back-text-btn ${wizardMode === "select" || isGenerating ? "hidden" : ""}`}
+                        className={`back-text-btn ${wizardMode === "select" || isGenerating || isImporting ? "hidden" : ""}`}
                         onClick={handleBack}
                     >
                         <LuChevronLeft size={20} /> Back
                     </button>
 
                     <div className="footer-actions">
-                        {wizardMode !== "select" && !isGenerating && (
+                        {wizardMode !== "select" && !isGenerating && !isImporting && wizardMode !== "import" && (
                             <button
                                 className="continue-btn premium"
                                 onClick={handleNext}
                                 disabled={
                                     (wizardMode === "manual" && currentStep === 1 && !selections.education) ||
                                     (wizardMode === "manual" && currentStep === 2 && !selections.occupation) ||
-                                    (wizardMode === "manual" && currentStep === 3 && !selections.experience) ||
-                                    (wizardMode === "ai" && aiSteps[currentStep].type === "multi" && aiSteps[currentStep].fields.filter(f => !f.optional).some(f => !selections[f.id])) ||
-                                    (wizardMode === "ai" && aiSteps[currentStep].type === "single" && !selections[aiSteps[currentStep].fieldId])
+                                    (wizardMode === "manual" && currentStep === 3 && !selections.experience)
                                 }
                             >
                                 {wizardMode === "ai" && currentStep === aiSteps.length - 1 ? "Confirm & Generate CV ✨" : 

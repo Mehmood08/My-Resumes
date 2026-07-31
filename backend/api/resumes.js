@@ -1,9 +1,30 @@
 import express from 'express';
+import multer from 'multer';
 import Resume from '../models/Resume.js';
 import mongoose from 'mongoose';
 import { GoogleGenAI } from '@google/genai';
+import { getEffectiveConfig, DEFAULT_GEMINI_MODEL } from '../utils/configHelper.js';
+import { extractContentFromFile, getFileExtension, importCvFromContent } from '../utils/cvImport.js';
 
 const router = express.Router();
+
+const getAiConfig = async (req) => {
+    const userId = req.body?.userId || req.query?.userId || null;
+    const { config } = await getEffectiveConfig(userId);
+    return config;
+};
+
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: (_req, file, cb) => {
+        if (getFileExtension(file.originalname)) {
+            cb(null, true);
+            return;
+        }
+        cb(new Error('Unsupported file type. Please upload a PDF, DOC, or DOCX file.'));
+    },
+});
 
 /**
  * Truncates long Job Descriptions to stay within Gemini token limits.
@@ -90,10 +111,16 @@ CV Content:
 ${markdown}
 `;
 
-        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+        const config = await getAiConfig(req);
+        if (!config.GEMINI_API_KEY) {
+            return res.status(500).json({ message: "Gemini API Key not configured in system settings." });
+        }
+
+        const ai = new GoogleGenAI({ apiKey: config.GEMINI_API_KEY });
+        const model = config.GEMINI_MODEL || DEFAULT_GEMINI_MODEL;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-lite',
+            model,
             contents: prompt,
             config: {
                 responseMimeType: 'application/json'
@@ -110,13 +137,94 @@ ${markdown}
     }
 });
 
+// POST AI Analyse CV against Job Description
+router.post('/analyse', async (req, res) => {
+    try {
+        const { markdown, jobDescription } = req.body;
+        if (!markdown || markdown.trim() === '') {
+            return res.status(400).json({ message: 'CV content required for analysis' });
+        }
+        if (!jobDescription || jobDescription.trim() === '') {
+            return res.status(400).json({ message: 'Job description is required' });
+        }
+
+        const truncatedJD = truncateJD(jobDescription);
+
+        const prompt = `Act as an expert CV coach and ATS specialist. Compare the candidate's CV against the Target Job Description and suggest concrete improvements section by section.
+
+Return ONLY valid JSON in this exact format:
+{
+  "matchScore": 72,
+  "summary": "One sentence overall fit assessment against the job.",
+  "sections": [
+    {
+      "id": "summary",
+      "title": "Summary",
+      "improvements": [
+        "Specific improvement tied to the JD",
+        "Another actionable improvement"
+      ],
+      "suggestedContent": "Full rewritten section body in markdown (bullets allowed). Do NOT include the ## heading line."
+    }
+  ]
+}
+
+Rules:
+- Include only sections that exist in the CV OR that are clearly important for this job (summary, experience, projects, education, skills, languages, certifications).
+- Use id values: summary, experience, projects, education, skills, languages, certifications (lowercase).
+- improvements: 2-4 specific, non-generic bullets per section referencing JD keywords/requirements.
+- suggestedContent: complete replacement text for that section only, tailored to the job, preserving truthful facts from the CV — do NOT invent employers, dates, or degrees.
+- matchScore: 0-100 indicating alignment with the job description.
+- Prioritize sections with the weakest JD alignment.
+
+Target Job Description:
+${truncatedJD}
+
+CV Content (markdown):
+${markdown}
+`;
+
+        const config = await getAiConfig(req);
+        if (!config.GEMINI_API_KEY) {
+            return res.status(500).json({ message: 'Gemini API Key not configured in system settings.' });
+        }
+
+        const ai = new GoogleGenAI({ apiKey: config.GEMINI_API_KEY });
+        const model = config.GEMINI_MODEL || DEFAULT_GEMINI_MODEL;
+
+        const response = await ai.models.generateContent({
+            model,
+            contents: prompt,
+            config: {
+                responseMimeType: 'application/json',
+                maxOutputTokens: 4096,
+            },
+        });
+
+        const cleanText = response.text.replace(/```json|```/g, '').trim();
+        const result = JSON.parse(cleanText);
+
+        if (!Array.isArray(result.sections)) {
+            throw new Error('Invalid analysis response format');
+        }
+
+        res.json(result);
+    } catch (err) {
+        console.error('Analyse Error:', err);
+        if (err.message?.includes('429')) {
+            return res.status(429).json({ message: 'Gemini API quota reached. Please try again shortly.' });
+        }
+        res.status(500).json({ message: 'Failed to analyse CV. Please try again.', error: err.message });
+    }
+});
+
 // POST AI Generation
 router.post('/generate', async (req, res) => {
     try {
         const { education, year, school, schoolCity, summary, jd, fullName, email, phone, city, linkedin, github, experienceYears } = req.body;
 
-        if (!education || !jd) {
-            return res.status(400).json({ message: "Education and Job Description are required" });
+        if (!education || !jd || !fullName || !email || !phone || !city || !school || !schoolCity || !year || !summary) {
+            return res.status(400).json({ message: "All required fields must be provided: name, contact info, education, job description, and experience summary" });
         }
 
         const truncatedJD = truncateJD(jd);
@@ -175,17 +283,18 @@ ${linksLine}
 4. Return ONLY a JSON object: { "markdown": "CV_HERE" }
 `;
 
-        if (!process.env.GEMINI_API_KEY) {
-            console.error("Missing GEMINI_API_KEY in backend environment");
-            return res.status(500).json({ message: "API Key not configured", error: "Please add GEMINI_API_KEY to your .env file" });
+        const config = await getAiConfig(req);
+        if (!config.GEMINI_API_KEY) {
+            console.error("Missing GEMINI_API_KEY in system settings");
+            return res.status(500).json({ message: "API Key not configured", error: "Please configure GEMINI_API_KEY in System Settings" });
         }
 
-        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-        const model = ai.models;
+        const ai = new GoogleGenAI({ apiKey: config.GEMINI_API_KEY });
+        const geminiModel = config.GEMINI_MODEL || DEFAULT_GEMINI_MODEL;
 
         try {
-            const response = await model.generateContent({
-                model: 'gemini-2.5-flash-lite',
+            const response = await ai.models.generateContent({
+                model: geminiModel,
                 contents: prompt,
                 config: {
                     maxOutputTokens: 1000
@@ -242,13 +351,15 @@ router.post('/suggest-experience', async (req, res) => {
         ---` : ""}
         DO NOT invent company names, specific dates, or fake projects. Focus on highlighting skills and achievements that align with the job requirements. Keep it professional. DO NOT wrap the output in markdown blockquotes or json, just return the plain string text.`;
 
-        if (!process.env.GEMINI_API_KEY) {
+        const config = await getAiConfig(req);
+        if (!config.GEMINI_API_KEY) {
             return res.status(500).json({ message: "API Key not configured" });
         }
 
-        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+        const ai = new GoogleGenAI({ apiKey: config.GEMINI_API_KEY });
+        const geminiModel = config.GEMINI_MODEL || DEFAULT_GEMINI_MODEL;
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-lite',
+            model: geminiModel,
             contents: prompt,
             config: {
                 maxOutputTokens: 250 // small max since it's just a summary
@@ -262,6 +373,44 @@ router.post('/suggest-experience', async (req, res) => {
             return res.status(429).json({ message: "Quota Full (429)", error: "Gemini API limits reached." });
         }
         res.status(500).json({ message: "Failed to generate suggestion.", error: err.message });
+    }
+});
+
+// POST Import CV from PDF/Word
+router.post('/import', (req, res, next) => {
+    upload.single('file')(req, res, (err) => {
+        if (err) {
+            const message = err.code === 'LIMIT_FILE_SIZE'
+                ? 'File is too large. Maximum size is 10 MB.'
+                : err.message;
+            return res.status(400).json({ message });
+        }
+        next();
+    });
+}, async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: 'No file uploaded. Please select a PDF, DOC, or DOCX file.' });
+        }
+
+        const content = await extractContentFromFile(req.file.buffer, req.file.originalname);
+        const result = await importCvFromContent(content, req.file.originalname);
+
+        res.json(result);
+    } catch (err) {
+        console.error('CV Import Error:', err);
+        if (err.message?.includes('Unsupported file type')) {
+            return res.status(400).json({ message: err.message });
+        }
+        if (err.status === 429 || err.message?.includes('429') || err.message?.includes('quota')) {
+            return res.status(429).json({ message: err.message || 'Gemini API quota reached. Please try again shortly.' });
+        }
+        if (err.message?.includes('Gemini API key')) {
+            return res.status(503).json({ message: err.message });
+        }
+        res.status(500).json({
+            message: err.message || 'Failed to import CV. Please try another file.',
+        });
     }
 });
 
