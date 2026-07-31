@@ -15,6 +15,7 @@ import CVScoringModal from './Components/CVScoringModal';
 import EmptyState from './Components/EmptyState';
 import SystemSetupModal from './Components/SystemSetupModal';
 import { SpeedInsights } from "@vercel/speed-insights/react";
+import { LuTrash2 } from "react-icons/lu";
 
 function App() {
   const { user, getUserId } = useAuth();
@@ -50,6 +51,7 @@ function App() {
   const [needsVerification, setNeedsVerification] = useState(false);
   const [wizardOptions, setWizardOptions] = useState({ mode: 'select', step: 0 });
   const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
 
   useEffect(() => {
     if (!user) {
@@ -289,24 +291,82 @@ function App() {
     }
   };
 
-  const handleDeleteNote = (id) => {
+  const handleDuplicateNote = (id) => {
     const userId = getUserId();
     if (!userId) return;
-    if (window.confirm("Are you sure you want to delete this resume?")) {
-      fetch(`${import.meta.env.VITE_API_URL}/api/resumes/${id}?userId=${userId}`, { method: 'DELETE' })
-        .then(res => {
-          if (res.ok) {
-            setNotes(notes.filter(n => n.id !== id));
-            if (currentNote.id === id) {
-              setCurrentNote({ title: "", desc: "", script: "", id: null, parentId: "", isDraft: false });
-              setIsPreviewMode(false);
-              setIsDirty(false);
-            }
-          }
-        })
-        .catch(err => alert("Failed to delete resume"));
-    }
+
+    const source = notes.find(n => n.id === id);
+    if (!source) return;
+
+    const copyTitle = source.title?.trim()
+      ? `${source.title.trim()} (Copy)`
+      : 'Untitled (Copy)';
+
+    const newNote = {
+      id: uuidv4(),
+      title: copyTitle,
+      desc: source.desc || '',
+      script: source.script || '',
+      date: new Date().toLocaleDateString(),
+      parentId: source.parentId || '',
+      cvFormat: source.cvFormat || cvFormat,
+      userId,
+    };
+
+    fetch(`${import.meta.env.VITE_API_URL}/api/resumes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newNote),
+    })
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to duplicate');
+        return res.json();
+      })
+      .then(savedNote => {
+        setNotes(prev => [savedNote, ...prev]);
+        setCurrentNote({
+          ...savedNote,
+          title: savedNote.title || '',
+          desc: savedNote.desc || '',
+          script: savedNote.script || '',
+          isDraft: false,
+        });
+        setCvFormat(savedNote.cvFormat || 'European');
+        setIsDirty(false);
+        if (window.innerWidth <= 768) setIsSidebarOpen(false);
+      })
+      .catch(() => alert('Failed to duplicate resume'));
   };
+
+  const handleDeleteNote = (id) => {
+    setDeleteConfirmId(id);
+  };
+
+  const confirmDeleteNote = () => {
+    const id = deleteConfirmId;
+    if (!id) return;
+
+    const userId = getUserId();
+    if (!userId) return;
+
+    fetch(`${import.meta.env.VITE_API_URL}/api/resumes/${id}?userId=${userId}`, { method: 'DELETE' })
+      .then(res => {
+        if (res.ok) {
+          setNotes(notes.filter(n => n.id !== id));
+          if (currentNote.id === id) {
+            setCurrentNote({ title: "", desc: "", script: "", id: null, parentId: "", isDraft: false });
+            setIsPreviewMode(false);
+            setIsDirty(false);
+          }
+          setDeleteConfirmId(null);
+        }
+      })
+      .catch(() => alert("Failed to delete resume"));
+  };
+
+  const pendingDeleteNote = deleteConfirmId
+    ? notes.find(n => n.id === deleteConfirmId)
+    : null;
 
   const handleDownloadPDF = () => {
     const element = document.querySelector(".cv-preview > div") || document.querySelector(".html-preview");
@@ -376,6 +436,7 @@ function App() {
           notes={notes}
           onSelectNote={selectNote}
           onDeleteNote={handleDeleteNote}
+          onDuplicateNote={handleDuplicateNote}
           activeNoteId={currentNote.id}
           isSidebarOpen={isSidebarOpen}
           onToggleSidebar={toggleSidebar}
@@ -437,6 +498,29 @@ function App() {
           }}
           onClose={() => setIsSettingsOpen(false)}
         />
+      )}
+
+      {deleteConfirmId && (
+        <div className="profile-logout-overlay" onClick={() => setDeleteConfirmId(null)}>
+          <div className="profile-logout-modal" onClick={e => e.stopPropagation()}>
+            <div className="profile-logout-icon">
+              <LuTrash2 size={28} />
+            </div>
+            <h3>Delete Resume</h3>
+            <p>
+              Are you sure you want to delete{' '}
+              <strong>{pendingDeleteNote?.title || 'this resume'}</strong>? This action cannot be undone.
+            </p>
+            <div className="profile-logout-actions">
+              <button type="button" className="profile-logout-cancel" onClick={() => setDeleteConfirmId(null)}>
+                Cancel
+              </button>
+              <button type="button" className="profile-logout-confirm" onClick={confirmDeleteNote}>
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       <SpeedInsights />

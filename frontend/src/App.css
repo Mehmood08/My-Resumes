@@ -522,6 +522,7 @@
 }
 
 .child-btn,
+.copy-btn,
 .delete-btn {
     background: transparent;
     border: none;
@@ -540,9 +541,23 @@
     color: var(--sidebar-text);
 }
 
+.copy-btn:hover {
+    background: #e0e7ff;
+    color: #4f46e5;
+}
+
 .delete-btn:hover {
     background: #fee2e2;
     color: #ef4444;
+}
+
+.note-item.active .copy-btn {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.note-item.active .copy-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
 }
 
 .child-notes-container {

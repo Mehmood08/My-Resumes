@@ -1,5 +1,5 @@
 import React, { useState, useEffect, memo, useMemo } from "react";
-import { LuTrash2, LuChevronDown, LuChevronRight, LuPanelLeftClose, LuPanelLeft, LuSettings, LuPlus } from "react-icons/lu";
+import { LuTrash2, LuChevronDown, LuChevronRight, LuPanelLeftClose, LuPanelLeft, LuSettings, LuPlus, LuCopy } from "react-icons/lu";
 import ProfileMenu from "./ProfileMenu";
 
 const LETTER_AVATAR_COLORS = [
@@ -23,6 +23,7 @@ function Sidebar({
   notes,
   onSelectNote,
   onDeleteNote,
+  onDuplicateNote,
   activeNoteId,
   openParentId,
   isSidebarOpen,
@@ -125,6 +126,9 @@ function Sidebar({
                   </div>
 
                   <div className="note-buttons" onClick={e => e.stopPropagation()}>
+                    <button className="copy-btn" onClick={() => onDuplicateNote(parent.id)} title="Duplicate">
+                      <LuCopy size={14} />
+                    </button>
                     <button className="delete-btn" onClick={() => onDeleteNote(parent.id)} title="Delete">
                       <LuTrash2 size={14} />
                     </button>
@@ -153,9 +157,14 @@ function Sidebar({
                           <small className="note-date">{child.date}</small>
                         </div>
 
-                        <button className="delete-btn" onClick={(e) => { e.stopPropagation(); onDeleteNote(child.id); }} title="Delete">
-                          <LuTrash2 size={14} />
-                        </button>
+                        <div className="note-buttons" onClick={e => e.stopPropagation()}>
+                          <button className="copy-btn" onClick={() => onDuplicateNote(child.id)} title="Duplicate">
+                            <LuCopy size={14} />
+                          </button>
+                          <button className="delete-btn" onClick={() => onDeleteNote(child.id)} title="Delete">
+                            <LuTrash2 size={14} />
+                          </button>
+                        </div>
                       </div>
                     )})}
                   </div>
