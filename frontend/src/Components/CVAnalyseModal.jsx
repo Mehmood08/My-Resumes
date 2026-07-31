@@ -1,21 +1,107 @@
 import React, { useState, useEffect } from 'react';
 import './CVAnalyseModal.css';
-import { LuX, LuSparkles, LuCheck, LuInfo, LuChevronRight } from 'react-icons/lu';
+import { LuX, LuSparkles, LuCheck, LuInfo } from 'react-icons/lu';
 import { useAuth } from '../context/AuthContext';
+import { buildSectionDraft } from '../utils/parseSectionContent';
+
+function SectionEditor({ section, draft, onDraftChange, onSave, onReplaceSuggested, saved }) {
+    const [activeTab, setActiveTab] = useState('suggested');
+    const isCurrentDirty = draft.current.trim() !== draft.savedCurrent.trim();
+
+    const updateDraft = (patch) => onDraftChange(section.id, patch);
+
+    return (
+        <div className="analyse-section-card">
+            <div className="analyse-section-head">
+                <h3>{section.title || section.id}</h3>
+                {saved && !isCurrentDirty && (
+                    <span className="analyse-applied-tag">
+                        <LuCheck size={14} /> Saved
+                    </span>
+                )}
+            </div>
+
+            <div className="analyse-tabs">
+                <button
+                    type="button"
+                    className={`analyse-tab ${activeTab === 'current' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('current')}
+                >
+                    Current
+                </button>
+                <button
+                    type="button"
+                    className={`analyse-tab ${activeTab === 'suggested' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('suggested')}
+                >
+                    Suggested
+                </button>
+            </div>
+
+            {activeTab === 'suggested' && section.improvements?.length > 0 && (
+                <ul className="analyse-section-tips">
+                    {section.improvements.map((tip, idx) => (
+                        <li key={idx} className={`analyse-tip-colour-${idx % 4}`}>{tip}</li>
+                    ))}
+                </ul>
+            )}
+
+            {activeTab === 'current' ? (
+                <div className="analyse-tab-panel">
+                    <textarea
+                        className="analyse-section-textarea"
+                        value={draft.current}
+                        onChange={(e) => updateDraft({ current: e.target.value })}
+                        rows={6}
+                        spellCheck
+                    />
+                    <button
+                        type="button"
+                        className="analyse-save-btn"
+                        onClick={() => onSave(section.id)}
+                        disabled={!isCurrentDirty || !draft.current.trim()}
+                    >
+                        Save
+                    </button>
+                </div>
+            ) : (
+                <div className="analyse-tab-panel">
+                    <textarea
+                        className="analyse-section-textarea"
+                        value={draft.suggested}
+                        onChange={(e) => updateDraft({ suggested: e.target.value })}
+                        rows={6}
+                        spellCheck
+                    />
+                    <button
+                        type="button"
+                        className="analyse-replace-btn"
+                        onClick={() => onReplaceSuggested(section.id)}
+                        disabled={!draft.suggested.trim()}
+                    >
+                        Replace with Suggested
+                    </button>
+                </div>
+            )}
+        </div>
+    );
+}
 
 export default function CVAnalyseModal({ isOpen, onClose, markdown, onApplySection }) {
     const { getUserId } = useAuth();
     const [jobDescription, setJobDescription] = useState('');
-    const [status, setStatus] = useState('input'); // input, loading, success, error
+    const [status, setStatus] = useState('input');
     const [analysis, setAnalysis] = useState(null);
-    const [appliedIds, setAppliedIds] = useState({});
+    const [sectionDrafts, setSectionDrafts] = useState({});
+    const [savedIds, setSavedIds] = useState({});
     const [errorMessage, setErrorMessage] = useState('');
 
     useEffect(() => {
         if (!isOpen) {
             setStatus('input');
             setAnalysis(null);
-            setAppliedIds({});
+            setSectionDrafts({});
+            setSavedIds({});
             setErrorMessage('');
         }
     }, [isOpen]);
@@ -43,6 +129,13 @@ export default function CVAnalyseModal({ isOpen, onClose, markdown, onApplySecti
             const data = await response.json();
             if (!response.ok) throw new Error(data.message || 'Failed to analyse CV');
 
+            const drafts = {};
+            for (const section of data.sections || []) {
+                drafts[section.id] = buildSectionDraft(section, markdown);
+            }
+
+            setSectionDrafts(drafts);
+            setSavedIds({});
             setAnalysis(data);
             setStatus('success');
         } catch (error) {
@@ -52,16 +145,51 @@ export default function CVAnalyseModal({ isOpen, onClose, markdown, onApplySecti
         }
     };
 
-    const handleApply = (section) => {
-        if (!section?.suggestedContent?.trim()) return;
-        onApplySection?.(section.id, section.suggestedContent.trim());
-        setAppliedIds(prev => ({ ...prev, [section.id]: true }));
+    const handleDraftChange = (sectionId, patch) => {
+        setSectionDrafts((prev) => ({
+            ...prev,
+            [sectionId]: { ...prev[sectionId], ...patch },
+        }));
+        if (patch.current !== undefined) {
+            setSavedIds((prev) => ({ ...prev, [sectionId]: false }));
+        }
+    };
+
+    const handleSave = (sectionId) => {
+        const draft = sectionDrafts[sectionId];
+        const content = draft?.current?.trim();
+        if (!content || content === draft.savedCurrent.trim()) return;
+
+        onApplySection?.(sectionId, content);
+        setSectionDrafts((prev) => ({
+            ...prev,
+            [sectionId]: { ...prev[sectionId], savedCurrent: content },
+        }));
+        setSavedIds((prev) => ({ ...prev, [sectionId]: true }));
+    };
+
+    const handleReplaceSuggested = (sectionId) => {
+        const draft = sectionDrafts[sectionId];
+        const content = draft?.suggested?.trim();
+        if (!content) return;
+
+        onApplySection?.(sectionId, content);
+        setSectionDrafts((prev) => ({
+            ...prev,
+            [sectionId]: {
+                ...prev[sectionId],
+                current: content,
+                savedCurrent: content,
+            },
+        }));
+        setSavedIds((prev) => ({ ...prev, [sectionId]: true }));
     };
 
     const handleClose = () => {
         setStatus('input');
         setAnalysis(null);
-        setAppliedIds({});
+        setSectionDrafts({});
+        setSavedIds({});
         onClose();
     };
 
@@ -141,52 +269,20 @@ export default function CVAnalyseModal({ isOpen, onClose, markdown, onApplySecti
 
                         <div className="analyse-sections">
                             {analysis.sections.map((section) => (
-                                <div key={section.id} className="analyse-section-card">
-                                    <div className="analyse-section-head">
-                                        <h3>{section.title || section.id}</h3>
-                                        {appliedIds[section.id] && (
-                                            <span className="analyse-applied-tag">
-                                                <LuCheck size={14} /> Applied
-                                            </span>
-                                        )}
-                                    </div>
-
-                                    {section.improvements?.length > 0 && (
-                                        <ul className="analyse-improvements">
-                                            {section.improvements.map((tip, idx) => (
-                                                <li key={idx}>
-                                                    <LuChevronRight size={14} />
-                                                    <span>{tip}</span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    )}
-
-                                    {section.suggestedContent && (
-                                        <div className="analyse-suggestion-preview">
-                                            <span className="analyse-suggestion-label">Suggested rewrite</span>
-                                            <pre>{section.suggestedContent}</pre>
-                                        </div>
-                                    )}
-
-                                    <button
-                                        type="button"
-                                        className={`analyse-apply-btn ${appliedIds[section.id] ? 'applied' : ''}`}
-                                        onClick={() => handleApply(section)}
-                                        disabled={!section.suggestedContent?.trim() || appliedIds[section.id]}
-                                    >
-                                        {appliedIds[section.id] ? (
-                                            <><LuCheck size={16} /> Applied to editor</>
-                                        ) : (
-                                            'Apply to section'
-                                        )}
-                                    </button>
-                                </div>
+                                <SectionEditor
+                                    key={section.id}
+                                    section={section}
+                                    draft={sectionDrafts[section.id] || { current: '', suggested: '', savedCurrent: '' }}
+                                    onDraftChange={handleDraftChange}
+                                    onSave={handleSave}
+                                    onReplaceSuggested={handleReplaceSuggested}
+                                    saved={savedIds[section.id]}
+                                />
                             ))}
                         </div>
 
                         <div className="analyse-footer-note">
-                            Applied changes update your editor but are not saved until you click Save.
+                            Save applies your Current edits to the editor. Replace with Suggested overwrites and saves in one step.
                         </div>
                     </div>
                 )}
