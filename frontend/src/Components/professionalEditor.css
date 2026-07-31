@@ -13,16 +13,103 @@
   position: relative;
 }
 
-/* Floating action buttons */
+/* Floating action bar */
 .floating-actions {
   position: fixed;
   top: 20px;
   right: 28px;
+  z-index: 200;
+}
+
+.floating-action-bar {
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 12px;
-  z-index: 200;
+  gap: 2px;
+  padding: 6px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12), 0 2px 8px rgba(15, 23, 42, 0.06);
+  backdrop-filter: blur(10px);
+  overflow: visible;
+}
+
+.floating-action-divider {
+  width: 1px;
+  height: 24px;
+  background: #e2e8f0;
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+
+.fab-tooltip-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.fab-tooltip-wrap[data-tooltip]:hover::after,
+.fab-tooltip-wrap[data-tooltip]:focus-within::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 10px;
+  background: #0f172a;
+  color: #f8fafc;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+  border-radius: 8px;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.18);
+  pointer-events: none;
+  z-index: 300;
+  animation: fabTooltipIn 0.15s ease-out;
+}
+
+.fab-tooltip-wrap[data-tooltip]:hover::before,
+.fab-tooltip-wrap[data-tooltip]:focus-within::before {
+  content: "";
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-bottom-color: #0f172a;
+  pointer-events: none;
+  z-index: 300;
+}
+
+@keyframes fabTooltipIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.fab-bar-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  background: transparent;
+  color: #475569;
+  flex-shrink: 0;
+}
+
+.fab-bar-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
 }
 
 .fab-round {
@@ -53,104 +140,102 @@
 }
 
 .fab-preview {
-  background: white;
   color: #475569;
-  border: 1px solid #e2e8f0;
 }
 
 .fab-preview:hover {
   color: #2563eb;
-  border-color: #93c5fd;
   background: #eff6ff;
 }
 
 .fab-preview.active {
   background: #2563eb;
   color: white;
-  border-color: #2563eb;
-  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35);
 }
 
 .fab-edit {
-  background: white;
   color: #475569;
-  border: 1px solid #e2e8f0;
 }
 
 .fab-edit:hover {
   color: #4f46e5;
-  border-color: #c7d2fe;
   background: #eef2ff;
 }
 
 .fab-edit.active {
   background: linear-gradient(135deg, #4f46e5, #4338ca);
   color: white;
-  border-color: #4338ca;
-  box-shadow: 0 6px 20px rgba(79, 70, 229, 0.35);
 }
 
 .fab-save {
-  background: linear-gradient(135deg, #059669, #10b981);
-  color: white;
-  border: none;
+  color: #059669;
 }
 
 .fab-save:hover:not(:disabled) {
-  background: linear-gradient(135deg, #047857, #059669);
+  background: #ecfdf5;
+  color: #047857;
 }
 
 .fab-save-locked,
 .fab-save:disabled {
-  background: #94a3b8;
+  color: #94a3b8;
   cursor: not-allowed;
   opacity: 0.75;
-  box-shadow: none;
 }
 
 .fab-verify {
-  background: linear-gradient(135deg, #059669, #10b981);
-  color: white;
-  border: none;
+  color: #059669;
 }
 
 .fab-verify:hover {
-  background: linear-gradient(135deg, #047857, #059669);
+  background: #ecfdf5;
+  color: #047857;
 }
 
 .fab-export {
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
-  color: white;
-  border: none;
+  color: #2563eb;
 }
 
 .fab-export:hover {
-  background: linear-gradient(135deg, #1d4ed8, #1e40af);
+  background: #eff6ff;
+  color: #1d4ed8;
 }
 
 .fab-score {
-  background: linear-gradient(135deg, #a855f7, #6366f1);
-  color: white;
-  border: none;
+  color: #7c3aed;
 }
 
 .fab-score:hover:not(:disabled) {
-  background: linear-gradient(135deg, #9333ea, #4f46e5);
+  background: #f5f3ff;
+  color: #6d28d9;
 }
 
 .fab-score-disabled,
 .fab-score:disabled {
-  background: #cbd5e1;
+  color: #cbd5e1;
   cursor: not-allowed;
   opacity: 0.75;
-  box-shadow: none;
 }
 
 @media (max-width: 768px) {
   .floating-actions {
     top: 16px;
     right: 16px;
-    gap: 10px;
+  }
+
+  .floating-action-bar {
+    padding: 4px;
+    gap: 1px;
+  }
+
+  .fab-bar-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .floating-action-divider {
+    height: 20px;
+    margin: 0 2px;
   }
 
   .fab-round {
