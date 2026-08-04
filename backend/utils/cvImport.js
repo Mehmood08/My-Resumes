@@ -40,9 +40,14 @@ export async function extractContentFromFile(buffer, filename) {
 
     if (ext === '.pdf') {
         const pdfParse = getPDFParse();
-        const result = await pdfParse(buffer);
-        const plainText = (result.text || '').trim();
-        return { plainText, markup: null, format: 'pdf' };
+        let plainText = '';
+        try {
+            const result = await pdfParse(buffer);
+            plainText = (result.text || '').trim();
+        } catch (err) {
+            console.warn("pdf-parse failed, falling back to Gemini OCR", err.message);
+        }
+        return { plainText, markup: null, format: 'pdf', buffer };
     }
 
     if (ext === '.docx') {
@@ -122,10 +127,23 @@ async function mapWithGemini(content, filename) {
     const ai = new GoogleGenAI({ apiKey: config.GEMINI_API_KEY });
     const model = config.GEMINI_MODEL || DEFAULT_GEMINI_MODEL;
     const prompt = buildGeminiPrompt({ ...content, filename });
+    
+    let reqContents = prompt;
+    if (content.format === 'pdf' && !content.plainText?.trim() && content.buffer) {
+        reqContents = [
+            {
+                inlineData: {
+                    data: content.buffer.toString("base64"),
+                    mimeType: "application/pdf"
+                }
+            },
+            prompt
+        ];
+    }
 
     const response = await ai.models.generateContent({
         model,
-        contents: prompt,
+        contents: reqContents,
         config: {
             responseMimeType: 'application/json',
             maxOutputTokens: 4096,
@@ -146,8 +164,8 @@ async function mapWithGemini(content, filename) {
 }
 
 export async function importCvFromContent(content, filename = '') {
-    const { plainText } = content;
-    if (!plainText?.trim()) {
+    const { plainText, format } = content;
+    if (!plainText?.trim() && format !== 'pdf') {
         throw new Error('Could not extract any text from the uploaded file.');
     }
 
