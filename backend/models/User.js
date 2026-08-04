@@ -12,11 +12,10 @@ const userSchema = new mongoose.Schema({
     invitedBy: String,
 }, { timestamps: true });
 
-userSchema.pre('save', function (next) {
+userSchema.pre('save', function {
     if (this.email) {
         this.email = normalizeEmail(this.email);
     }
-    next();
 });
 
 export default mongoose.model('User', userSchema);
