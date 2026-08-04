@@ -8,7 +8,7 @@ const require = createRequire(import.meta.url);
 let _PDFParse = null;
 function getPDFParse() {
     if (!_PDFParse) {
-        _PDFParse = require('pdf-parse').PDFParse;
+        _PDFParse = require('pdf-parse');
     }
     return _PDFParse;
 }
@@ -39,9 +39,8 @@ export async function extractContentFromFile(buffer, filename) {
     }
 
     if (ext === '.pdf') {
-        const PDFParse = getPDFParse();
-        const parser = new PDFParse({ data: buffer });
-        const result = await parser.getText();
+        const pdfParse = getPDFParse();
+        const result = await pdfParse(buffer);
         const plainText = (result.text || '').trim();
         return { plainText, markup: null, format: 'pdf' };
     }
