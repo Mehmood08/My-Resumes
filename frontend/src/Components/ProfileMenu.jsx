@@ -109,7 +109,7 @@ export default function ProfileMenu({ variant = 'default' }) {
                 onClick={handleInviteClick}
               >
                 <LuUserPlus size={16} />
-                Invite User
+                Invite Users
               </button>
             ) : (
               <div className="profile-menu-invite-blocked" role="note">
