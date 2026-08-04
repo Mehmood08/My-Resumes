@@ -5,7 +5,13 @@ import { GoogleGenAI } from '@google/genai';
 import { getSystemConfig, DEFAULT_GEMINI_MODEL } from './configHelper.js';
 
 const require = createRequire(import.meta.url);
-const { PDFParse } = require('pdf-parse');
+let _PDFParse = null;
+function getPDFParse() {
+    if (!_PDFParse) {
+        _PDFParse = require('pdf-parse').PDFParse;
+    }
+    return _PDFParse;
+}
 
 const STANDARD_SECTIONS = [
     'SUMMARY',
@@ -33,6 +39,7 @@ export async function extractContentFromFile(buffer, filename) {
     }
 
     if (ext === '.pdf') {
+        const PDFParse = getPDFParse();
         const parser = new PDFParse({ data: buffer });
         const result = await parser.getText();
         const plainText = (result.text || '').trim();
