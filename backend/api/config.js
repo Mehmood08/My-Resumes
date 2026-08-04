@@ -9,6 +9,7 @@ import {
     DEFAULT_GEMINI_MODEL,
     MASKED_SENTINEL,
     MASKABLE_CONFIG_FIELDS,
+    SENSITIVE_CONFIG_FIELDS,
     maskConfigForClient,
 } from '../utils/configHelper.js';
 
@@ -87,7 +88,9 @@ router.get('/', requireAuth, async (req, res) => {
             return res.json(maskConfigForClient(editableConfig, config.maskedFields || []));
         }
 
-        res.json(editableConfig);
+        // Mask the system config so sensitive keys are never exposed to ordinary users
+        const maskedSystemConfig = maskConfigForClient(editableConfig, SENSITIVE_CONFIG_FIELDS);
+        res.json(maskedSystemConfig);
     } catch (err) {
         console.error('GET /api/config Error:', err);
         res.status(500).json({ message: 'Failed to fetch system config', error: err.message });
