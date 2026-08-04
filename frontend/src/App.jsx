@@ -68,21 +68,21 @@ function App() {
       return;
     }
 
-    const checkBackend = (retries = 10) => {
+    const checkBackend = (retries = 3) => {
       fetch(`${import.meta.env.VITE_API_URL}/api/test`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.status === 'success') {
+        .then(async (res) => {
+          const data = await res.json().catch(() => ({}));
+          if (res.ok && data.status === 'success') {
             setBackendStatus("connected");
-          } else {
-            setBackendStatus("waking-up");
-            if (retries > 0) setTimeout(() => checkBackend(retries - 1), 3000);
-            else setBackendStatus("disconnected");
+            return;
           }
+          setBackendStatus("waking-up");
+          if (retries > 0) setTimeout(() => checkBackend(retries - 1), 2000);
+          else setBackendStatus("disconnected");
         })
         .catch((err) => {
           setBackendStatus("waking-up");
-          if (retries > 0) setTimeout(() => checkBackend(retries - 1), 3000);
+          if (retries > 0) setTimeout(() => checkBackend(retries - 1), 2000);
           else {
             console.error("Backend offline", err);
             setBackendStatus("disconnected");

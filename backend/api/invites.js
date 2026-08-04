@@ -4,8 +4,9 @@ import User from '../models/User.js';
 import Invite from '../models/Invite.js';
 import sendEmail from '../utils/sendEmail.js';
 import normalizeEmail from '../utils/normalizeEmail.js';
-import { getEffectiveConfig, getJwtSecret, isPlaceholderOrEmpty } from '../utils/configHelper.js';
+import { getEffectiveConfig, getJwtSecret } from '../utils/configHelper.js';
 import { createInvite, validateInviteToken } from '../utils/inviteHelper.js';
+import { assertInviteReady, getInviteCredentialIssues } from '../utils/inviteCredentials.js';
 
 const router = express.Router();
 
@@ -45,6 +46,24 @@ router.get('/validate/:token', async (req, res) => {
     }
 });
 
+router.get('/eligibility', requireAuth, async (req, res) => {
+    try {
+        const { config } = await getEffectiveConfig(req.userId);
+        const issues = getInviteCredentialIssues(config);
+
+        res.json({
+            canInvite: issues.length === 0,
+            issues,
+        });
+    } catch (err) {
+        console.error('Invite eligibility error:', err);
+        res.status(500).json({
+            canInvite: false,
+            issues: ['Could not check invite eligibility. Please try again.'],
+        });
+    }
+});
+
 router.post('/', requireAuth, async (req, res) => {
     let invite = null;
     try {
@@ -59,18 +78,7 @@ router.post('/', requireAuth, async (req, res) => {
         }
 
         const { config } = await getEffectiveConfig(req.userId);
-
-        if (isPlaceholderOrEmpty(config.GEMINI_API_KEY)) {
-            return res.status(400).json({
-                message: 'Add your Gemini API key before inviting users.',
-            });
-        }
-
-        if (isPlaceholderOrEmpty(config.RESEND_API_KEY)) {
-            return res.status(400).json({
-                message: 'Add your Resend API key before sending invitation emails.',
-            });
-        }
+        await assertInviteReady(config);
 
         const { invite: inviteDoc, resent } = await createInvite(req.userId, email);
         invite = inviteDoc;
@@ -119,8 +127,12 @@ router.post('/', requireAuth, async (req, res) => {
             await Invite.findByIdAndDelete(invite._id).catch(() => {});
         }
 
-        const isEmailError = err.message?.includes('Resend') || err.message?.includes('email');
-        res.status(isEmailError ? 502 : 400).json({
+        const isEmailError = err.message?.includes('email') && !err.message?.includes('Settings');
+        const isCredentialError = err.message?.includes('Gemini')
+            || err.message?.includes('Resend')
+            || err.message?.includes('Settings')
+            || err.message?.includes('From Email');
+        res.status(isCredentialError ? 403 : isEmailError ? 502 : 400).json({
             message: err.message || 'Failed to send invitation.',
         });
     }

@@ -7,11 +7,7 @@ import User from '../models/User.js';
 import sendEmail from '../utils/sendEmail.js';
 import { getJwtSecret } from '../utils/configHelper.js';
 import normalizeEmail from '../utils/normalizeEmail.js';
-import {
-    validateInviteToken,
-    acceptInvite,
-    copyInviterSettingsToUser,
-} from '../utils/inviteHelper.js';
+import { databaseUnavailableMessage } from '../utils/dbErrors.js';
 
 const router = express.Router();
 
@@ -93,18 +89,25 @@ router.post('/google', async (req, res) => {
 
     } catch (err) {
         console.error("❌ Google Auth Backend Error:", err.message);
-        
+
+        const dbMessage = databaseUnavailableMessage(err);
+        if (dbMessage) {
+            return res.status(503).json({
+                message: dbMessage,
+                error_type: 'DATABASE_UNAVAILABLE',
+                details: err.message,
+            });
+        }
+
         let customMessage = "Authentication Failed";
-        if (err.message.includes("buffering timed out")) {
-            customMessage = "Server Busy (Database Timeout). Please click login again.";
-        } else if (err.message.includes("audience")) {
+        if (err.message.includes("audience")) {
             customMessage = "Google Console Mismatch (Wait 5 min after whitelist)";
         }
 
-        res.status(401).json({ 
-            message: customMessage, 
+        res.status(401).json({
+            message: customMessage,
             error_type: "GOOGLE_VERIFY_ERROR",
-            details: err.message 
+            details: err.message
         });
     }
 });
@@ -162,6 +165,10 @@ router.post('/register', async (req, res) => {
         if (err.code === 11000) {
             return res.status(400).json({ message: "An account already exists with this email. Please Login instead or use Forgot Password." });
         }
+        const dbMessage = databaseUnavailableMessage(err);
+        if (dbMessage) {
+            return res.status(503).json({ message: dbMessage, details: err.message });
+        }
         res.status(500).json({ message: "Server error during registration." });
     }
 });
@@ -197,6 +204,10 @@ router.post('/login', async (req, res) => {
         res.json({ token, user: userData });
     } catch (err) {
         console.error("Login Error:", err);
+        const dbMessage = databaseUnavailableMessage(err);
+        if (dbMessage) {
+            return res.status(503).json({ message: dbMessage, details: err.message });
+        }
         res.status(500).json({ message: "Server error during login." });
     }
 });

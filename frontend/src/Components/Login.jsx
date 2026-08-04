@@ -53,22 +53,29 @@ function Login({ inviteToken: inviteTokenProp = null }) {
         const isAppBrowser = (ua.indexOf('FBAN') > -1) || (ua.indexOf('FBAV') > -1) || (ua.indexOf('Instagram') > -1) || (ua.indexOf('WhatsApp') > -1);
         setIsWebView(isAppBrowser);
         
-        const checkStatus = (retries = 10) => {
+        const checkStatus = (retries = 3) => {
             fetch(`${import.meta.env.VITE_API_URL}/api/test`)
-                .then(res => res.json())
-                .then(data => {
-                    if (data.status === 'success') {
+                .then(async (res) => {
+                    const data = await res.json().catch(() => ({}));
+                    if (res.ok && data.status === 'success') {
                         setServerStatus('online');
-                    } else {
+                        return;
+                    }
+
+                    if (retries > 0) {
                         setServerStatus('waking-up');
-                        if (retries > 0) setTimeout(() => checkStatus(retries - 1), 3000);
-                        else setServerStatus('offline');
+                        setTimeout(() => checkStatus(retries - 1), 2000);
+                    } else {
+                        setServerStatus('offline');
                     }
                 })
                 .catch(() => {
-                    setServerStatus('waking-up');
-                    if (retries > 0) setTimeout(() => checkStatus(retries - 1), 3000);
-                    else setServerStatus('offline');
+                    if (retries > 0) {
+                        setServerStatus('waking-up');
+                        setTimeout(() => checkStatus(retries - 1), 2000);
+                    } else {
+                        setServerStatus('offline');
+                    }
                 });
         };
         checkStatus();
@@ -102,8 +109,12 @@ function Login({ inviteToken: inviteTokenProp = null }) {
         e.preventDefault();
         setError('');
         setAuthLoading(true);
-        if (serverStatus === 'offline') {
-            setError('Server is not responding. Please wait or refresh the page.');
+        if (serverStatus !== 'online') {
+            setError(
+                serverStatus === 'checking' || serverStatus === 'waking-up'
+                    ? 'Connecting to the server and database. Please wait a moment and try again.'
+                    : 'Database is unavailable. Login and registration are disabled until the connection is restored.'
+            );
             setAuthLoading(false);
             return;
         }
@@ -228,6 +239,15 @@ function Login({ inviteToken: inviteTokenProp = null }) {
                                 </div>
                             )}
 
+                            {serverStatus !== 'online' && (
+                                <div style={{ color: '#b45309', fontSize: '13px', background: '#fffbeb', padding: '12px', borderRadius: '6px', border: '1px solid #fde68a', marginBottom: '16px' }}>
+                                    <strong>Database unavailable.</strong>{' '}
+                                    {serverStatus === 'checking' || serverStatus === 'waking-up'
+                                        ? 'Checking server connection...'
+                                        : 'You cannot register or sign in until the database is back online.'}
+                                </div>
+                            )}
+
                             <form onSubmit={handleEmailAuth} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                                 {error && (
                                     <div style={{ color: '#ef4444', fontSize: '13px', background: '#fef2f2', padding: '12px', borderRadius: '6px', border: '1px solid #fee2e2' }}>
@@ -296,7 +316,7 @@ function Login({ inviteToken: inviteTokenProp = null }) {
                                     </div>
                                 )}
 
-                                <button type="submit" disabled={authLoading} style={{ background: '#1e293b', color: 'white', padding: '14px', borderRadius: '6px', fontWeight: '600', border: 'none', cursor: 'pointer', fontSize: '14px', marginTop: '10px', opacity: authLoading ? 0.7 : 1 }}>
+                                <button type="submit" disabled={authLoading || serverStatus !== 'online'} style={{ background: '#1e293b', color: 'white', padding: '14px', borderRadius: '6px', fontWeight: '600', border: 'none', cursor: 'pointer', fontSize: '14px', marginTop: '10px', opacity: authLoading || serverStatus !== 'online' ? 0.7 : 1 }}>
                                     {authLoading ? 'Please wait...' : (isRegistering ? 'Create Account' : 'Sign In to Dashboard')}
                                 </button>
 
@@ -316,6 +336,10 @@ function Login({ inviteToken: inviteTokenProp = null }) {
                             <div style={{ display: 'flex', justifyContent: 'center' }}>
                                 <GoogleLogin
                                     onSuccess={async (res) => {
+                                        if (serverStatus !== 'online') {
+                                            setError('Database is unavailable. Google sign-in is disabled until the connection is restored.');
+                                            return;
+                                        }
                                         try {
                                             await login(res.credential, inviteToken);
                                         } catch (err) {

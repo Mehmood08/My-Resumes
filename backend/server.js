@@ -35,22 +35,30 @@ app.use((req, res, next) => {
 let cachedDb = null;
 
 const connectDB = async () => {
-    if (cachedDb && mongoose.connection.readyState === 1) return cachedDb;
+    if (mongoose.connection.readyState === 1) {
+        try {
+            await mongoose.connection.db.admin().ping();
+            return mongoose.connection;
+        } catch (err) {
+            cachedDb = null;
+            console.error('MongoDB ping failed:', err.message);
+        }
+    }
 
     const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/notes-app';
-    
+
     try {
         console.log('🔄 Attempting to connect to MongoDB...');
-        // Standard Mongoose options for stable production connection
         const conn = await mongoose.connect(MONGODB_URI, {
-            serverSelectionTimeoutMS: 30000, // Wait 30 seconds before timing out
-            connectTimeoutMS: 30000,
-            socketTimeoutMS: 45000,
+            serverSelectionTimeoutMS: 10000,
+            connectTimeoutMS: 10000,
+            socketTimeoutMS: 15000,
         });
         cachedDb = conn;
         console.log('✅ Connected to MongoDB Successfully');
         return conn;
     } catch (err) {
+        cachedDb = null;
         console.error('❌ MongoDB Connection ERROR:', err.message);
         throw err;
     }
@@ -70,9 +78,9 @@ app.use(async (req, res, next) => {
             next();
         } catch (err) {
             console.error("📛 Request failed due to DB connection issues.");
-            return res.status(503).json({ 
-                status: 'error', 
-                message: 'Database is still waking up. Please refresh in 5 seconds.',
+            return res.status(503).json({
+                status: 'error',
+                message: 'Database is unavailable. Please try again in a moment.',
                 details: err.message
             });
         }
@@ -101,16 +109,32 @@ app.get('/', (req, res) => {
     `);
 });
 
-app.get('/api/test', (req, res) => {
+app.get('/api/test', async (req, res) => {
     const state = mongoose.connection.readyState;
-    // 1 = connected, 2 = connecting
-    const isDbWorking = state === 1 || state === 2;
-    
-    res.json({ 
-        message: 'Backend is working!', 
-        status: isDbWorking ? 'success' : 'error',
-        database: state 
-    });
+
+    if (state !== 1) {
+        return res.status(503).json({
+            message: 'Backend is running but the database is not connected.',
+            status: 'error',
+            database: state,
+        });
+    }
+
+    try {
+        await mongoose.connection.db.admin().ping();
+        res.json({
+            message: 'Backend is working!',
+            status: 'success',
+            database: state,
+        });
+    } catch (err) {
+        res.status(503).json({
+            message: 'Database is unavailable.',
+            status: 'error',
+            database: state,
+            details: err.message,
+        });
+    }
 });
 
 // Fallback: If someone accidentally hits /reset-password on the BACKEND, redirect them to FRONTEND

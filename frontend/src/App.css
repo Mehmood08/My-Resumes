@@ -2347,6 +2347,29 @@
     background: #fef2f2;
 }
 
+.profile-menu-invite-blocked {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    color: #92400e;
+    background: #fffbeb;
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.profile-menu-invite-blocked strong {
+    display: block;
+    font-size: 13px;
+    color: #b45309;
+    margin-bottom: 2px;
+}
+
+.profile-menu-invite-blocked p {
+    margin: 0;
+    color: #92400e;
+}
+
 .profile-menu-settings {
     display: flex;
     align-items: center;
