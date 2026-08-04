@@ -247,6 +247,8 @@ export default function TemplateWizard({ isOpen, onClose, onCreate, initialMode 
             const apiUrl = import.meta.env.VITE_API_URL || '';
             const formData = new FormData();
             formData.append('file', file);
+            const userId = getUserId();
+            if (userId) formData.append('userId', userId);
 
             const response = await fetch(`${apiUrl}/api/resumes/import`, {
                 method: 'POST',

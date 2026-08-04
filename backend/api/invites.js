@@ -4,7 +4,7 @@ import User from '../models/User.js';
 import Invite from '../models/Invite.js';
 import sendEmail from '../utils/sendEmail.js';
 import normalizeEmail from '../utils/normalizeEmail.js';
-import { getSystemConfig, getEffectiveConfig, isPlaceholderOrEmpty } from '../utils/configHelper.js';
+import { getEffectiveConfig, getJwtSecret, isPlaceholderOrEmpty } from '../utils/configHelper.js';
 import { createInvite, validateInviteToken } from '../utils/inviteHelper.js';
 
 const router = express.Router();
@@ -16,8 +16,11 @@ const requireAuth = async (req, res, next) => {
         return res.status(401).json({ message: 'Authentication required.' });
     }
     try {
-        const { config } = await getSystemConfig();
-        const decoded = jwt.verify(token, config.JWT_SECRET);
+        const secret = getJwtSecret();
+        if (!secret) {
+            return res.status(500).json({ message: 'JWT_SECRET is not configured. Please set it in your backend .env file.' });
+        }
+        const decoded = jwt.verify(token, secret);
         req.userId = decoded.id;
         next();
     } catch (err) {
@@ -59,13 +62,13 @@ router.post('/', requireAuth, async (req, res) => {
 
         if (isPlaceholderOrEmpty(config.GEMINI_API_KEY)) {
             return res.status(400).json({
-                message: 'Configure your Gemini API key in Settings before inviting users.',
+                message: 'Add your Gemini API key before inviting users.',
             });
         }
 
         if (isPlaceholderOrEmpty(config.RESEND_API_KEY)) {
             return res.status(400).json({
-                message: 'Add your Resend API key in Settings to send invitation emails.',
+                message: 'Add your Resend API key before sending invitation emails.',
             });
         }
 

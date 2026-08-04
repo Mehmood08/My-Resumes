@@ -3,7 +3,11 @@ import Invite from '../models/Invite.js';
 import User from '../models/User.js';
 import UserConfig from '../models/UserConfig.js';
 import normalizeEmail from './normalizeEmail.js';
-import { getEffectiveConfig, SENSITIVE_CONFIG_FIELDS, DEFAULT_GEMINI_MODEL } from './configHelper.js';
+import {
+    getEffectiveConfig,
+    getInheritedMaskedFields,
+    DEFAULT_GEMINI_MODEL,
+} from './configHelper.js';
 
 const INVITE_EXPIRY_DAYS = 7;
 
@@ -97,22 +101,21 @@ export async function acceptInvite(invite, userId, userEmail) {
 }
 
 export async function copyInviterSettingsToUser(fromUserId, toUserId) {
+    const existing = await UserConfig.findOne({ userId: String(toUserId) });
+    if (existing) return existing;
+
     const { config } = await getEffectiveConfig(fromUserId);
-    const maskedFields = [...SENSITIVE_CONFIG_FIELDS];
-
-    if (config.EMAIL_FROM && !maskedFields.includes('EMAIL_FROM')) {
-        maskedFields.push('EMAIL_FROM');
-    }
-
-    await UserConfig.create({
-        userId: toUserId,
-        JWT_SECRET: config.JWT_SECRET || '',
+    const values = {
         GEMINI_API_KEY: config.GEMINI_API_KEY || '',
         GEMINI_MODEL: config.GEMINI_MODEL || DEFAULT_GEMINI_MODEL,
         RESEND_API_KEY: config.RESEND_API_KEY || '',
         EMAIL_FROM: config.EMAIL_FROM || '',
-        isConfigured: Boolean(config.GEMINI_API_KEY),
+    };
+
+    return UserConfig.create({
+        userId: toUserId,
+        ...values,
         copiedFromUserId: fromUserId,
-        maskedFields,
+        maskedFields: getInheritedMaskedFields(values),
     });
 }

@@ -5,7 +5,7 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import User from '../models/User.js';
 import sendEmail from '../utils/sendEmail.js';
-import { getSystemConfig } from '../utils/configHelper.js';
+import { getJwtSecret } from '../utils/configHelper.js';
 import normalizeEmail from '../utils/normalizeEmail.js';
 import {
     validateInviteToken,
@@ -83,10 +83,9 @@ router.post('/google', async (req, res) => {
             await user.save();
         }
 
-        const { config } = await getSystemConfig();
         const sessionToken = jwt.sign(
             { id: user._id, email: user.email },
-            config.JWT_SECRET,
+            getJwtSecret(),
             { expiresIn: '7d' }
         );
 
@@ -155,8 +154,7 @@ router.post('/register', async (req, res) => {
 
         console.log(`New user registered: ${email}`);
 
-        const { config } = await getSystemConfig();
-        const token = jwt.sign({ id: user._id, email: user.email }, config.JWT_SECRET, { expiresIn: '7d' });
+        const token = jwt.sign({ id: user._id, email: user.email }, getJwtSecret(), { expiresIn: '7d' });
         const userData = { ...user._doc, googleId: user.googleId || user._id.toString() };
         res.status(201).json({ token, user: userData });
     } catch (err) {
@@ -193,8 +191,7 @@ router.post('/login', async (req, res) => {
             await user.save();
         }
 
-        const { config } = await getSystemConfig();
-        const token = jwt.sign({ id: user._id, email: user.email }, config.JWT_SECRET, { expiresIn: '7d' });
+        const token = jwt.sign({ id: user._id, email: user.email }, getJwtSecret(), { expiresIn: '7d' });
 
         const userData = { ...user._doc, googleId: user.googleId || user._id.toString() };
         res.json({ token, user: userData });

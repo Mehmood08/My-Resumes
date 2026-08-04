@@ -62,7 +62,7 @@ export default function InviteModal({ isOpen, onClose }) {
                     </div>
                     <div>
                         <h2>Invite User</h2>
-                        <p>Send an email invitation so they can register and use your app settings. Send again to the same email to resend.</p>
+                        <p>Send an email invitation so they can register with your shared app configuration.</p>
                     </div>
                 </div>
 

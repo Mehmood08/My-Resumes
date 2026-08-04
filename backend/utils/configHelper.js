@@ -1,17 +1,26 @@
-import SystemConfig from '../models/SystemConfig.js';
 import UserConfig from '../models/UserConfig.js';
 
 export const DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash-lite';
 export const MASKED_SENTINEL = '__MASKED__';
-export const SENSITIVE_CONFIG_FIELDS = ['JWT_SECRET', 'GEMINI_API_KEY', 'RESEND_API_KEY'];
+export const SENSITIVE_CONFIG_FIELDS = ['GEMINI_API_KEY', 'RESEND_API_KEY'];
 export const MASKABLE_CONFIG_FIELDS = [...SENSITIVE_CONFIG_FIELDS, 'EMAIL_FROM'];
+export const CLIENT_EDITABLE_FIELDS = ['GEMINI_API_KEY', 'GEMINI_MODEL', 'RESEND_API_KEY', 'EMAIL_FROM'];
 
 const PLACEHOLDERS = [
     'your_jwt_secret_key',
     'your_google_gemini_api_key',
     're_your_resend_api_key',
-    'your_email@gmail.com'
+    'your_email@gmail.com',
 ];
+
+export const getJwtSecret = () => process.env.JWT_SECRET || '';
+
+export const getEnvDefaults = () => ({
+    GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
+    GEMINI_MODEL: process.env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL,
+    RESEND_API_KEY: process.env.RESEND_API_KEY || '',
+    EMAIL_FROM: process.env.EMAIL_FROM || '',
+});
 
 /**
  * Checks if a given value is missing, empty, or a default template placeholder.
@@ -23,119 +32,108 @@ export const isPlaceholderOrEmpty = (val) => {
     return PLACEHOLDERS.some(p => trimmed.toLowerCase() === p.toLowerCase());
 };
 
-const buildConfigObject = (source, extras = {}) => ({
-    GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
-    JWT_SECRET: source.JWT_SECRET || '',
-    GEMINI_API_KEY: source.GEMINI_API_KEY || '',
-    GEMINI_MODEL: source.GEMINI_MODEL || DEFAULT_GEMINI_MODEL,
-    RESEND_API_KEY: source.RESEND_API_KEY || '',
-    EMAIL_FROM: source.EMAIL_FROM || '',
-    isConfigured: Boolean(source.isConfigured),
-    updatedBy: source.updatedBy || source.userId || '',
-    ...extras,
+const pickValue = (stored, fallback) => (
+    !isPlaceholderOrEmpty(stored) ? stored.trim() : fallback
+);
+
+const buildEffectiveValues = (source, envDefaults) => ({
+    GEMINI_API_KEY: pickValue(source?.GEMINI_API_KEY, envDefaults.GEMINI_API_KEY),
+    GEMINI_MODEL: pickValue(source?.GEMINI_MODEL, envDefaults.GEMINI_MODEL),
+    RESEND_API_KEY: pickValue(source?.RESEND_API_KEY, envDefaults.RESEND_API_KEY),
+    EMAIL_FROM: pickValue(source?.EMAIL_FROM, envDefaults.EMAIL_FROM),
 });
 
-export const maskConfigForClient = (config, maskedFields = []) => {
-    const clientConfig = { ...config };
-    for (const field of maskedFields) {
-        if (clientConfig[field]) {
+export const getInheritedMaskedFields = (values) => (
+    MASKABLE_CONFIG_FIELDS.filter((field) => !isPlaceholderOrEmpty(values[field]))
+);
+
+export const maskConfigForClient = (config) => {
+    const clientConfig = {
+        GEMINI_MODEL: config.GEMINI_MODEL || DEFAULT_GEMINI_MODEL,
+        isConfigured: Boolean(config.isConfigured),
+        hasUserConfig: Boolean(config.hasUserConfig),
+        copiedFromUserId: config.copiedFromUserId || '',
+    };
+
+    const maskedFields = [];
+    for (const field of MASKABLE_CONFIG_FIELDS) {
+        if (!isPlaceholderOrEmpty(config[field])) {
             clientConfig[field] = MASKED_SENTINEL;
+            maskedFields.push(field);
+        } else {
+            clientConfig[field] = '';
         }
     }
+
     clientConfig.maskedFields = maskedFields;
-    clientConfig.hasUserConfig = Boolean(config.hasUserConfig);
     return clientConfig;
 };
 
 /**
- * Returns config for a specific user (UserConfig) or falls back to global SystemConfig.
+ * Returns merged config for a user: UserConfig overrides env defaults.
  */
 export const getEffectiveConfig = async (userId = null) => {
+    const envDefaults = getEnvDefaults();
+
     try {
         if (userId) {
             const userConfigDoc = await UserConfig.findOne({ userId: String(userId) });
             if (userConfigDoc) {
+                const values = buildEffectiveValues(userConfigDoc, envDefaults);
                 return {
                     configDoc: userConfigDoc,
                     isUserConfig: true,
-                    config: buildConfigObject(userConfigDoc, {
+                    config: {
+                        ...values,
                         hasUserConfig: true,
-                        maskedFields: userConfigDoc.maskedFields || [],
-                    }),
+                        copiedFromUserId: userConfigDoc.copiedFromUserId || '',
+                        isConfigured: true,
+                    },
                 };
             }
         }
 
-        const system = await getSystemConfig();
+        const values = buildEffectiveValues(null, envDefaults);
         return {
-            ...system,
+            configDoc: null,
             isUserConfig: false,
             config: {
-                ...system.config,
+                ...values,
                 hasUserConfig: false,
-                maskedFields: [],
+                copiedFromUserId: '',
+                isConfigured: !isPlaceholderOrEmpty(values.GEMINI_API_KEY),
             },
         };
     } catch (err) {
         console.error('getEffectiveConfig Error:', err);
-        return getSystemConfig();
+        const values = buildEffectiveValues(null, envDefaults);
+        return {
+            configDoc: null,
+            isUserConfig: false,
+            config: {
+                ...values,
+                hasUserConfig: false,
+                copiedFromUserId: '',
+                isConfigured: false,
+            },
+        };
     }
 };
 
 /**
- * Fetches the system config from DB (creates default if none exists).
- * GOOGLE_CLIENT_ID is always read from process.env — never stored in DB.
- * No hardcoded fallback strings — values must come from .env or MongoDB only.
+ * Backwards-compatible helper used by auth and legacy callers.
+ * JWT, Google Client ID, and DB URL always come from env.
  */
 export const getSystemConfig = async () => {
-    try {
-        let configDoc = await SystemConfig.findOne();
-        if (!configDoc) {
-            configDoc = await SystemConfig.create({
-                JWT_SECRET:     process.env.JWT_SECRET     || '',
-                GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
-                GEMINI_MODEL:   process.env.GEMINI_MODEL   || DEFAULT_GEMINI_MODEL,
-                RESEND_API_KEY: process.env.RESEND_API_KEY || '',
-                EMAIL_FROM:     process.env.EMAIL_FROM     || '',
-                isConfigured:   false
-            });
-        }
-
-        // DB takes priority over process.env; no hardcoded fallback strings
-        const jwtSecret     = !isPlaceholderOrEmpty(configDoc.JWT_SECRET)     ? configDoc.JWT_SECRET     : process.env.JWT_SECRET     || '';
-        const geminiApiKey  = !isPlaceholderOrEmpty(configDoc.GEMINI_API_KEY)  ? configDoc.GEMINI_API_KEY  : process.env.GEMINI_API_KEY  || '';
-        const geminiModel   = !isPlaceholderOrEmpty(configDoc.GEMINI_MODEL)    ? configDoc.GEMINI_MODEL    : process.env.GEMINI_MODEL    || DEFAULT_GEMINI_MODEL;
-        const resendApiKey  = !isPlaceholderOrEmpty(configDoc.RESEND_API_KEY)  ? configDoc.RESEND_API_KEY  : process.env.RESEND_API_KEY  || '';
-        const emailFrom     = !isPlaceholderOrEmpty(configDoc.EMAIL_FROM)      ? configDoc.EMAIL_FROM      : process.env.EMAIL_FROM      || '';
-
-        return {
-            configDoc,
-            config: {
-                GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',  // always from .env
-                JWT_SECRET:       jwtSecret,
-                GEMINI_API_KEY:   geminiApiKey,
-                GEMINI_MODEL:     geminiModel,
-                RESEND_API_KEY:   resendApiKey,
-                EMAIL_FROM:       emailFrom,
-                isConfigured:     configDoc.isConfigured,
-                updatedBy:        configDoc.updatedBy || ''
-            }
-        };
-    } catch (err) {
-        console.error('Config Helper Error:', err);
-        // Pure process.env fallback if DB is unavailable
-        return {
-            configDoc: null,
-            config: {
-                GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
-                JWT_SECRET:       process.env.JWT_SECRET        || '',
-                GEMINI_API_KEY:   process.env.GEMINI_API_KEY    || '',
-                GEMINI_MODEL:     process.env.GEMINI_MODEL      || DEFAULT_GEMINI_MODEL,
-                RESEND_API_KEY:   process.env.RESEND_API_KEY    || '',
-                EMAIL_FROM:       process.env.EMAIL_FROM        || '',
-                isConfigured:     false,
-                updatedBy:        ''
-            }
-        };
-    }
+    const envDefaults = getEnvDefaults();
+    return {
+        configDoc: null,
+        config: {
+            GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
+            JWT_SECRET: getJwtSecret(),
+            ...envDefaults,
+            isConfigured: !isPlaceholderOrEmpty(envDefaults.GEMINI_API_KEY),
+            updatedBy: '',
+        },
+    };
 };

@@ -414,8 +414,9 @@ router.post('/import', (req, res, next) => {
             return res.status(400).json({ message: 'No file uploaded. Please select a PDF, DOC, or DOCX file.' });
         }
 
+        const userId = req.body?.userId || req.query?.userId || null;
         const content = await extractContentFromFile(req.file.buffer, req.file.originalname);
-        const result = await importCvFromContent(content, req.file.originalname);
+        const result = await importCvFromContent(content, req.file.originalname, userId);
 
         res.json(result);
     } catch (err) {

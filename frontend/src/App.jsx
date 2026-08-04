@@ -91,8 +91,7 @@ function App() {
     };
     checkBackend();
 
-    // After login: check if system settings have been configured.
-    // If not → auto-open the settings modal so the user sets them up first.
+    // Load settings snapshot for the current user (values are masked by the API).
     const token = localStorage.getItem('token');
     fetch(`${import.meta.env.VITE_API_URL}/api/config`, {
       headers: { 'Authorization': `Bearer ${token}` }
@@ -100,10 +99,6 @@ function App() {
       .then(r => r.json())
       .then(cfg => {
         setExistingConfig(cfg);
-        if (!cfg.isConfigured) {
-          // Settings not yet configured — open the settings modal automatically
-          setIsSettingsOpen(true);
-        }
       })
       .catch(() => {
         // If config fetch fails, don't block the user — proceed normally
@@ -486,12 +481,11 @@ function App() {
         initialStep={wizardOptions.step}
       />
 
-      {/* System Settings Modal — auto-opens on first login if not configured */}
+      {/* Setup modal — auto-opens on first login if API keys are not configured */}
       {isSettingsOpen && (
         <SystemSetupModal
-          isEditMode={true}
           existingConfig={existingConfig}
-          allowClose={existingConfig?.isConfigured === true}
+          allowClose={true}
           onConfigured={(cfg) => {
             setExistingConfig(cfg);
             setIsSettingsOpen(false);
