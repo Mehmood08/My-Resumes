@@ -484,6 +484,7 @@ function App() {
       {/* Setup modal — auto-opens on first login if API keys are not configured */}
       {isSettingsOpen && (
         <SystemSetupModal
+          isOpen={isSettingsOpen}
           existingConfig={existingConfig}
           allowClose={true}
           onConfigured={(cfg) => {

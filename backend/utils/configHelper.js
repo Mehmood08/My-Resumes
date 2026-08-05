@@ -64,16 +64,20 @@ export const getInheritedMaskedFields = (values) => (
 );
 
 export const maskConfigForClient = (config) => {
+    const stored = config.storedValues || {};
+    const usesEnvDefaults = Boolean(config.usesEnvDefaults);
+
     const clientConfig = {
         GEMINI_MODEL: config.GEMINI_MODEL || DEFAULT_GEMINI_MODEL,
         isConfigured: Boolean(config.isConfigured),
         hasUserConfig: Boolean(config.hasUserConfig),
+        usesEnvDefaults,
         copiedFromUserId: config.copiedFromUserId || '',
     };
 
     const maskedFields = [];
     for (const field of MASKABLE_CONFIG_FIELDS) {
-        if (!isPlaceholderOrEmpty(config[field])) {
+        if (!isPlaceholderOrEmpty(stored[field])) {
             clientConfig[field] = MASKED_SENTINEL;
             maskedFields.push(field);
         } else {
@@ -102,20 +106,31 @@ export const getEffectiveConfig = async (userId = null) => {
                     config: {
                         ...values,
                         hasUserConfig: true,
+                        storedValues: {
+                            GEMINI_API_KEY: userConfigDoc.GEMINI_API_KEY || '',
+                            GEMINI_MODEL: userConfigDoc.GEMINI_MODEL || '',
+                            RESEND_API_KEY: userConfigDoc.RESEND_API_KEY || '',
+                            EMAIL_FROM: userConfigDoc.EMAIL_FROM || '',
+                        },
                         copiedFromUserId: userConfigDoc.copiedFromUserId || '',
-                        isConfigured: true,
+                        isConfigured: !isPlaceholderOrEmpty(values.GEMINI_API_KEY),
                     },
                 };
             }
         }
 
         const values = buildEffectiveValues(null, envDefaults);
+        const usesEnvDefaults = MASKABLE_CONFIG_FIELDS.some(
+            (field) => !isPlaceholderOrEmpty(values[field])
+        );
         return {
             configDoc: null,
             isUserConfig: false,
             config: {
                 ...values,
                 hasUserConfig: false,
+                storedValues: {},
+                usesEnvDefaults,
                 copiedFromUserId: '',
                 isConfigured: !isPlaceholderOrEmpty(values.GEMINI_API_KEY),
             },

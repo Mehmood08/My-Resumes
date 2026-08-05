@@ -3,13 +3,13 @@ import UserConfig from '../models/UserConfig.js';
 import { requireAuth } from '../middleware/requireAuth.js';
 import {
     getEffectiveConfig,
-    getEnvDefaults,
     isPlaceholderOrEmpty,
     DEFAULT_GEMINI_MODEL,
     MASKED_SENTINEL,
     MASKABLE_CONFIG_FIELDS,
     maskConfigForClient,
 } from '../utils/configHelper.js';
+import { verifyGeminiApiKey, verifyResendApiKey } from '../utils/inviteCredentials.js';
 import { withDevDetails } from '../utils/errorResponse.js';
 
 const router = express.Router();
@@ -69,26 +69,39 @@ router.get('/', requireAuth, async (req, res) => {
 
 router.post('/', requireAuth, async (req, res) => {
     try {
-        const envDefaults = getEnvDefaults();
         let userConfigDoc = await UserConfig.findOne({ userId: String(req.userId) });
 
         if (!userConfigDoc) {
             userConfigDoc = new UserConfig({
                 userId: String(req.userId),
-                GEMINI_API_KEY: envDefaults.GEMINI_API_KEY,
-                GEMINI_MODEL: envDefaults.GEMINI_MODEL,
-                RESEND_API_KEY: envDefaults.RESEND_API_KEY,
-                EMAIL_FROM: envDefaults.EMAIL_FROM,
-                maskedFields: MASKABLE_CONFIG_FIELDS.filter(
-                    (field) => !isPlaceholderOrEmpty(envDefaults[field])
-                ),
             });
         }
 
         const updates = req.body;
+        const providedGeminiKey = updates.GEMINI_API_KEY !== undefined
+            && updates.GEMINI_API_KEY !== MASKED_SENTINEL
+            && !isPlaceholderOrEmpty(updates.GEMINI_API_KEY);
         const providedResendKey = updates.RESEND_API_KEY !== undefined
             && updates.RESEND_API_KEY !== MASKED_SENTINEL
             && !isPlaceholderOrEmpty(updates.RESEND_API_KEY);
+
+        if (providedGeminiKey) {
+            const geminiError = await verifyGeminiApiKey(updates.GEMINI_API_KEY.trim());
+            if (geminiError) {
+                return res.status(400).json({
+                    message: 'Gemini API key is invalid or expired. Please check the key and try again.',
+                });
+            }
+        }
+
+        if (providedResendKey) {
+            const resendError = await verifyResendApiKey(updates.RESEND_API_KEY.trim());
+            if (resendError) {
+                return res.status(400).json({
+                    message: 'Resend API key is invalid or expired. Please check the key and try again.',
+                });
+            }
+        }
 
         if (providedResendKey) {
             const providedFromEmail = updates.EMAIL_FROM !== undefined
