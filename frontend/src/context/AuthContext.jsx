@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { googleLogout } from '@react-oauth/google';
 import normalizeEmail from '../utils/normalizeEmail';
+import { apiFetch, setUnauthorizedHandler } from '../utils/api';
 
 const AuthContext = createContext();
 const AUTH_TIMEOUT_MS = 15000;
@@ -52,6 +53,25 @@ export const AuthProvider = ({ children }) => {
         const savedUser = localStorage.getItem('user');
         return savedToken && savedUser ? JSON.parse(savedUser) : null;
     });
+
+    const logout = useCallback(() => {
+        googleLogout();
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setUser(null);
+    }, []);
+
+    useEffect(() => {
+        setUnauthorizedHandler(logout);
+
+        const token = localStorage.getItem('token');
+        const savedUser = localStorage.getItem('user');
+        if (token && savedUser) {
+            apiFetch(`${import.meta.env.VITE_API_URL}/api/config`).catch(() => {});
+        }
+
+        return () => setUnauthorizedHandler(null);
+    }, [logout]);
 
     const login = async (googleCredential, inviteToken = null) => {
         try {
@@ -115,13 +135,6 @@ export const AuthProvider = ({ children }) => {
             console.error("Registration Failed:", err);
             throw err;
         }
-    };
-
-    const logout = () => {
-        googleLogout();
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        setUser(null);
     };
 
     const getUserId = useCallback(() => {

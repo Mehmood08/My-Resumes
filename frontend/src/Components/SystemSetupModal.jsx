@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { LuEye, LuEyeOff, LuSave, LuSettings, LuBot, LuMail, LuLoader } from 'react-icons/lu';
 import { MASKED_SENTINEL, isMaskedValue } from '../utils/normalizeEmail';
-import { getAuthHeaders } from '../utils/api';
+import { getAuthHeaders, apiFetch } from '../utils/api';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 const DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash-lite';
@@ -111,9 +111,9 @@ const SystemSetupModal = ({ onConfigured, existingConfig = null, onClose, allowC
                 body.apiKey = apiKey.trim();
             }
 
-            const res = await fetch(`${API_URL}/api/config/models`, {
+            const res = await apiFetch(`${API_URL}/api/config/models`, {
                 method: 'POST',
-                headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body),
             });
             const data = await res.json();
@@ -187,13 +187,9 @@ const SystemSetupModal = ({ onConfigured, existingConfig = null, onClose, allowC
 
         setSaving(true);
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(`${API_URL}/api/config`, {
+            const res = await apiFetch(`${API_URL}/api/config`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     GEMINI_MODEL: form.GEMINI_MODEL,
                     GEMINI_API_KEY: form.GEMINI_API_KEY?.trim()
