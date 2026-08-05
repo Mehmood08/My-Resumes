@@ -986,6 +986,61 @@
 }
 .photo-upload-label { font-size: 14px; font-weight: 700; color: #1e293b; }
 .photo-upload-box { display: flex; align-items: center; gap: 16px; }
+.photo-source-options {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.photo-source-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 120px;
+  min-height: 120px;
+  padding: 12px;
+  border: 2px solid #e2e8f0;
+  border-radius: 16px;
+  background: #fff;
+  color: #475569;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  transition: all 0.2s;
+}
+.photo-source-btn:hover {
+  border-color: #3b82f6;
+  background: #eff6ff;
+  color: #2563eb;
+}
+.photo-source-preview {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #e2e8f0;
+}
+.photo-upload-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #92400e;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.photo-upload-notice--info {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+}
 .photo-upload-btn {
   display: flex; align-items: center; justify-content: center; gap: 8px;
   background: #f8fafc; border: 2px dashed #cbd5e1; color: #64748b;
