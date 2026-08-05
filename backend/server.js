@@ -1,17 +1,28 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import authRoutes from './api/auth.js';
 import resumeRoutes from './api/resumes.js';
 import configRoutes from './api/config.js';
 import inviteRoutes from './api/invites.js';
-
+import { assertJwtSecretConfigured } from './utils/configHelper.js';
+import { authRateLimiter } from './middleware/rateLimit.js';
 dotenv.config();
+
+if (process.env.NODE_ENV === 'production') {
+    assertJwtSecretConfigured();
+}
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const isProduction = process.env.NODE_ENV === 'production';
 
+app.use(helmet({
+    crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+}));
 app.use(cors({
     origin: [
         'http://localhost:5173', 
@@ -20,14 +31,7 @@ app.use(cors({
     ],
     credentials: true
 }));
-app.use(express.json());
-
-// Security Headers for Google Auth (COOP)
-app.use((req, res, next) => {
-    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
-    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-    next();
-});
+app.use(express.json({ limit: '2mb' }));
 
 
 
@@ -81,7 +85,7 @@ app.use(async (req, res, next) => {
             return res.status(503).json({
                 status: 'error',
                 message: 'Database is unavailable. Please try again in a moment.',
-                details: err.message
+                ...(isProduction ? {} : { details: err.message }),
             });
         }
     } else {
@@ -92,7 +96,7 @@ app.use(async (req, res, next) => {
 
 
 // Routes
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authRateLimiter, authRoutes);
 app.use('/api/resumes', resumeRoutes);
 app.use('/api/config', configRoutes);
 app.use('/api/invites', inviteRoutes);
@@ -132,7 +136,7 @@ app.get('/api/test', async (req, res) => {
             message: 'Database is unavailable.',
             status: 'error',
             database: state,
-            details: err.message,
+            ...(isProduction ? {} : { details: err.message }),
         });
     }
 });
@@ -141,7 +145,7 @@ app.get('/api/test', async (req, res) => {
 app.get('/reset-password/:token', (req, res) => {
     const { token } = req.params;
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-    res.redirect(`${frontendUrl}/reset-password/${token}`);
+    res.redirect(`${frontendUrl}/reset-password#token=${token}`);
 });
 
 app.get('/register', (req, res) => {

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { LuX, LuChevronLeft, LuCheck } from "react-icons/lu";
 import { validateWizardAiFields, hasValidationErrors } from "../utils/cvValidation";
-import { useAuth } from "../context/AuthContext";
+import { getAuthHeaders } from "../utils/api";
 
 const steps = [
     { id: "mode", title: "Choose Your Creation Mode" },
@@ -70,7 +70,6 @@ const experienceLevels = [
 
 
 export default function TemplateWizard({ isOpen, onClose, onCreate, initialMode = "select", initialStep = 0 }) {
-    const { getUserId } = useAuth();
     const [currentStep, setCurrentStep] = useState(initialStep);
     const [wizardMode, setWizardMode] = useState(initialMode); // 'select', 'manual', 'ai'
 
@@ -149,7 +148,7 @@ export default function TemplateWizard({ isOpen, onClose, onCreate, initialMode 
             const apiUrl = import.meta.env.VITE_API_URL || '';
             const response = await fetch(`${apiUrl}/api/resumes/generate`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({
                     education: selections.ai_education,
                     year: selections.ai_year,
@@ -164,7 +163,6 @@ export default function TemplateWizard({ isOpen, onClose, onCreate, initialMode 
                     linkedin: selections.linkedin,
                     github: selections.github,
                     experienceYears: selections.experienceYears,
-                    userId: getUserId(),
                 })
             });
 
@@ -201,13 +199,12 @@ export default function TemplateWizard({ isOpen, onClose, onCreate, initialMode 
             const apiUrl = import.meta.env.VITE_API_URL || '';
             const response = await fetch(`${apiUrl}/api/resumes/suggest-experience`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({
                     qualification: selections.ai_education,
                     years: selections.experienceYears,
                     institute: selections.ai_school,
                     jd: selections.ai_jd,
-                    userId: getUserId(),
                 })
             });
 
@@ -247,11 +244,10 @@ export default function TemplateWizard({ isOpen, onClose, onCreate, initialMode 
             const apiUrl = import.meta.env.VITE_API_URL || '';
             const formData = new FormData();
             formData.append('file', file);
-            const userId = getUserId();
-            if (userId) formData.append('userId', userId);
 
             const response = await fetch(`${apiUrl}/api/resumes/import`, {
                 method: 'POST',
+                headers: getAuthHeaders(),
                 body: formData,
             });
 

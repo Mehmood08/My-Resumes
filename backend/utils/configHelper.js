@@ -15,6 +15,14 @@ const PLACEHOLDERS = [
 
 export const getJwtSecret = () => process.env.JWT_SECRET || '';
 
+export const assertJwtSecretConfigured = () => {
+    const secret = getJwtSecret();
+    if (!secret || secret.length < 32) {
+        console.error('FATAL: JWT_SECRET must be set in .env and be at least 32 characters.');
+        process.exit(1);
+    }
+};
+
 export const getEnvDefaults = () => ({
     GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
     GEMINI_MODEL: process.env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL,

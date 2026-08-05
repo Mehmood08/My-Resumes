@@ -5,13 +5,30 @@ import mongoose from 'mongoose';
 import { GoogleGenAI } from '@google/genai';
 import { getEffectiveConfig, DEFAULT_GEMINI_MODEL } from '../utils/configHelper.js';
 import { extractContentFromFile, getFileExtension, importCvFromContent } from '../utils/cvImport.js';
+import { requireAuth } from '../middleware/requireAuth.js';
+import { aiRateLimiter } from '../middleware/rateLimit.js';
 
 const router = express.Router();
 
+const UPDATABLE_FIELDS = ['title', 'desc', 'script', 'date', 'parentId', 'cvFormat'];
+
+const ownerFilter = (req) => ({ userId: { $in: req.ownerIds } });
+
 const getAiConfig = async (req) => {
-    const userId = req.body?.userId || req.query?.userId || null;
-    const { config } = await getEffectiveConfig(userId);
+    const { config } = await getEffectiveConfig(req.userId);
     return config;
+};
+
+const hasOperatorKeys = (obj) => Object.keys(obj || {}).some((key) => key.startsWith('$'));
+
+const pickUpdatableFields = (body) => {
+    const updates = {};
+    for (const field of UPDATABLE_FIELDS) {
+        if (body[field] !== undefined) {
+            updates[field] = body[field];
+        }
+    }
+    return updates;
 };
 
 const upload = multer({
@@ -34,7 +51,6 @@ const truncateJD = (jd) => {
     if (!jd) return "";
     if (jd.length <= 2500) return jd;
 
-    // Try to find the start of the most important sections
     const keywords = ["Requirements", "Responsibilities", "Qualification", "What we look for", "Required Skills", "Qualifications"];
     let bestStart = -1;
 
@@ -46,41 +62,27 @@ const truncateJD = (jd) => {
     }
 
     if (bestStart !== -1) {
-        // Start from 200 chars before the keyword if possible to get context
         const start = Math.max(0, bestStart - 200);
         return jd.substring(start, start + 3000) + "... (truncated for brevity)";
     }
 
-    // Default: Just take the first 3000 characters
     return jd.substring(0, 3000) + "... (truncated for brevity)";
 };
 
-// GET All (Filtered by User)
+router.use(requireAuth);
+
+// GET All (Filtered by authenticated user)
 router.get('/', async (req, res) => {
     try {
-        const { userId } = req.query;
-        if (!userId) return res.status(401).json({ message: "UserId required" });
-
-        const resumes = await Resume.find({ userId }).sort({ createdAt: -1 });
+        const resumes = await Resume.find(ownerFilter(req)).sort({ createdAt: -1 });
         res.json(resumes);
     } catch (err) {
-        res.status(500).json({ message: err.message });
-    }
-});
-
-// GET One
-router.get('/:id', async (req, res) => {
-    try {
-        const resume = await Resume.findOne({ id: req.params.id });
-        if (!resume) return res.status(404).json({ message: 'Resume not found' });
-        res.json(resume);
-    } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: 'Failed to fetch resumes.' });
     }
 });
 
 // POST AI Score
-router.post('/score', async (req, res) => {
+router.post('/score', aiRateLimiter, async (req, res) => {
     try {
         const { markdown } = req.body;
         if (!markdown || markdown.trim() === '') {
@@ -127,18 +129,17 @@ ${markdown}
             }
         });
 
-        console.log("Raw Gemini text:", response.text);
         const jsonScore = JSON.parse(response.text);
         res.json(jsonScore);
 
     } catch (err) {
         console.error("Scoring Error:", err);
-        res.status(500).json({ message: "Failed to score CV with AI. Please try again.", error: err.message, stack: err.stack });
+        res.status(500).json({ message: "Failed to score CV with AI. Please try again." });
     }
 });
 
 // POST AI Analyse CV against Job Description
-router.post('/analyse', async (req, res) => {
+router.post('/analyse', aiRateLimiter, async (req, res) => {
     try {
         const { markdown, jobDescription } = req.body;
         if (!markdown || markdown.trim() === '') {
@@ -235,12 +236,12 @@ ${markdown}
         if (err.message?.includes('429')) {
             return res.status(429).json({ message: 'Gemini API quota reached. Please try again shortly.' });
         }
-        res.status(500).json({ message: 'Failed to analyse CV. Please try again.', error: err.message });
+        res.status(500).json({ message: 'Failed to analyse CV. Please try again.' });
     }
 });
 
 // POST AI Generation
-router.post('/generate', async (req, res) => {
+router.post('/generate', aiRateLimiter, async (req, res) => {
     try {
         const { education, year, school, schoolCity, summary, jd, fullName, email, phone, city, linkedin, github, experienceYears } = req.body;
 
@@ -306,7 +307,6 @@ ${linksLine}
 
         const config = await getAiConfig(req);
         if (!config.GEMINI_API_KEY) {
-            console.error("Missing GEMINI_API_KEY in system settings");
             return res.status(500).json({ message: "API Key not configured", error: "Please configure GEMINI_API_KEY in System Settings" });
         }
 
@@ -322,22 +322,17 @@ ${linksLine}
                 }
             });
 
-            console.log("Raw Gemini text:", response.text);
-
             let jsonResult;
             try {
                 const cleanText = response.text.replace(/```json|```/g, "").trim();
                 jsonResult = JSON.parse(cleanText);
-            } catch (parseErr) {
-                console.error("JSON Parse Error. Raw Text:", response.text);
+            } catch {
                 throw new Error("Invalid response format from AI.");
             }
 
             res.json(jsonResult);
 
         } catch (genErr) {
-            console.error("Gemini Execution Error:", genErr);
-            // Specifically detect 429 Too Many Requests
             if (genErr.message && genErr.message.includes("429")) {
                 return res.status(429).json({ 
                     message: "Quota Full (429)", 
@@ -349,15 +344,12 @@ ${linksLine}
 
     } catch (err) {
         console.error("AI Generation Critical Error:", err);
-        res.status(500).json({ 
-            message: "Failed to generate CV with AI.", 
-            error: err.message 
-        });
+        res.status(500).json({ message: "Failed to generate CV with AI." });
     }
 });
 
 // POST AI Suggest Experience
-router.post('/suggest-experience', async (req, res) => {
+router.post('/suggest-experience', aiRateLimiter, async (req, res) => {
     try {
         const { qualification, years, institute, jd } = req.body;
 
@@ -383,7 +375,7 @@ router.post('/suggest-experience', async (req, res) => {
             model: geminiModel,
             contents: prompt,
             config: {
-                maxOutputTokens: 250 // small max since it's just a summary
+                maxOutputTokens: 250
             }
         });
 
@@ -393,12 +385,12 @@ router.post('/suggest-experience', async (req, res) => {
         if (err.message && err.message.includes("429")) {
             return res.status(429).json({ message: "Quota Full (429)", error: "Gemini API limits reached." });
         }
-        res.status(500).json({ message: "Failed to generate suggestion.", error: err.message });
+        res.status(500).json({ message: "Failed to generate suggestion." });
     }
 });
 
 // POST Import CV from PDF/Word
-router.post('/import', (req, res, next) => {
+router.post('/import', aiRateLimiter, (req, res, next) => {
     upload.single('file')(req, res, (err) => {
         if (err) {
             const message = err.code === 'LIMIT_FILE_SIZE'
@@ -414,9 +406,8 @@ router.post('/import', (req, res, next) => {
             return res.status(400).json({ message: 'No file uploaded. Please select a PDF, DOC, or DOCX file.' });
         }
 
-        const userId = req.body?.userId || req.query?.userId || null;
         const content = await extractContentFromFile(req.file.buffer, req.file.originalname);
-        const result = await importCvFromContent(content, req.file.originalname, userId);
+        const result = await importCvFromContent(content, req.file.originalname, req.userId);
 
         res.json(result);
     } catch (err) {
@@ -438,20 +429,26 @@ router.post('/import', (req, res, next) => {
 
 // POST Create
 router.post('/', async (req, res) => {
-    console.log("Received POST /api/resumes body:", req.body);
-    const { id, title, desc, script, date, parentId, cvFormat, userId } = req.body;
+    if (hasOperatorKeys(req.body)) {
+        return res.status(400).json({ message: 'Invalid request body.' });
+    }
 
-    if (!userId) return res.status(401).json({ message: "UserId required to save" });
-
+    const { id, title, desc, script, date, parentId, cvFormat } = req.body;
     const resumeId = id || new mongoose.Types.ObjectId().toString();
 
     const newResume = new Resume({
-        id: resumeId, title, desc, script, date, parentId, cvFormat, userId
+        id: resumeId,
+        title,
+        desc,
+        script,
+        date,
+        parentId,
+        cvFormat,
+        userId: req.userId,
     });
 
     try {
         const savedResume = await newResume.save();
-        console.log("Saved successfully:", savedResume);
         res.status(201).json(savedResume);
     } catch (err) {
         console.error("Save Error:", err.message);
@@ -459,15 +456,28 @@ router.post('/', async (req, res) => {
     }
 });
 
+// GET One
+router.get('/:id', async (req, res) => {
+    try {
+        const resume = await Resume.findOne({ id: req.params.id, ...ownerFilter(req) });
+        if (!resume) return res.status(404).json({ message: 'Resume not found' });
+        res.json(resume);
+    } catch (err) {
+        res.status(500).json({ message: 'Failed to fetch resume.' });
+    }
+});
+
 // PUT Update
 router.put('/:id', async (req, res) => {
     try {
-        const { userId } = req.body;
-        if (!userId) return res.status(401).json({ message: "UserId required" });
+        if (hasOperatorKeys(req.body)) {
+            return res.status(400).json({ message: 'Invalid request body.' });
+        }
 
+        const updates = pickUpdatableFields(req.body);
         const updatedResume = await Resume.findOneAndUpdate(
-            { id: req.params.id, userId },
-            req.body,
+            { id: req.params.id, ...ownerFilter(req) },
+            updates,
             { new: true }
         );
         if (!updatedResume) return res.status(404).json({ message: 'Resume not found or unauthorized' });
@@ -480,14 +490,11 @@ router.put('/:id', async (req, res) => {
 // DELETE Remove
 router.delete('/:id', async (req, res) => {
     try {
-        const { userId } = req.query;
-        if (!userId) return res.status(401).json({ message: "UserId required" });
-
-        const result = await Resume.findOneAndDelete({ id: req.params.id, userId });
+        const result = await Resume.findOneAndDelete({ id: req.params.id, ...ownerFilter(req) });
         if (!result) return res.status(404).json({ message: 'Resume not found or unauthorized' });
         res.json({ message: 'Deleted successfully' });
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: 'Failed to delete resume.' });
     }
 });
 

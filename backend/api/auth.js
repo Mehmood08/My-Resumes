@@ -8,8 +8,12 @@ import sendEmail from '../utils/sendEmail.js';
 import { getJwtSecret } from '../utils/configHelper.js';
 import normalizeEmail from '../utils/normalizeEmail.js';
 import { databaseUnavailableMessage } from '../utils/dbErrors.js';
+import { validateInviteToken, acceptInvite, copyInviterSettingsToUser } from '../utils/inviteHelper.js';
+import { toSafeUser } from '../utils/userDto.js';
+import { withDevDetails } from '../utils/errorResponse.js';
 
 const router = express.Router();
+const INVALID_CREDENTIALS_MESSAGE = 'Invalid email or password.';
 
 async function applyInviteToNewUser(user, inviteToken, email) {
     if (!inviteToken) return;
@@ -85,18 +89,17 @@ router.post('/google', async (req, res) => {
             { expiresIn: '7d' }
         );
 
-        res.json({ token: sessionToken, user: { ...user._doc, googleId: user.googleId || user._id.toString() } });
+        res.json({ token: sessionToken, user: toSafeUser(user) });
 
     } catch (err) {
         console.error("❌ Google Auth Backend Error:", err.message);
 
         const dbMessage = databaseUnavailableMessage(err);
         if (dbMessage) {
-            return res.status(503).json({
+            return res.status(503).json(withDevDetails({
                 message: dbMessage,
                 error_type: 'DATABASE_UNAVAILABLE',
-                details: err.message,
-            });
+            }, err));
         }
 
         let customMessage = "Authentication Failed";
@@ -104,11 +107,10 @@ router.post('/google', async (req, res) => {
             customMessage = "Google Console Mismatch (Wait 5 min after whitelist)";
         }
 
-        res.status(401).json({
+        res.status(401).json(withDevDetails({
             message: customMessage,
             error_type: "GOOGLE_VERIFY_ERROR",
-            details: err.message
-        });
+        }, err));
     }
 });
 
@@ -158,8 +160,7 @@ router.post('/register', async (req, res) => {
         console.log(`New user registered: ${email}`);
 
         const token = jwt.sign({ id: user._id, email: user.email }, getJwtSecret(), { expiresIn: '7d' });
-        const userData = { ...user._doc, googleId: user.googleId || user._id.toString() };
-        res.status(201).json({ token, user: userData });
+        res.status(201).json({ token, user: toSafeUser(user) });
     } catch (err) {
         console.error("Register Error:", err);
         if (err.code === 11000) {
@@ -167,7 +168,7 @@ router.post('/register', async (req, res) => {
         }
         const dbMessage = databaseUnavailableMessage(err);
         if (dbMessage) {
-            return res.status(503).json({ message: dbMessage, details: err.message });
+            return res.status(503).json(withDevDetails({ message: dbMessage }, err));
         }
         res.status(500).json({ message: "Server error during registration." });
     }
@@ -182,16 +183,12 @@ router.post('/login', async (req, res) => {
     }
     try {
         const user = await User.findOne({ email });
-        if (!user) {
-            return res.status(400).json({ message: "No account found with this email. Please register." });
-        }
-
-        if (!user.password) {
-            return res.status(400).json({ message: "You previously signed in with Google. Please use the 'Sign in with Google' button, or register to set a password." });
+        if (!user || !user.password) {
+            return res.status(400).json({ message: INVALID_CREDENTIALS_MESSAGE });
         }
 
         const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) return res.status(400).json({ message: "Incorrect password." });
+        if (!isMatch) return res.status(400).json({ message: INVALID_CREDENTIALS_MESSAGE });
 
         if (!user.googleId) {
             user.googleId = user._id.toString();
@@ -199,14 +196,12 @@ router.post('/login', async (req, res) => {
         }
 
         const token = jwt.sign({ id: user._id, email: user.email }, getJwtSecret(), { expiresIn: '7d' });
-
-        const userData = { ...user._doc, googleId: user.googleId || user._id.toString() };
-        res.json({ token, user: userData });
+        res.json({ token, user: toSafeUser(user) });
     } catch (err) {
         console.error("Login Error:", err);
         const dbMessage = databaseUnavailableMessage(err);
         if (dbMessage) {
-            return res.status(503).json({ message: dbMessage, details: err.message });
+            return res.status(503).json(withDevDetails({ message: dbMessage }, err));
         }
         res.status(500).json({ message: "Server error during login." });
     }
@@ -238,7 +233,7 @@ router.post('/forgot-password', async (req, res) => {
         await user.save();
 
         // Send Email
-        const resetURL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password/${resetToken}`;
+        const resetURL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password#token=${resetToken}`;
         const message = `You requested a password reset. Please click the link below to set a new password:\n\n${resetURL}\n\nIf you didn't request this, please ignore this email.`;
         const html = `
             <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #ddd; border-radius: 10px; max-width: 600px; margin: auto;">
@@ -277,9 +272,11 @@ router.post('/forgot-password', async (req, res) => {
 });
 
 // Reset Password
-router.post('/reset-password/:token', async (req, res) => {
-    const { token } = req.params;
-    const { password } = req.body;
+router.post('/reset-password', async (req, res) => {
+    const { token, password } = req.body;
+    if (!token || !password) {
+        return res.status(400).json({ message: 'Reset token and new password are required.' });
+    }
     try {
         const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
 

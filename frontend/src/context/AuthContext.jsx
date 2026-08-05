@@ -117,20 +117,6 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const loginAsGuest = () => {
-        const guestUser = {
-            _id: 'guest_user_id',
-            googleId: 'guest_user_id',
-            name: 'Guest User',
-            email: 'guest@example.com',
-            picture: null,
-            isGuest: true
-        };
-        localStorage.setItem('user', JSON.stringify(guestUser));
-        localStorage.setItem('token', 'guest-token');
-        setUser(guestUser);
-    };
-
     const logout = () => {
         googleLogout();
         localStorage.removeItem('token');
@@ -144,7 +130,7 @@ export const AuthProvider = ({ children }) => {
     }, [user]);
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, loginWithEmail, registerWithEmail, loginAsGuest, getUserId }}>
+        <AuthContext.Provider value={{ user, login, logout, loginWithEmail, registerWithEmail, getUserId }}>
             {children}
         </AuthContext.Provider>
     );

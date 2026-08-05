@@ -1,34 +1,15 @@
 import express from 'express';
-import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import Invite from '../models/Invite.js';
 import sendEmail from '../utils/sendEmail.js';
 import normalizeEmail, { parseEmailList } from '../utils/normalizeEmail.js';
-import { getEffectiveConfig, getJwtSecret } from '../utils/configHelper.js';
+import { getEffectiveConfig } from '../utils/configHelper.js';
+import { requireAuth } from '../middleware/requireAuth.js';
 import { createInvite, validateInviteToken } from '../utils/inviteHelper.js';
 import { assertInviteReady, getInviteCredentialIssues } from '../utils/inviteCredentials.js';
 
 const router = express.Router();
 const MAX_BULK_INVITES = 25;
-
-const requireAuth = async (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-    if (!token) {
-        return res.status(401).json({ message: 'Authentication required.' });
-    }
-    try {
-        const secret = getJwtSecret();
-        if (!secret) {
-            return res.status(500).json({ message: 'JWT_SECRET is not configured. Please set it in your backend .env file.' });
-        }
-        const decoded = jwt.verify(token, secret);
-        req.userId = decoded.id;
-        next();
-    } catch (err) {
-        return res.status(403).json({ message: 'Invalid or expired session.' });
-    }
-};
 
 async function sendInviteEmail({ email, inviter, config, inviteDoc }) {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';

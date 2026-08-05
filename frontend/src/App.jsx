@@ -13,6 +13,8 @@ import Login from './Components/Login';
 import ResetPassword from './Components/ResetPassword';
 import EmptyState from './Components/EmptyState';
 import SystemSetupModal from './Components/SystemSetupModal';
+import { getAuthHeaders } from './utils/api';
+import { consumeResetPasswordToken, clearResetPasswordToken } from './utils/resetPasswordToken';
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { LuTrash2 } from "react-icons/lu";
 
@@ -26,19 +28,19 @@ function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   useEffect(() => {
+    const token = consumeResetPasswordToken();
+    if (token) setResetToken(token);
+
     const path = window.location.pathname;
-    if (path.startsWith('/reset-password/')) {
-      const token = path.split('/').pop();
-      if (token) setResetToken(token);
-    }
     if (path.startsWith('/register')) {
       const params = new URLSearchParams(window.location.search);
-      const token = params.get('invite');
-      if (token) setInviteToken(token);
+      const invite = params.get('invite');
+      if (invite) setInviteToken(invite);
     }
   }, []);
 
   const handleBackToLogin = () => {
+    clearResetPasswordToken();
     setResetToken(null);
     window.history.pushState({}, '', '/');
   };
@@ -92,9 +94,8 @@ function App() {
     checkBackend();
 
     // Load settings snapshot for the current user (values are masked by the API).
-    const token = localStorage.getItem('token');
     fetch(`${import.meta.env.VITE_API_URL}/api/config`, {
-      headers: { 'Authorization': `Bearer ${token}` }
+      headers: getAuthHeaders()
     })
       .then(r => r.json())
       .then(cfg => {
@@ -104,9 +105,9 @@ function App() {
         // If config fetch fails, don't block the user — proceed normally
       });
 
-    const userId = getUserId();
-    if (!userId) return;
-    fetch(`${import.meta.env.VITE_API_URL}/api/resumes?userId=${userId}`)
+    fetch(`${import.meta.env.VITE_API_URL}/api/resumes`, {
+      headers: getAuthHeaders()
+    })
       .then(res => {
         if (!res.ok) throw new Error("Network response was not ok");
         return res.json();
@@ -155,7 +156,7 @@ function App() {
         try {
           const res = await fetch(`${import.meta.env.VITE_API_URL}/api/resumes`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
             body: JSON.stringify(newNote),
           });
           if (!res.ok) throw new Error('Save failed');
@@ -266,7 +267,7 @@ function App() {
     if (currentNote.id) {
       fetch(`${import.meta.env.VITE_API_URL}/api/resumes/${currentNote.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(noteToSave)
       })
         .then(res => res.json())
@@ -280,7 +281,7 @@ function App() {
       const newNote = { ...noteToSave, id: uuidv4() };
       fetch(`${import.meta.env.VITE_API_URL}/api/resumes`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(newNote)
       })
         .then(res => res.json())
@@ -317,7 +318,7 @@ function App() {
 
     fetch(`${import.meta.env.VITE_API_URL}/api/resumes`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(newNote),
     })
       .then(res => {
@@ -348,10 +349,10 @@ function App() {
     const id = deleteConfirmId;
     if (!id) return;
 
-    const userId = getUserId();
-    if (!userId) return;
-
-    fetch(`${import.meta.env.VITE_API_URL}/api/resumes/${id}?userId=${userId}`, { method: 'DELETE' })
+    fetch(`${import.meta.env.VITE_API_URL}/api/resumes/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    })
       .then(res => {
         if (res.ok) {
           setNotes(notes.filter(n => n.id !== id));
@@ -415,9 +416,8 @@ function App() {
   };
 
   const openSettings = () => {
-    const token = localStorage.getItem('token');
     fetch(`${import.meta.env.VITE_API_URL}/api/config`, {
-      headers: { 'Authorization': `Bearer ${token}` }
+      headers: getAuthHeaders()
     })
       .then(r => r.json())
       .then(cfg => { setExistingConfig(cfg); setIsSettingsOpen(true); })

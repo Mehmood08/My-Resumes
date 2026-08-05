@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './CVAnalyseModal.css';
 import { LuX, LuSparkles, LuCheck, LuInfo } from 'react-icons/lu';
-import { useAuth } from '../context/AuthContext';
+import { getAuthHeaders } from '../utils/api';
 import { buildSectionDraft } from '../utils/parseSectionContent';
 
 function SectionEditor({ section, draft, onDraftChange, onSave, onReplaceSuggested, saved }) {
@@ -88,7 +88,6 @@ function SectionEditor({ section, draft, onDraftChange, onSave, onReplaceSuggest
 }
 
 export default function CVAnalyseModal({ isOpen, onClose, markdown, onApplySection }) {
-    const { getUserId } = useAuth();
     const [jobDescription, setJobDescription] = useState('');
     const [status, setStatus] = useState('input');
     const [analysis, setAnalysis] = useState(null);
@@ -122,8 +121,8 @@ export default function CVAnalyseModal({ isOpen, onClose, markdown, onApplySecti
         try {
             const response = await fetch(`${import.meta.env.VITE_API_URL}/api/resumes/analyse`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ markdown, jobDescription: jobDescription.trim(), userId: getUserId() }),
+                headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+                body: JSON.stringify({ markdown, jobDescription: jobDescription.trim() }),
             });
 
             const data = await response.json();

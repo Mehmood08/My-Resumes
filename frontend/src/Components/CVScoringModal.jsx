@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import './CVScoringModal.css';
 import { LuX, LuCheck, LuInfo, LuChevronRight } from "react-icons/lu";
-import { useAuth } from '../context/AuthContext';
+import { getAuthHeaders } from '../utils/api';
 
 export default function CVScoringModal({ isOpen, onClose, markdown }) {
-    const { getUserId } = useAuth();
     const [status, setStatus] = useState('idle'); // idle, loading, success, error
     const [scoreData, setScoreData] = useState(null);
 
@@ -19,8 +18,8 @@ export default function CVScoringModal({ isOpen, onClose, markdown }) {
         try {
             const response = await fetch(`${import.meta.env.VITE_API_URL}/api/resumes/score`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ markdown, userId: getUserId() })
+                headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+                body: JSON.stringify({ markdown })
             });
 
             if (!response.ok) throw new Error('Failed to score CV');
