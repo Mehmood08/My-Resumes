@@ -2,7 +2,7 @@ import { createRequire } from 'module';
 import mammoth from 'mammoth';
 import WordExtractor from 'word-extractor';
 import { GoogleGenAI } from '@google/genai';
-import { getSystemConfig, DEFAULT_GEMINI_MODEL } from './configHelper.js';
+import { getEffectiveConfig, DEFAULT_GEMINI_MODEL } from './configHelper.js';
 
 const require = createRequire(import.meta.url);
 let _PDFParse = null;
@@ -118,8 +118,8 @@ Plain text extraction:
 ${plainText.substring(0, 12000)}`;
 }
 
-async function mapWithGemini(content, filename) {
-    const { config } = await getSystemConfig();
+async function mapWithGemini(content, filename, userId = null) {
+    const { config } = await getEffectiveConfig(userId);
     if (!config.GEMINI_API_KEY) {
         throw new Error('Gemini API key is not configured. Please add it in System Settings to import CVs.');
     }
@@ -163,14 +163,14 @@ async function mapWithGemini(content, filename) {
     };
 }
 
-export async function importCvFromContent(content, filename = '') {
-    const { plainText, format } = content;
-    if (!plainText?.trim() && format !== 'pdf') {
+export async function importCvFromContent(content, filename = '', userId = null) {
+    const { plainText } = content;
+    if (!plainText?.trim()) {
         throw new Error('Could not extract any text from the uploaded file.');
     }
 
     try {
-        return await mapWithGemini(content, filename);
+        return await mapWithGemini(content, filename, userId);
     } catch (err) {
         if (err.message?.includes('429') || err.message?.includes('Quota')) {
             const quotaErr = new Error('Gemini API quota reached. Please wait a moment and try again.');

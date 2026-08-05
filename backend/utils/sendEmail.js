@@ -1,14 +1,14 @@
 import { Resend } from 'resend';
-import { getSystemConfig, isPlaceholderOrEmpty } from './configHelper.js';
+import { getEnvDefaults, isPlaceholderOrEmpty } from './configHelper.js';
 
 const sendEmail = async (options, configOverride = null) => {
-    const config = configOverride || (await getSystemConfig()).config;
+    const config = configOverride || getEnvDefaults();
 
     const apiKey = config.RESEND_API_KEY;
     const from = config.EMAIL_FROM || 'CV Builder <onboarding@resend.dev>';
 
     if (isPlaceholderOrEmpty(apiKey)) {
-        throw new Error('Resend API key is not configured. Add it in Settings to send emails.');
+        throw new Error('Resend API key is not configured.');
     }
 
     const resend = new Resend(apiKey);

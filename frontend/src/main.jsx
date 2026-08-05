@@ -9,34 +9,46 @@ import { AuthProvider } from './context/AuthContext';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 function Root() {
-  // null = fetching, '' = backend down/not set, string = ready
+  // null = fetching, '' = not ready, string = ready
   const [googleClientId, setGoogleClientId] = useState(null);
-  const [fetchError, setFetchError] = useState('');
+  const [startupError, setStartupError] = useState(null);
 
   useEffect(() => {
     fetch(`${API_URL}/api/config/status`)
-      .then(res => res.json())
-      .then(data => {
+      .then(async (res) => {
+        if (!res.ok) {
+          throw new Error('backend_unavailable');
+        }
+        const data = await res.json();
         if (data.googleClientId) {
           setGoogleClientId(data.googleClientId);
+          setStartupError(null);
         } else {
-          setFetchError('GOOGLE_CLIENT_ID is not set in the backend .env file.');
           setGoogleClientId('');
+          setStartupError({
+            type: 'config',
+            title: 'Configuration Missing',
+            message: 'GOOGLE_CLIENT_ID is not set in the backend .env file.',
+          });
         }
       })
       .catch(() => {
-        setFetchError('Cannot reach the backend server. Please ensure it is running.');
         setGoogleClientId('');
+        setStartupError({
+          type: 'backend',
+          title: 'Backend Unavailable',
+          message: 'Cannot reach the backend server. Please ensure it is running.',
+        });
       });
   }, []);
 
-  // Wait until the fetch resolves — prevents GoogleOAuthProvider mounting twice
   if (googleClientId === null) {
     return null;
   }
 
-  // Backend is reachable but GOOGLE_CLIENT_ID is missing — show a clear error
-  if (!googleClientId) {
+  if (!googleClientId && startupError) {
+    const isBackendDown = startupError.type === 'backend';
+
     return (
       <div style={{
         display: 'flex', flexDirection: 'column', alignItems: 'center',
@@ -44,17 +56,25 @@ function Root() {
         color: '#f87171', fontFamily: 'Inter, sans-serif', gap: '12px',
         padding: '24px', textAlign: 'center'
       }}>
-        <div style={{ fontSize: 32 }}>⚠️</div>
-        <h2 style={{ margin: 0, fontSize: 18, color: '#fca5a5' }}>Configuration Missing</h2>
+        <div style={{ fontSize: 32 }}>{isBackendDown ? '🔌' : '⚠️'}</div>
+        <h2 style={{ margin: 0, fontSize: 18, color: '#fca5a5' }}>{startupError.title}</h2>
         <p style={{ margin: 0, fontSize: 14, color: '#9ca3af', maxWidth: 420 }}>
-          {fetchError}
+          {startupError.message}
         </p>
-        <code style={{
-          background: 'rgba(255,255,255,0.06)', padding: '8px 16px',
-          borderRadius: 8, fontSize: 13, color: '#a5b4fc'
-        }}>
-          GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
-        </code>
+        {isBackendDown ? (
+          <p style={{ margin: 0, fontSize: 13, color: '#6b7280', maxWidth: 420 }}>
+            Start the backend server, then refresh this page.
+            <br />
+            Expected API URL: <code style={{ color: '#a5b4fc' }}>{API_URL}</code>
+          </p>
+        ) : (
+          <code style={{
+            background: 'rgba(255,255,255,0.06)', padding: '8px 16px',
+            borderRadius: 8, fontSize: 13, color: '#a5b4fc'
+          }}>
+            GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+          </code>
+        )}
       </div>
     );
   }

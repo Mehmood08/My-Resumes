@@ -1,17 +1,28 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import authRoutes from './api/auth.js';
 import resumeRoutes from './api/resumes.js';
 import configRoutes from './api/config.js';
 import inviteRoutes from './api/invites.js';
-
+import { assertJwtSecretConfigured } from './utils/configHelper.js';
+import { authRateLimiter } from './middleware/rateLimit.js';
 dotenv.config();
+
+if (process.env.NODE_ENV === 'production') {
+    assertJwtSecretConfigured();
+}
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const isProduction = process.env.NODE_ENV === 'production';
 
+app.use(helmet({
+    crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+}));
 app.use(cors({
     origin: [
         'http://localhost:5173', 
@@ -20,14 +31,7 @@ app.use(cors({
     ],
     credentials: true
 }));
-app.use(express.json());
-
-// Security Headers for Google Auth (COOP)
-app.use((req, res, next) => {
-    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
-    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-    next();
-});
+app.use(express.json({ limit: '2mb' }));
 
 
 
@@ -35,22 +39,30 @@ app.use((req, res, next) => {
 let cachedDb = null;
 
 const connectDB = async () => {
-    if (cachedDb && mongoose.connection.readyState === 1) return cachedDb;
+    if (mongoose.connection.readyState === 1) {
+        try {
+            await mongoose.connection.db.admin().ping();
+            return mongoose.connection;
+        } catch (err) {
+            cachedDb = null;
+            console.error('MongoDB ping failed:', err.message);
+        }
+    }
 
     const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/notes-app';
-    
+
     try {
         console.log('🔄 Attempting to connect to MongoDB...');
-        // Standard Mongoose options for stable production connection
         const conn = await mongoose.connect(MONGODB_URI, {
-            serverSelectionTimeoutMS: 30000, // Wait 30 seconds before timing out
-            connectTimeoutMS: 30000,
-            socketTimeoutMS: 45000,
+            serverSelectionTimeoutMS: 10000,
+            connectTimeoutMS: 10000,
+            socketTimeoutMS: 15000,
         });
         cachedDb = conn;
         console.log('✅ Connected to MongoDB Successfully');
         return conn;
     } catch (err) {
+        cachedDb = null;
         console.error('❌ MongoDB Connection ERROR:', err.message);
         throw err;
     }
@@ -70,10 +82,10 @@ app.use(async (req, res, next) => {
             next();
         } catch (err) {
             console.error("📛 Request failed due to DB connection issues.");
-            return res.status(503).json({ 
-                status: 'error', 
-                message: 'Database is still waking up. Please refresh in 5 seconds.',
-                details: err.message
+            return res.status(503).json({
+                status: 'error',
+                message: 'Database is unavailable. Please try again in a moment.',
+                ...(isProduction ? {} : { details: err.message }),
             });
         }
     } else {
@@ -84,7 +96,7 @@ app.use(async (req, res, next) => {
 
 
 // Routes
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authRateLimiter, authRoutes);
 app.use('/api/resumes', resumeRoutes);
 app.use('/api/config', configRoutes);
 app.use('/api/invites', inviteRoutes);
@@ -101,23 +113,39 @@ app.get('/', (req, res) => {
     `);
 });
 
-app.get('/api/test', (req, res) => {
+app.get('/api/test', async (req, res) => {
     const state = mongoose.connection.readyState;
-    // 1 = connected, 2 = connecting
-    const isDbWorking = state === 1 || state === 2;
-    
-    res.json({ 
-        message: 'Backend is working!', 
-        status: isDbWorking ? 'success' : 'error',
-        database: state 
-    });
+
+    if (state !== 1) {
+        return res.status(503).json({
+            message: 'Backend is running but the database is not connected.',
+            status: 'error',
+            database: state,
+        });
+    }
+
+    try {
+        await mongoose.connection.db.admin().ping();
+        res.json({
+            message: 'Backend is working!',
+            status: 'success',
+            database: state,
+        });
+    } catch (err) {
+        res.status(503).json({
+            message: 'Database is unavailable.',
+            status: 'error',
+            database: state,
+            ...(isProduction ? {} : { details: err.message }),
+        });
+    }
 });
 
 // Fallback: If someone accidentally hits /reset-password on the BACKEND, redirect them to FRONTEND
 app.get('/reset-password/:token', (req, res) => {
     const { token } = req.params;
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-    res.redirect(`${frontendUrl}/reset-password/${token}`);
+    res.redirect(`${frontendUrl}/reset-password#token=${token}`);
 });
 
 app.get('/register', (req, res) => {

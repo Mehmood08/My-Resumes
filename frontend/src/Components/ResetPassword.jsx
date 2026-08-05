@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { LuLock, LuEye, LuEyeOff, LuLoader } from "react-icons/lu";
 import './Login.css';
+import { clearResetPasswordToken } from '../utils/resetPasswordToken';
 
 function ResetPassword({ token, onBackToLogin }) {
     const [password, setPassword] = useState('');
@@ -19,15 +20,16 @@ function ResetPassword({ token, onBackToLogin }) {
 
         setStatus('loading');
         try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/reset-password/${token}`, {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/reset-password`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ password })
+                body: JSON.stringify({ token, password })
             });
 
             const data = await response.json();
 
             if (response.ok) {
+                clearResetPasswordToken();
                 setStatus('success');
                 setMessage(data.message);
                 // Redirect to login after 3 seconds

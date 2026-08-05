@@ -1,52 +1,34 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { LuEye, LuEyeOff, LuSave, LuSettings, LuKey, LuBot, LuMail, LuLoader } from 'react-icons/lu';
+import { LuEye, LuEyeOff, LuSave, LuSettings, LuBot, LuMail, LuLoader } from 'react-icons/lu';
 import { MASKED_SENTINEL, isMaskedValue } from '../utils/normalizeEmail';
+import { getAuthHeaders } from '../utils/api';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 const DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash-lite';
 
 const FIELD_META = [
     {
-        section: 'JWT Authentication',
-        icon: <LuKey size={15} />,
-
-        fields: [
-            {
-                key: 'JWT_SECRET',
-                label: 'JWT Secret Key',
-                type: 'password',
-                placeholder: 'A long random secret string (32+ chars)...',
-                required: true,
-                hint: 'Used to sign user session tokens. Use any long, random string.'
-            },
-        ]
-    },
-    {
         section: 'AI (Gemini API)',
         icon: <LuBot size={15} />,
-
         fields: [
             {
                 key: 'GEMINI_API_KEY',
                 label: 'Google Gemini API Key',
                 type: 'password',
                 placeholder: 'AIza...',
-                required: true,
-                hint: 'From Google AI Studio → Get API Key. Required for AI CV scoring and generation.'
+                hint: 'From Google AI Studio. Enter a new key to replace the configured value.',
             },
-        ]
+        ],
     },
     {
         section: 'Email (Resend)',
         icon: <LuMail size={15} />,
-
         fields: [
             {
                 key: 'RESEND_API_KEY',
                 label: 'Resend API Key',
                 type: 'password',
                 placeholder: 're_xxxxxxxxxxxxxxxxxxxx',
-                required: false,
                 hint: (
                     <>
                         Get your free API key at{' '}
@@ -54,39 +36,46 @@ const FIELD_META = [
                             style={{ color: '#818cf8', textDecoration: 'underline' }}>
                             resend.com
                         </a>
-                        . Required for password reset emails. No SMTP password needed.
+                        . Enter a new key to replace the configured value.
                     </>
-                )
+                ),
             },
             {
                 key: 'EMAIL_FROM',
                 label: 'From Email Address',
                 type: 'email',
                 placeholder: 'CV Builder <noreply@yourdomain.com>',
-                required: false,
-                hint: 'The "From" address for sent emails. Must be a verified domain in Resend. Leave blank to use Resend\'s sandbox address (for testing).'
+                hint: 'Required when you provide your own Resend API key. Must be a verified domain in Resend.',
             },
-        ]
-    }
+        ],
+    },
 ];
 
-const SystemSetupModal = ({ onConfigured, existingConfig = null, isEditMode = false, onClose, allowClose = true }) => {
+const SystemSetupModal = ({ onConfigured, existingConfig = null, onClose, allowClose = true }) => {
     const [form, setForm] = useState(() => ({
-        JWT_SECRET:     existingConfig?.JWT_SECRET     || '',
         GEMINI_API_KEY: existingConfig?.GEMINI_API_KEY || '',
-        GEMINI_MODEL:   existingConfig?.GEMINI_MODEL   || DEFAULT_GEMINI_MODEL,
+        GEMINI_MODEL: existingConfig?.GEMINI_MODEL || DEFAULT_GEMINI_MODEL,
         RESEND_API_KEY: existingConfig?.RESEND_API_KEY || '',
-        EMAIL_FROM:     existingConfig?.EMAIL_FROM     || '',
+        EMAIL_FROM: existingConfig?.EMAIL_FROM || '',
     }));
 
     const [availableModels, setAvailableModels] = useState([]);
     const [modelsLoading, setModelsLoading] = useState(false);
     const [modelsError, setModelsError] = useState('');
-
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [showPasswords, setShowPasswords] = useState({});
+
+    useEffect(() => {
+        if (!existingConfig) return;
+        setForm({
+            GEMINI_API_KEY: existingConfig.GEMINI_API_KEY || '',
+            GEMINI_MODEL: existingConfig.GEMINI_MODEL || DEFAULT_GEMINI_MODEL,
+            RESEND_API_KEY: existingConfig.RESEND_API_KEY || '',
+            EMAIL_FROM: existingConfig.EMAIL_FROM || '',
+        });
+    }, [existingConfig]);
 
     const handleChange = (key, value) => {
         setForm(prev => ({ ...prev, [key]: value }));
@@ -99,19 +88,19 @@ const SystemSetupModal = ({ onConfigured, existingConfig = null, isEditMode = fa
     };
 
     const fetchAvailableModels = useCallback(async (apiKey) => {
-        if (!apiKey?.trim() || isMaskedValue(apiKey)) {
-            setAvailableModels([]);
-            setModelsError('');
-            return;
-        }
-
         setModelsLoading(true);
         setModelsError('');
+
         try {
-            const token = localStorage.getItem('token');
-            const params = new URLSearchParams({ apiKey: apiKey.trim() });
-            const res = await fetch(`${API_URL}/api/config/models?${params}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
+            const body = {};
+            if (apiKey?.trim() && !isMaskedValue(apiKey)) {
+                body.apiKey = apiKey.trim();
+            }
+
+            const res = await fetch(`${API_URL}/api/config/models`, {
+                method: 'POST',
+                headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+                body: JSON.stringify(body),
             });
             const data = await res.json();
 
@@ -138,26 +127,45 @@ const SystemSetupModal = ({ onConfigured, existingConfig = null, isEditMode = fa
     }, []);
 
     useEffect(() => {
-        if (!form.GEMINI_API_KEY?.trim()) return;
-
         const timer = setTimeout(() => {
-            fetchAvailableModels(form.GEMINI_API_KEY);
+            const hasTypedGeminiKey = form.GEMINI_API_KEY?.trim() && !isMaskedValue(form.GEMINI_API_KEY);
+            const hasConfiguredGeminiKey = isMaskedValue(existingConfig?.GEMINI_API_KEY);
+
+            if (hasTypedGeminiKey) {
+                fetchAvailableModels(form.GEMINI_API_KEY);
+            } else if (hasConfiguredGeminiKey) {
+                fetchAvailableModels(null);
+            } else {
+                setAvailableModels([]);
+                setModelsError('');
+            }
         }, 500);
 
         return () => clearTimeout(timer);
-    }, [form.GEMINI_API_KEY, fetchAvailableModels]);
+    }, [form.GEMINI_API_KEY, existingConfig?.GEMINI_API_KEY, fetchAvailableModels]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
         setSuccess('');
 
-        if (!form.JWT_SECRET?.trim() && !isMaskedValue(form.JWT_SECRET)) {
-            setError('JWT Secret Key is required.');
+        const hasNewResendKey = form.RESEND_API_KEY?.trim() && !isMaskedValue(form.RESEND_API_KEY);
+        const hasNewFromEmail = form.EMAIL_FROM?.trim() && !isMaskedValue(form.EMAIL_FROM);
+
+        if (hasNewResendKey && !hasNewFromEmail) {
+            setError('From Email Address is required when providing your own Resend API key.');
             return;
         }
-        if (!form.GEMINI_API_KEY?.trim() && !isMaskedValue(form.GEMINI_API_KEY)) {
-            setError('Gemini API Key is required.');
+
+        const hasChanges = ['GEMINI_API_KEY', 'GEMINI_MODEL', 'RESEND_API_KEY', 'EMAIL_FROM'].some((key) => {
+            if (key === 'GEMINI_MODEL') {
+                return form.GEMINI_MODEL && form.GEMINI_MODEL !== (existingConfig?.GEMINI_MODEL || DEFAULT_GEMINI_MODEL);
+            }
+            return form[key]?.trim() && !isMaskedValue(form[key]);
+        });
+
+        if (!hasChanges) {
+            setError('Change at least one setting before saving.');
             return;
         }
 
@@ -168,11 +176,10 @@ const SystemSetupModal = ({ onConfigured, existingConfig = null, isEditMode = fa
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
+                    Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({
-                    ...form,
-                    JWT_SECRET: form.JWT_SECRET || (isMaskedValue(existingConfig?.JWT_SECRET) ? MASKED_SENTINEL : ''),
+                    GEMINI_MODEL: form.GEMINI_MODEL,
                     GEMINI_API_KEY: form.GEMINI_API_KEY || (isMaskedValue(existingConfig?.GEMINI_API_KEY) ? MASKED_SENTINEL : ''),
                     RESEND_API_KEY: form.RESEND_API_KEY || (isMaskedValue(existingConfig?.RESEND_API_KEY) ? MASKED_SENTINEL : ''),
                     EMAIL_FROM: form.EMAIL_FROM || (isMaskedValue(existingConfig?.EMAIL_FROM) ? MASKED_SENTINEL : ''),
@@ -184,46 +191,41 @@ const SystemSetupModal = ({ onConfigured, existingConfig = null, isEditMode = fa
             if (!res.ok) {
                 setError(data.message || 'Failed to save configuration.');
             } else {
-                setSuccess('✅ System settings saved successfully!');
+                setSuccess('Settings saved successfully.');
                 if (onConfigured) {
                     setTimeout(() => onConfigured(data.config), 800);
                 }
             }
-        } catch (err) {
+        } catch {
             setError('Network error. Please ensure the backend server is running.');
         } finally {
             setSaving(false);
         }
     };
 
+    const geminiKeyIsConfigured = Boolean(
+        (form.GEMINI_API_KEY?.trim() && !isMaskedValue(form.GEMINI_API_KEY))
+        || isMaskedValue(existingConfig?.GEMINI_API_KEY)
+    );
+
     return (
         <div className="setup-modal-overlay">
             <div className="setup-modal">
-                {/* Header */}
                 <div className="setup-modal-header">
                     <div className="setup-modal-title-group">
                         <div className="setup-modal-icon"><LuSettings size={22} /></div>
                         <div>
-                            <h1 className="setup-modal-title">
-                                {allowClose ? 'System Settings' : '👋 Welcome! Set Up Your App'}
-                            </h1>
+                            <h1 className="setup-modal-title">Settings</h1>
                             <p className="setup-modal-subtitle">
-                                {allowClose
-                                    ? 'Update your API keys. Stored securely in MongoDB.'
-                                    : 'Before you start, please configure the required API keys below. You can update these later via the ⚙️ gear icon.'
-                                }
-                                {(existingConfig?.maskedFields?.length > 0) && (
+                                Existing API keys and email settings are hidden. Enter new values only to replace what is already configured.
+                                {existingConfig?.copiedFromUserId && (
                                     <>
                                         <br />
-                                        <span style={{ color: '#b45309', fontSize: '12px' }}>
-                                            Settings copied from your invitation are hidden. Change and save a field to set your own value.
+                                        <span style={{ color: '#6b7280', fontSize: '12px' }}>
+                                            Initial values were copied from your inviter. Replace any field to use your own.
                                         </span>
                                     </>
                                 )}
-                                <br />
-                                <span style={{ color: '#6b7280', fontSize: '12px' }}>
-                                    Google OAuth Client ID is managed via the backend <code style={{ background: 'rgba(255,255,255,0.08)', padding: '1px 5px', borderRadius: 4 }}>.env</code> file.
-                                </span>
                             </p>
                         </div>
                     </div>
@@ -232,7 +234,6 @@ const SystemSetupModal = ({ onConfigured, existingConfig = null, isEditMode = fa
                     )}
                 </div>
 
-                {/* Form */}
                 <form onSubmit={handleSubmit} className="setup-form">
                     {FIELD_META.map((section) => (
                         <div key={section.section} className="setup-section">
@@ -243,44 +244,40 @@ const SystemSetupModal = ({ onConfigured, existingConfig = null, isEditMode = fa
 
                             <div className="setup-fields-grid">
                                 {section.fields.map(field => {
-                                    const masked = isMaskedValue(form[field.key]);
+                                    const masked = isMaskedValue(form[field.key]) || isMaskedValue(existingConfig?.[field.key]);
                                     const displayValue = masked ? '' : (form[field.key] || '');
                                     const displayPlaceholder = masked
-                                        ? '•••••••••••• (from invitation)'
+                                        ? '•••••••••••• (configured)'
                                         : field.placeholder;
 
                                     return (
-                                    <div
-                                        key={field.key}
-                                        className={`setup-field ${field.type === 'number' ? 'setup-field-narrow' : ''}`}
-                                    >
-                                        <label className="setup-label" htmlFor={`setup-${field.key}`}>
-                                            {field.label}
-                                            {field.required && <span className="setup-required">*</span>}
-                                        </label>
-                                        <div className="setup-input-wrapper">
-                                            <input
-                                                id={`setup-${field.key}`}
-                                                type={(field.type === 'password' || masked) ? (showPasswords[field.key] ? 'text' : 'password') : field.type}
-                                                className="setup-input"
-                                                placeholder={displayPlaceholder}
-                                                value={displayValue}
-                                                onChange={e => handleChange(field.key, e.target.value)}
-                                                autoComplete={field.type === 'password' ? 'new-password' : 'off'}
-                                            />
-                                            {(field.type === 'password' || masked) && (
-                                                <button
-                                                    type="button"
-                                                    className="setup-eye-btn"
-                                                    onClick={() => toggleShowPassword(field.key)}
-                                                    aria-label={showPasswords[field.key] ? 'Hide' : 'Show'}
-                                                >
-                                                    {showPasswords[field.key] ? <LuEyeOff size={16} /> : <LuEye size={16} />}
-                                                </button>
-                                            )}
+                                        <div key={field.key} className="setup-field">
+                                            <label className="setup-label" htmlFor={`setup-${field.key}`}>
+                                                {field.label}
+                                            </label>
+                                            <div className="setup-input-wrapper">
+                                                <input
+                                                    id={`setup-${field.key}`}
+                                                    type={(field.type === 'password' || masked) ? (showPasswords[field.key] ? 'text' : 'password') : field.type}
+                                                    className="setup-input"
+                                                    placeholder={displayPlaceholder}
+                                                    value={displayValue}
+                                                    onChange={e => handleChange(field.key, e.target.value)}
+                                                    autoComplete={field.type === 'password' ? 'new-password' : 'off'}
+                                                />
+                                                {(field.type === 'password' || masked) && (
+                                                    <button
+                                                        type="button"
+                                                        className="setup-eye-btn"
+                                                        onClick={() => toggleShowPassword(field.key)}
+                                                        aria-label={showPasswords[field.key] ? 'Hide' : 'Show'}
+                                                    >
+                                                        {showPasswords[field.key] ? <LuEyeOff size={16} /> : <LuEye size={16} />}
+                                                    </button>
+                                                )}
+                                            </div>
+                                            {field.hint && <p className="setup-hint">{field.hint}</p>}
                                         </div>
-                                        {field.hint && <p className="setup-hint">{field.hint}</p>}
-                                    </div>
                                     );
                                 })}
 
@@ -295,7 +292,7 @@ const SystemSetupModal = ({ onConfigured, existingConfig = null, isEditMode = fa
                                                 className="setup-input setup-select"
                                                 value={form.GEMINI_MODEL || DEFAULT_GEMINI_MODEL}
                                                 onChange={e => handleChange('GEMINI_MODEL', e.target.value)}
-                                                disabled={modelsLoading || !form.GEMINI_API_KEY?.trim()}
+                                                disabled={modelsLoading || !geminiKeyIsConfigured}
                                             >
                                                 {modelsLoading && (
                                                     <option value={form.GEMINI_MODEL || DEFAULT_GEMINI_MODEL}>
@@ -317,7 +314,7 @@ const SystemSetupModal = ({ onConfigured, existingConfig = null, isEditMode = fa
                                         {modelsError && <p className="setup-hint setup-hint-error">{modelsError}</p>}
                                         {!modelsError && (
                                             <p className="setup-hint">
-                                                Models are loaded from your Google account. Used for CV scoring, generation, and suggestions.
+                                                Choose a model after entering a valid Gemini API key.
                                             </p>
                                         )}
                                     </div>
@@ -326,11 +323,9 @@ const SystemSetupModal = ({ onConfigured, existingConfig = null, isEditMode = fa
                         </div>
                     ))}
 
-                    {/* Feedback */}
-                    {error   && <div className="setup-alert setup-alert-error">⚠️ {error}</div>}
+                    {error && <div className="setup-alert setup-alert-error">⚠️ {error}</div>}
                     {success && <div className="setup-alert setup-alert-success">{success}</div>}
 
-                    {/* Actions */}
                     <div className="setup-actions">
                         {allowClose && onClose && (
                             <button type="button" className="setup-cancel-btn" onClick={onClose}>Cancel</button>
