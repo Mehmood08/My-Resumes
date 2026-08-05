@@ -462,8 +462,11 @@ ${selections.ai_summary || "Professional experience details regarding recent rol
         if (wizardMode === "ai") {
             const step = aiSteps[currentStep];
             if (step.type === "multi") {
+                const stepClass = step.id === "ai_contact"
+                    ? "ai-input-step multi-fields contact-grid"
+                    : "ai-input-step multi-fields";
                 return (
-                    <div className="ai-input-step multi-fields">
+                    <div className={stepClass}>
                         {step.fields.map(f => (
                             f.type === "textarea" ? (
                                 <div key={f.id} className="textarea-wrapper" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -479,7 +482,7 @@ ${selections.ai_summary || "Professional experience details regarding recent rol
                                         </button>
                                     )}
                                     <textarea
-                                        className={`wizard-textarea ${fieldErrors[f.id] ? "input-error" : ""}`}
+                                        className={`wizard-textarea wizard-textarea-lg ${fieldErrors[f.id] ? "input-error" : ""}`}
                                         placeholder={f.placeholder}
                                         value={selections[f.id]}
                                         onChange={(e) => updateSelection(f.id, e.target.value)}
@@ -511,7 +514,7 @@ ${selections.ai_summary || "Professional experience details regarding recent rol
                     {step.fieldType === "textarea" ? (
                         <>
                             <textarea
-                                className={`wizard-textarea ${fieldErrors[step.fieldId] ? "input-error" : ""}`}
+                                className={`wizard-textarea wizard-textarea-lg ${fieldErrors[step.fieldId] ? "input-error" : ""}`}
                                 placeholder={step.placeholder}
                                 value={selections[step.fieldId]}
                                 onChange={(e) => updateSelection(step.fieldId, e.target.value)}
@@ -636,7 +639,7 @@ ${selections.ai_summary || "Professional experience details regarding recent rol
                         <div className="progress-label">
                             {isGenerating ? "Generation in progress..." : isImporting ? "Import in progress..." : (
                                 wizardMode === "select" ? "Selection Mode" : 
-                                (wizardMode === "ai" ? `AI Step ${currentStep + 1} of ${aiSteps.length}` :
+                                (wizardMode === "ai" ? `Step ${currentStep + 1} of ${aiSteps.length}` :
                                  wizardMode === "import" ? "Import CV" :
                                  `Manual Step ${currentStep} of ${steps.length - 1}`)
                             )}

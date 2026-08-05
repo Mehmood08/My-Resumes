@@ -3,6 +3,8 @@ import { useAuth } from '../context/AuthContext';
 import { LuLogOut, LuUser, LuUserPlus } from 'react-icons/lu';
 import InviteModal from './InviteModal';
 
+import { apiFetch } from '../utils/api';
+
 const API_URL = import.meta.env.VITE_API_URL || '';
 
 export default function ProfileMenu({ variant = 'default' }) {
@@ -22,10 +24,7 @@ export default function ProfileMenu({ variant = 'default' }) {
     }
 
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`${API_URL}/api/invites/eligibility`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await apiFetch(`${API_URL}/api/invites/eligibility`);
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {

@@ -13,7 +13,7 @@ import Login from './Components/Login';
 import ResetPassword from './Components/ResetPassword';
 import EmptyState from './Components/EmptyState';
 import SystemSetupModal from './Components/SystemSetupModal';
-import { getAuthHeaders } from './utils/api';
+import { apiFetch, getAuthHeaders } from './utils/api';
 import { consumeResetPasswordToken, clearResetPasswordToken } from './utils/resetPasswordToken';
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { LuTrash2 } from "react-icons/lu";
@@ -97,17 +97,14 @@ function App() {
     fetch(`${import.meta.env.VITE_API_URL}/api/config`, {
       headers: getAuthHeaders()
     })
-      .then(r => r.json())
-      .then(cfg => {
+      .then(async (r) => {
+        if (!r.ok) return;
+        const cfg = await r.json();
         setExistingConfig(cfg);
       })
-      .catch(() => {
-        // If config fetch fails, don't block the user — proceed normally
-      });
+      .catch(() => {});
 
-    fetch(`${import.meta.env.VITE_API_URL}/api/resumes`, {
-      headers: getAuthHeaders()
-    })
+    apiFetch(`${import.meta.env.VITE_API_URL}/api/resumes`)
       .then(res => {
         if (!res.ok) throw new Error("Network response was not ok");
         return res.json();
@@ -415,13 +412,16 @@ function App() {
     if (window.innerWidth <= 768) setIsSidebarOpen(false);
   };
 
-  const openSettings = () => {
-    fetch(`${import.meta.env.VITE_API_URL}/api/config`, {
-      headers: getAuthHeaders()
-    })
-      .then(r => r.json())
-      .then(cfg => { setExistingConfig(cfg); setIsSettingsOpen(true); })
-      .catch(() => setIsSettingsOpen(true));
+  const openSettings = async () => {
+    try {
+      const res = await apiFetch(`${import.meta.env.VITE_API_URL}/api/config`);
+      if (!res.ok) return;
+      const cfg = await res.json();
+      setExistingConfig(cfg);
+      setIsSettingsOpen(true);
+    } catch {
+      // Session errors trigger logout via apiFetch
+    }
   };
 
   if (resetToken) return <ResetPassword token={resetToken} onBackToLogin={handleBackToLogin} />;
@@ -484,6 +484,7 @@ function App() {
       {/* Setup modal — auto-opens on first login if API keys are not configured */}
       {isSettingsOpen && (
         <SystemSetupModal
+          isOpen={isSettingsOpen}
           existingConfig={existingConfig}
           allowClose={true}
           onConfigured={(cfg) => {

@@ -1,10 +1,24 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { LuEye, LuEyeOff, LuSave, LuSettings, LuBot, LuMail, LuLoader } from 'react-icons/lu';
 import { MASKED_SENTINEL, isMaskedValue } from '../utils/normalizeEmail';
-import { getAuthHeaders } from '../utils/api';
+import { getAuthHeaders, apiFetch } from '../utils/api';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 const DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash-lite';
+
+const toFormValue = (config, key) => {
+    if (!config) {
+        return key === 'GEMINI_MODEL' ? DEFAULT_GEMINI_MODEL : '';
+    }
+    if (key === 'GEMINI_MODEL') {
+        return config.GEMINI_MODEL || DEFAULT_GEMINI_MODEL;
+    }
+    return isMaskedValue(config[key]) ? '' : (config[key] || '');
+};
+
+const isFieldConfigured = (config, key) => (
+    isMaskedValue(config?.[key]) || config?.maskedFields?.includes(key)
+);
 
 const FIELD_META = [
     {
@@ -51,12 +65,13 @@ const FIELD_META = [
     },
 ];
 
-const SystemSetupModal = ({ onConfigured, existingConfig = null, onClose, allowClose = true }) => {
+const SystemSetupModal = ({ onConfigured, existingConfig = null, onClose, allowClose = true, isOpen = true }) => {
+    const isDirtyRef = useRef(false);
     const [form, setForm] = useState(() => ({
-        GEMINI_API_KEY: existingConfig?.GEMINI_API_KEY || '',
-        GEMINI_MODEL: existingConfig?.GEMINI_MODEL || DEFAULT_GEMINI_MODEL,
-        RESEND_API_KEY: existingConfig?.RESEND_API_KEY || '',
-        EMAIL_FROM: existingConfig?.EMAIL_FROM || '',
+        GEMINI_API_KEY: toFormValue(existingConfig, 'GEMINI_API_KEY'),
+        GEMINI_MODEL: toFormValue(existingConfig, 'GEMINI_MODEL'),
+        RESEND_API_KEY: toFormValue(existingConfig, 'RESEND_API_KEY'),
+        EMAIL_FROM: toFormValue(existingConfig, 'EMAIL_FROM'),
     }));
 
     const [availableModels, setAvailableModels] = useState([]);
@@ -68,16 +83,21 @@ const SystemSetupModal = ({ onConfigured, existingConfig = null, onClose, allowC
     const [showPasswords, setShowPasswords] = useState({});
 
     useEffect(() => {
-        if (!existingConfig) return;
+        if (!isOpen) {
+            isDirtyRef.current = false;
+            return;
+        }
+        if (!existingConfig || isDirtyRef.current) return;
         setForm({
-            GEMINI_API_KEY: existingConfig.GEMINI_API_KEY || '',
-            GEMINI_MODEL: existingConfig.GEMINI_MODEL || DEFAULT_GEMINI_MODEL,
-            RESEND_API_KEY: existingConfig.RESEND_API_KEY || '',
-            EMAIL_FROM: existingConfig.EMAIL_FROM || '',
+            GEMINI_API_KEY: toFormValue(existingConfig, 'GEMINI_API_KEY'),
+            GEMINI_MODEL: toFormValue(existingConfig, 'GEMINI_MODEL'),
+            RESEND_API_KEY: toFormValue(existingConfig, 'RESEND_API_KEY'),
+            EMAIL_FROM: toFormValue(existingConfig, 'EMAIL_FROM'),
         });
-    }, [existingConfig]);
+    }, [isOpen, existingConfig]);
 
     const handleChange = (key, value) => {
+        isDirtyRef.current = true;
         setForm(prev => ({ ...prev, [key]: value }));
         setError('');
         setSuccess('');
@@ -97,9 +117,9 @@ const SystemSetupModal = ({ onConfigured, existingConfig = null, onClose, allowC
                 body.apiKey = apiKey.trim();
             }
 
-            const res = await fetch(`${API_URL}/api/config/models`, {
+            const res = await apiFetch(`${API_URL}/api/config/models`, {
                 method: 'POST',
-                headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body),
             });
             const data = await res.json();
@@ -128,8 +148,8 @@ const SystemSetupModal = ({ onConfigured, existingConfig = null, onClose, allowC
 
     useEffect(() => {
         const timer = setTimeout(() => {
-            const hasTypedGeminiKey = form.GEMINI_API_KEY?.trim() && !isMaskedValue(form.GEMINI_API_KEY);
-            const hasConfiguredGeminiKey = isMaskedValue(existingConfig?.GEMINI_API_KEY);
+            const hasTypedGeminiKey = form.GEMINI_API_KEY?.trim();
+            const hasConfiguredGeminiKey = isFieldConfigured(existingConfig, 'GEMINI_API_KEY');
 
             if (hasTypedGeminiKey) {
                 fetchAvailableModels(form.GEMINI_API_KEY);
@@ -161,28 +181,36 @@ const SystemSetupModal = ({ onConfigured, existingConfig = null, onClose, allowC
             if (key === 'GEMINI_MODEL') {
                 return form.GEMINI_MODEL && form.GEMINI_MODEL !== (existingConfig?.GEMINI_MODEL || DEFAULT_GEMINI_MODEL);
             }
-            return form[key]?.trim() && !isMaskedValue(form[key]);
+            const nextValue = form[key]?.trim();
+            if (!nextValue) return false;
+            return !isMaskedValue(nextValue);
         });
 
         if (!hasChanges) {
-            setError('Change at least one setting before saving.');
+            const hasConfiguredKey = isFieldConfigured(existingConfig, 'GEMINI_API_KEY');
+            setError(
+                hasConfiguredKey
+                    ? 'Enter your new Gemini API key in the field above, then click Save Settings.'
+                    : existingConfig?.usesEnvDefaults
+                        ? 'Enter your Gemini API key above, then click Save Settings.'
+                        : 'Change at least one setting before saving.'
+            );
             return;
         }
 
         setSaving(true);
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(`${API_URL}/api/config`, {
+            const res = await apiFetch(`${API_URL}/api/config`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     GEMINI_MODEL: form.GEMINI_MODEL,
-                    GEMINI_API_KEY: form.GEMINI_API_KEY || (isMaskedValue(existingConfig?.GEMINI_API_KEY) ? MASKED_SENTINEL : ''),
-                    RESEND_API_KEY: form.RESEND_API_KEY || (isMaskedValue(existingConfig?.RESEND_API_KEY) ? MASKED_SENTINEL : ''),
-                    EMAIL_FROM: form.EMAIL_FROM || (isMaskedValue(existingConfig?.EMAIL_FROM) ? MASKED_SENTINEL : ''),
+                    GEMINI_API_KEY: form.GEMINI_API_KEY?.trim()
+                        || (isFieldConfigured(existingConfig, 'GEMINI_API_KEY') ? MASKED_SENTINEL : ''),
+                    RESEND_API_KEY: form.RESEND_API_KEY?.trim()
+                        || (isFieldConfigured(existingConfig, 'RESEND_API_KEY') ? MASKED_SENTINEL : ''),
+                    EMAIL_FROM: form.EMAIL_FROM?.trim()
+                        || (isFieldConfigured(existingConfig, 'EMAIL_FROM') ? MASKED_SENTINEL : ''),
                 }),
             });
 
@@ -191,6 +219,13 @@ const SystemSetupModal = ({ onConfigured, existingConfig = null, onClose, allowC
             if (!res.ok) {
                 setError(data.message || 'Failed to save configuration.');
             } else {
+                isDirtyRef.current = false;
+                setForm({
+                    GEMINI_API_KEY: toFormValue(data.config, 'GEMINI_API_KEY'),
+                    GEMINI_MODEL: toFormValue(data.config, 'GEMINI_MODEL'),
+                    RESEND_API_KEY: toFormValue(data.config, 'RESEND_API_KEY'),
+                    EMAIL_FROM: toFormValue(data.config, 'EMAIL_FROM'),
+                });
                 setSuccess('Settings saved successfully.');
                 if (onConfigured) {
                     setTimeout(() => onConfigured(data.config), 800);
@@ -204,8 +239,8 @@ const SystemSetupModal = ({ onConfigured, existingConfig = null, onClose, allowC
     };
 
     const geminiKeyIsConfigured = Boolean(
-        (form.GEMINI_API_KEY?.trim() && !isMaskedValue(form.GEMINI_API_KEY))
-        || isMaskedValue(existingConfig?.GEMINI_API_KEY)
+        form.GEMINI_API_KEY?.trim()
+        || isFieldConfigured(existingConfig, 'GEMINI_API_KEY')
     );
 
     return (
@@ -217,7 +252,16 @@ const SystemSetupModal = ({ onConfigured, existingConfig = null, onClose, allowC
                         <div>
                             <h1 className="setup-modal-title">Settings</h1>
                             <p className="setup-modal-subtitle">
-                                Existing API keys and email settings are hidden. Enter new values only to replace what is already configured.
+                                {existingConfig?.usesEnvDefaults ? (
+                                    <>
+                                        You registered without an invite, so no personal API keys are saved yet.
+                                        Enter your own Gemini and Resend keys below. Until then, AI may use shared server defaults.
+                                    </>
+                                ) : (
+                                    <>
+                                        Existing API keys and email settings are hidden. Enter new values only to replace what is already configured.
+                                    </>
+                                )}
                                 {existingConfig?.copiedFromUserId && (
                                     <>
                                         <br />
@@ -244,10 +288,10 @@ const SystemSetupModal = ({ onConfigured, existingConfig = null, onClose, allowC
 
                             <div className="setup-fields-grid">
                                 {section.fields.map(field => {
-                                    const masked = isMaskedValue(form[field.key]) || isMaskedValue(existingConfig?.[field.key]);
-                                    const displayValue = masked ? '' : (form[field.key] || '');
-                                    const displayPlaceholder = masked
-                                        ? '•••••••••••• (configured)'
+                                    const isConfigured = isFieldConfigured(existingConfig, field.key);
+                                    const displayValue = form[field.key] || '';
+                                    const displayPlaceholder = isConfigured && !displayValue
+                                        ? '•••••••••••• (configured — enter new value to replace)'
                                         : field.placeholder;
 
                                     return (
@@ -258,14 +302,14 @@ const SystemSetupModal = ({ onConfigured, existingConfig = null, onClose, allowC
                                             <div className="setup-input-wrapper">
                                                 <input
                                                     id={`setup-${field.key}`}
-                                                    type={(field.type === 'password' || masked) ? (showPasswords[field.key] ? 'text' : 'password') : field.type}
+                                                    type={field.type === 'password' ? (showPasswords[field.key] ? 'text' : 'password') : field.type}
                                                     className="setup-input"
                                                     placeholder={displayPlaceholder}
                                                     value={displayValue}
                                                     onChange={e => handleChange(field.key, e.target.value)}
                                                     autoComplete={field.type === 'password' ? 'new-password' : 'off'}
                                                 />
-                                                {(field.type === 'password' || masked) && (
+                                                {field.type === 'password' && (
                                                     <button
                                                         type="button"
                                                         className="setup-eye-btn"

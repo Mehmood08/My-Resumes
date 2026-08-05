@@ -3031,6 +3031,10 @@
     font-size: 14px;
   }
 
+  .wizard-textarea-lg {
+    min-height: 280px;
+  }
+
   .wizard-actions {
     padding: 12px 15px;
     background: #fff;

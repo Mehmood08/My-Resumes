@@ -14,8 +14,14 @@ export const requireAuth = async (req, res, next) => {
         return res.status(500).json({ message: 'JWT_SECRET is not configured. Please set it in your backend .env file.' });
     }
 
+    let decoded;
     try {
-        const decoded = jwt.verify(token, secret);
+        decoded = jwt.verify(token, secret);
+    } catch {
+        return res.status(403).json({ message: 'Invalid or expired session. Please log in again.' });
+    }
+
+    try {
         req.userId = String(decoded.id);
 
         const user = await User.findById(decoded.id).select('googleId');
@@ -25,7 +31,8 @@ export const requireAuth = async (req, res, next) => {
 
         req.ownerIds = [...new Set([String(user._id), user.googleId].filter(Boolean))];
         next();
-    } catch {
-        return res.status(403).json({ message: 'Invalid or expired session. Please log in again.' });
+    } catch (err) {
+        console.error('requireAuth DB error:', err);
+        return res.status(503).json({ message: 'Database is unavailable. Please try again in a moment.' });
     }
 };
