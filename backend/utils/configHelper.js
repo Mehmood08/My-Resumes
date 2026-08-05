@@ -8,20 +8,28 @@ export const CLIENT_EDITABLE_FIELDS = ['GEMINI_API_KEY', 'GEMINI_MODEL', 'RESEND
 
 const PLACEHOLDERS = [
     'your_jwt_secret_key',
+    'your_secret_here',
     'your_google_gemini_api_key',
     're_your_resend_api_key',
     'your_email@gmail.com',
 ];
 
-export const getJwtSecret = () => process.env.JWT_SECRET || '';
+const DEV_JWT_SECRET = 'local-dev-jwt-secret-do-not-use-in-production';
 
-export const assertJwtSecretConfigured = () => {
-    const secret = getJwtSecret();
-    if (!secret || secret.length < 32) {
-        console.error('FATAL: JWT_SECRET must be set in .env and be at least 32 characters.');
-        process.exit(1);
+export const getJwtSecret = () => {
+    const secret = (process.env.JWT_SECRET || '').trim();
+    if (!isPlaceholderOrEmpty(secret)) {
+        return secret;
     }
+
+    if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+        return DEV_JWT_SECRET;
+    }
+
+    return '';
 };
+
+export const isJwtSecretConfigured = () => Boolean(getJwtSecret());
 
 export const getEnvDefaults = () => ({
     GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',

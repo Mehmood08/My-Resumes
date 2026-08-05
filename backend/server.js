@@ -7,12 +7,12 @@ import authRoutes from './api/auth.js';
 import resumeRoutes from './api/resumes.js';
 import configRoutes from './api/config.js';
 import inviteRoutes from './api/invites.js';
-import { assertJwtSecretConfigured } from './utils/configHelper.js';
+import { isJwtSecretConfigured } from './utils/configHelper.js';
 import { authRateLimiter } from './middleware/rateLimit.js';
 dotenv.config();
 
-if (process.env.NODE_ENV === 'production') {
-    assertJwtSecretConfigured();
+if (process.env.NODE_ENV === 'production' && !isJwtSecretConfigured()) {
+    console.warn('JWT_SECRET is not set in environment variables. Auth routes will fail until it is configured.');
 }
 
 const app = express();
@@ -73,23 +73,24 @@ connectDB().catch(err => {
     console.error("Initial DB connect failed. Will retry on request.");
 });
 
-// Middleware to ensure DB is connected before any API route executes
+// Middleware to ensure DB is connected before API routes that need it
+const DB_OPTIONAL_PATHS = ['/api/config/status'];
+
 app.use(async (req, res, next) => {
-    // Only wait for DB on /api routes
-    if (req.path.startsWith('/api')) {
-        try {
-            await connectDB();
-            next();
-        } catch (err) {
-            console.error("📛 Request failed due to DB connection issues.");
-            return res.status(503).json({
-                status: 'error',
-                message: 'Database is unavailable. Please try again in a moment.',
-                ...(isProduction ? {} : { details: err.message }),
-            });
-        }
-    } else {
+    if (!req.path.startsWith('/api') || DB_OPTIONAL_PATHS.includes(req.path)) {
+        return next();
+    }
+
+    try {
+        await connectDB();
         next();
+    } catch (err) {
+        console.error("📛 Request failed due to DB connection issues.");
+        return res.status(503).json({
+            status: 'error',
+            message: 'Database is unavailable. Please try again in a moment.',
+            ...(isProduction ? {} : { details: err.message }),
+        });
     }
 });
 
@@ -154,12 +155,14 @@ app.get('/register', (req, res) => {
     res.redirect(`${frontendUrl}/register${query}`);
 });
 
-app.listen(PORT, () => {
-    console.log(`
+if (!process.env.VERCEL) {
+    app.listen(PORT, () => {
+        console.log(`
     🚀 Backend is running!
     📡 Port: ${PORT}
     🔗 URL: http://localhost:${PORT}
     `);
-});
+    });
+}
 
 export default app;
