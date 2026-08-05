@@ -52,7 +52,7 @@ export default function MarkdownEditor({
 
   const getCurrentMarkdown = () => {
     if (!isPreview) {
-      return guidedEditorRef.current?.getMarkdown?.() ?? localMarkdown;
+      return guidedEditorRef.current?.getDisplayMarkdown?.() ?? localMarkdown;
     }
     return previewMarkdown || localMarkdown;
   };
@@ -124,6 +124,7 @@ export default function MarkdownEditor({
             onVerificationDismissed={onVerificationDismissed}
             onMetaUpdate={onMetaUpdate}
             onVerifyStateChange={setVerifyState}
+            resumeId={currentNoteId}
           />
         </div>
 
