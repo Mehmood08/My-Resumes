@@ -76,7 +76,7 @@
     width: 100%;
     padding: 10px 0;
     gap: 4px;
-    overflow-x: hidden;
+    overflow: visible;
 }
 
 .sidebar-collapsed-mode .sidebar-mini-rail {
@@ -173,6 +173,9 @@
     flex-direction: column;
     align-items: center;
     gap: 4px;
+    overflow: visible;
+    position: relative;
+    z-index: 20;
 }
 
 .sidebar-footer {
@@ -2181,6 +2184,8 @@
 .profile-menu-wrap--mini {
     display: flex;
     justify-content: center;
+    position: relative;
+    z-index: 21;
 }
 
 .profile-menu-trigger--mini {
@@ -2250,6 +2255,7 @@
     top: auto;
     right: auto;
     width: 220px;
+    z-index: 1100;
 }
 
 .profile-menu-dropdown--mini .profile-menu-signout {
