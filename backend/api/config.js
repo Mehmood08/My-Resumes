@@ -8,7 +8,6 @@ import {
     DEFAULT_GEMINI_MODEL,
     MASKED_SENTINEL,
     MASKABLE_CONFIG_FIELDS,
-    SENSITIVE_CONFIG_FIELDS,
     maskConfigForClient,
 } from '../utils/configHelper.js';
 import { withDevDetails } from '../utils/errorResponse.js';
