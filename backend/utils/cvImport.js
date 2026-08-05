@@ -5,7 +5,13 @@ import { GoogleGenAI } from '@google/genai';
 import { getEffectiveConfig, DEFAULT_GEMINI_MODEL } from './configHelper.js';
 
 const require = createRequire(import.meta.url);
-const { PDFParse } = require('pdf-parse');
+let _PDFParse = null;
+function getPDFParse() {
+    if (!_PDFParse) {
+        _PDFParse = require('pdf-parse');
+    }
+    return _PDFParse;
+}
 
 const STANDARD_SECTIONS = [
     'SUMMARY',
@@ -33,10 +39,15 @@ export async function extractContentFromFile(buffer, filename) {
     }
 
     if (ext === '.pdf') {
-        const parser = new PDFParse({ data: buffer });
-        const result = await parser.getText();
-        const plainText = (result.text || '').trim();
-        return { plainText, markup: null, format: 'pdf' };
+        const pdfParse = getPDFParse();
+        let plainText = '';
+        try {
+            const result = await pdfParse(buffer);
+            plainText = (result.text || '').trim();
+        } catch (err) {
+            console.warn("pdf-parse failed, falling back to Gemini OCR", err.message);
+        }
+        return { plainText, markup: null, format: 'pdf', buffer };
     }
 
     if (ext === '.docx') {
@@ -116,10 +127,23 @@ async function mapWithGemini(content, filename, userId = null) {
     const ai = new GoogleGenAI({ apiKey: config.GEMINI_API_KEY });
     const model = config.GEMINI_MODEL || DEFAULT_GEMINI_MODEL;
     const prompt = buildGeminiPrompt({ ...content, filename });
+    
+    let reqContents = prompt;
+    if (content.format === 'pdf' && !content.plainText?.trim() && content.buffer) {
+        reqContents = [
+            {
+                inlineData: {
+                    data: content.buffer.toString("base64"),
+                    mimeType: "application/pdf"
+                }
+            },
+            prompt
+        ];
+    }
 
     const response = await ai.models.generateContent({
         model,
-        contents: prompt,
+        contents: reqContents,
         config: {
             responseMimeType: 'application/json',
             maxOutputTokens: 4096,

@@ -13,7 +13,7 @@ const steps = [
 
 const aiSteps = [
     { id: "ai_contact", title: "Contact Information", type: "multi", fields: [
-        { id: "fullName", placeholder: "Full Name (e.g., Mehmood Shah)", type: "text" },
+        { id: "fullName", placeholder: "Full Name (e.g... Mehmood Shah)", type: "text" },
         { id: "email", placeholder: "Email Address", type: "email" },
         { id: "phone", placeholder: "Phone Number", type: "tel" },
         { id: "city", placeholder: "Your Residing City", type: "text" },
