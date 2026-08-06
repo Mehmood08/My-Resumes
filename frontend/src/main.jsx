@@ -5,6 +5,7 @@ import App from './App.jsx'
 
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthProvider } from './context/AuthContext';
+import { Analytics } from '@vercel/analytics/react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -84,6 +85,7 @@ function Root() {
       <GoogleOAuthProvider clientId={googleClientId}>
         <AuthProvider>
           <App />
+          <Analytics />
         </AuthProvider>
       </GoogleOAuthProvider>
     </StrictMode>
