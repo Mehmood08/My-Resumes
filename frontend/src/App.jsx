@@ -16,6 +16,7 @@ import SystemSetupModal from './Components/SystemSetupModal';
 import { apiFetch, getAuthHeaders } from './utils/api';
 import { consumeResetPasswordToken, clearResetPasswordToken } from './utils/resetPasswordToken';
 import { SpeedInsights } from "@vercel/speed-insights/react";
+import { Analytics } from '@vercel/analytics/react';
 import { LuTrash2 } from "react-icons/lu";
 
 function App() {
@@ -519,6 +520,7 @@ function App() {
       )}
 
       <SpeedInsights />
+      <Analytics />
     </div>
   );
 }
