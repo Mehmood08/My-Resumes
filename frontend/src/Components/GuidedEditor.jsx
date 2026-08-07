@@ -1,8 +1,13 @@
-import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
+import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef, useCallback } from 'react';
 import GuidedHelper from './GuidedHelper';
 import ImageCropperModal from './ImageCropperModal';
-import { LuPlus, LuInfo, LuLightbulb, LuTrash2, LuChevronLeft, LuCheck, LuBold, LuItalic, LuHeading, LuList, LuListOrdered } from "react-icons/lu";
+import { useAuth } from '../context/AuthContext';
+import { LuPlus, LuInfo, LuLightbulb, LuTrash2, LuChevronLeft, LuCheck, LuBold, LuItalic, LuHeading, LuList, LuListOrdered, LuUpload } from "react-icons/lu";
 import { validateHeadingFields, hasValidationErrors } from '../utils/cvValidation';
+
+const getPhotoStorageKey = (resumeId) => `cv-uploaded-photo-${resumeId || 'draft'}`;
+
+const isUploadedPhoto = (url) => typeof url === 'string' && url.startsWith('data:');
 
 const WIZARD_STEPS = [
     { id: 'heading', label: 'Heading', emoji: '👤' },
@@ -15,7 +20,8 @@ const WIZARD_STEPS = [
     { id: 'certifications', label: 'Certifications', emoji: '🏆', helper: 'certifications' }
 ];
 
-const GuidedEditor = forwardRef(({ markdown, onChange, onSave, onStartWizard, needsVerification, onVerificationDismissed, onMetaUpdate, onVerifyStateChange }, ref) => {
+const GuidedEditor = forwardRef(({ markdown, onChange, onSave, onStartWizard, needsVerification, onVerificationDismissed, onMetaUpdate, onVerifyStateChange, resumeId = null }, ref) => {
+    const { user } = useAuth();
     const [currentStep, setCurrentStep] = useState(0);
     const [showHelper, setShowHelper] = useState(false);
     const isInternalChange = useRef(false);
@@ -25,6 +31,8 @@ const GuidedEditor = forwardRef(({ markdown, onChange, onSave, onStartWizard, ne
     const [showVerificationPopup, setShowVerificationPopup] = useState(false);
     const [verifiedSections, setVerifiedSections] = useState({});
     const [cropperData, setCropperData] = useState(null);
+    const [photoSource, setPhotoSource] = useState('');
+    const photoSourceRef = useRef('');
     const isVerificationInitialized = useRef(false);
     const [fieldErrors, setFieldErrors] = useState({});
     const [showValidationToast, setShowValidationToast] = useState(false);
@@ -75,11 +83,23 @@ const GuidedEditor = forwardRef(({ markdown, onChange, onSave, onStartWizard, ne
 
     useEffect(() => { personalInfoRef.current = personalInfo; }, [personalInfo]);
     useEffect(() => { sectionsRef.current = sections; }, [sections]);
+    useEffect(() => { photoSourceRef.current = photoSource; }, [photoSource]);
 
-    const buildMarkdown = (newPersonalInfo, newSections) => {
+    const persistUploadedPhoto = useCallback((dataUrl) => {
+        const key = getPhotoStorageKey(resumeId);
+        if (dataUrl) {
+            sessionStorage.setItem(key, dataUrl);
+        } else {
+            sessionStorage.removeItem(key);
+        }
+    }, [resumeId]);
+
+    const buildMarkdown = (newPersonalInfo, newSections, { includeUploadedPhoto = true } = {}) => {
         let md = '';
-        if (newPersonalInfo.photo) {
-            md += `![Profile](${newPersonalInfo.photo})\n`;
+        const photo = newPersonalInfo.photo;
+        const includePhoto = photo && (photoSourceRef.current !== 'upload' || includeUploadedPhoto);
+        if (includePhoto) {
+            md += `![Profile](${photo})\n`;
         }
         md += `# ${newPersonalInfo.firstName} ${newPersonalInfo.lastName} | ${newPersonalInfo.profession}\n`;
         md += `${newPersonalInfo.city}, ${newPersonalInfo.province}, ${newPersonalInfo.zip} | ${newPersonalInfo.email} | ${newPersonalInfo.phone}\n`;
@@ -123,7 +143,12 @@ const GuidedEditor = forwardRef(({ markdown, onChange, onSave, onStartWizard, ne
     }, [showValidationToast]);
 
     useImperativeHandle(ref, () => ({
-        getMarkdown: () => buildMarkdown(personalInfoRef.current, sectionsRef.current),
+        getMarkdown: () => buildMarkdown(
+            personalInfoRef.current,
+            sectionsRef.current,
+            { includeUploadedPhoto: photoSourceRef.current !== 'upload' }
+        ),
+        getDisplayMarkdown: () => buildMarkdown(personalInfoRef.current, sectionsRef.current),
         validate: () => {
             const errors = validateHeadingFields(personalInfoRef.current);
             setFieldErrors(errors);
@@ -193,6 +218,7 @@ const GuidedEditor = forwardRef(({ markdown, onChange, onSave, onStartWizard, ne
 
             if (line.startsWith('![Profile](') && isParsingHeader) {
                 const url = line.substring(11, line.length - 1);
+                setPhotoSource(isUploadedPhoto(url) ? 'upload' : 'google');
                 setPersonalInfo(prev => ({ ...prev, photo: url }));
             } else if (line.startsWith('# ') && isParsingHeader) {
                 const titleLine = line.replace('# ', ''); // Do not trim to preserve trailing spaces
@@ -248,6 +274,20 @@ const GuidedEditor = forwardRef(({ markdown, onChange, onSave, onStartWizard, ne
         }));
         setSections(finalSections);
     }, [markdown]);
+
+    useEffect(() => {
+        const storedPhoto = sessionStorage.getItem(getPhotoStorageKey(resumeId));
+        if (!storedPhoto) return;
+
+        setPhotoSource('upload');
+        setPersonalInfo(prev => {
+            if (prev.photo) return prev;
+            const updated = { ...prev, photo: storedPhoto };
+            isInternalChange.current = true;
+            onChange(buildMarkdown(updated, sectionsRef.current));
+            return updated;
+        });
+    }, [resumeId, onChange]);
 
     // --- Floating Toolbar Handlers ---
     const handleTextareaSelect = (e) => {
@@ -417,25 +457,38 @@ const GuidedEditor = forwardRef(({ markdown, onChange, onSave, onStartWizard, ne
         if (!file) return;
         const reader = new FileReader();
         reader.onload = (event) => {
-            // Open the advanced Image Cropper Modal instead of direct injection
             setCropperData(event.target.result);
         };
         reader.readAsDataURL(file);
-        e.target.value = null; // allow uploading same file again
+        e.target.value = null;
+    };
+
+    const handleUseGooglePhoto = () => {
+        if (!user?.picture) return;
+        setPhotoSource('google');
+        persistUploadedPhoto('');
+        handleInfoChange('photo', user.picture);
+    };
+
+    const handleRemovePhoto = () => {
+        setPhotoSource('');
+        persistUploadedPhoto('');
+        handleInfoChange('photo', '');
     };
 
     const handleCropDone = (croppedDataUrl) => {
-        // Compress the cropped image to save DB space
         const img = new Image();
         img.onload = () => {
             const canvas = document.createElement('canvas');
-            const MAX_WIDTH = 250; // standard CV profile picture width
+            const MAX_WIDTH = 250;
             const scaleSize = MAX_WIDTH / img.width;
             canvas.width = MAX_WIDTH;
             canvas.height = img.height * scaleSize;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
             const compressedUrl = canvas.toDataURL('image/jpeg', 0.85);
+            setPhotoSource('upload');
+            persistUploadedPhoto(compressedUrl);
             handleInfoChange('photo', compressedUrl);
             setCropperData(null);
         };
@@ -571,15 +624,40 @@ const GuidedEditor = forwardRef(({ markdown, onChange, onSave, onStartWizard, ne
                             {personalInfo.photo ? (
                                 <div className="photo-preview-wrapper">
                                     <img src={personalInfo.photo} alt="Profile" className="photo-preview" />
-                                    <button type="button" className="remove-photo-btn" onClick={() => handleInfoChange('photo', '')}>Remove</button>
+                                    <button type="button" className="remove-photo-btn" onClick={handleRemovePhoto}>Remove</button>
                                 </div>
                             ) : (
-                                <label className="photo-upload-btn">
-                                    <input type="file" accept="image/*" onChange={handleImageUpload} hidden />
-                                    <LuPlus size={20} /> Upload Photo
-                                </label>
+                                <div className="photo-source-options">
+                                    {user?.picture && (
+                                        <button
+                                            type="button"
+                                            className="photo-source-btn"
+                                            onClick={handleUseGooglePhoto}
+                                        >
+                                            <img src={user.picture} alt="" className="photo-source-preview" />
+                                            <span>Use Google Profile Photo</span>
+                                        </button>
+                                    )}
+                                    <label className="photo-upload-btn">
+                                        <input type="file" accept="image/*" onChange={handleImageUpload} hidden />
+                                        <LuUpload size={20} />
+                                        Upload Photo
+                                    </label>
+                                </div>
                             )}
                         </div>
+                        {(photoSource === 'upload' || cropperData) && (
+                            <p className="photo-upload-notice">
+                                <LuInfo size={14} />
+                                Uploaded photos are used for CV preview and PDF export only. They are not saved in our database.
+                            </p>
+                        )}
+                        {photoSource === 'google' && personalInfo.photo && (
+                            <p className="photo-upload-notice photo-upload-notice--info">
+                                <LuInfo size={14} />
+                                Using your Google profile photo.
+                            </p>
+                        )}
                     </div>
 
                     <div className="form-grid">
