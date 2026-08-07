@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, Suspense, lazy } from "react";
 import Sidebar from "./Components/Sidebar";
-import MarkdownEditor from "./Components/MarkdownEditor";
-import TemplateWizard from "./Components/TemplateWizard";
+const MarkdownEditor = lazy(() => import("./Components/MarkdownEditor"));
+const TemplateWizard = lazy(() => import("./Components/TemplateWizard"));
 import "./App.css";
 import { v4 as uuidv4 } from 'uuid';
 
@@ -456,35 +456,39 @@ function App() {
         {shouldShowEditor ? (
           <div className="editor-workspace editor-workspace-full">
             <ErrorBoundary>
-              <MarkdownEditor
-                key={currentNote.id || (currentNote.isDraft ? 'draft' : 'new')}
-                markdownValue={currentNote.desc}
-                onMarkdownChange={(val) => updateCurrentNote({ desc: val })}
-                cvFormat={cvFormat}
-                onFormatChange={setCvFormat}
-                onSave={handleSaveNote}
-                onStartWizard={openCreateWizard}
-                needsVerification={needsVerification}
-                onVerificationDismissed={handleVerificationDismissed}
-                onMetaUpdate={handleAutoTitleUpdate}
-                onDownloadPDF={handleDownloadPDF}
-                currentNoteId={currentNote.id}
-                isPreview={isPreviewMode}
-                onPreviewChange={setIsPreviewMode}
-              />
+              <Suspense fallback={<div className="loading-state">Loading Editor...</div>}>
+                <MarkdownEditor
+                  key={currentNote.id || (currentNote.isDraft ? 'draft' : 'new')}
+                  markdownValue={currentNote.desc}
+                  onMarkdownChange={(val) => updateCurrentNote({ desc: val })}
+                  cvFormat={cvFormat}
+                  onFormatChange={setCvFormat}
+                  onSave={handleSaveNote}
+                  onStartWizard={openCreateWizard}
+                  needsVerification={needsVerification}
+                  onVerificationDismissed={handleVerificationDismissed}
+                  onMetaUpdate={handleAutoTitleUpdate}
+                  onDownloadPDF={handleDownloadPDF}
+                  currentNoteId={currentNote.id}
+                  isPreview={isPreviewMode}
+                  onPreviewChange={setIsPreviewMode}
+                />
+              </Suspense>
             </ErrorBoundary>
           </div>
         ) : (
           <EmptyState hasResumes={hasResumes} onSelectMode={handleOpenWizardFromEmpty} />
         )}
       </main>
-      <TemplateWizard
-        isOpen={isWizardOpen}
-        onClose={() => setIsWizardOpen(false)}
-        onCreate={(selections) => handleCreateNote("", selections)}
-        initialMode={wizardOptions.mode}
-        initialStep={wizardOptions.step}
-      />
+      <Suspense fallback={null}>
+        <TemplateWizard
+          isOpen={isWizardOpen}
+          onClose={() => setIsWizardOpen(false)}
+          onCreate={(selections) => handleCreateNote("", selections)}
+          initialMode={wizardOptions.mode}
+          initialStep={wizardOptions.step}
+        />
+      </Suspense>
 
       {/* Setup modal — auto-opens on first login if API keys are not configured */}
       {isSettingsOpen && (
