@@ -3,6 +3,7 @@ import Sidebar from "./Components/Sidebar";
 const MarkdownEditor = lazy(() => import("./Components/MarkdownEditor"));
 const TemplateWizard = lazy(() => import("./Components/TemplateWizard"));
 import "./App.css";
+import "./Components/professionalEditor.css";
 import { v4 as uuidv4 } from 'uuid';
 
 import { cvTemplates } from './data/cvTemplates';
