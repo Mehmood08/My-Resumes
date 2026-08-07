@@ -4,7 +4,7 @@ import MarkdownEditor from "./Components/MarkdownEditor";
 import TemplateWizard from "./Components/TemplateWizard";
 import "./App.css";
 import { v4 as uuidv4 } from 'uuid';
-import html2pdf from 'html2pdf.js';
+
 import { cvTemplates } from './data/cvTemplates';
 import ErrorBoundary from './Components/ErrorBoundary';
 
@@ -368,9 +368,14 @@ function App() {
     ? notes.find(n => n.id === deleteConfirmId)
     : null;
 
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => {
     const element = document.querySelector(".cv-preview > div") || document.querySelector(".html-preview");
     if (!element) return;
+
+    // Dynamically import html2pdf to split the heavy library from the main bundle
+    const html2pdfModule = await import('html2pdf.js');
+    const html2pdf = html2pdfModule.default || html2pdfModule;
+
     const opt = {
       margin: 10,
       filename: `${currentNote.title || 'Resume'}.pdf`,
