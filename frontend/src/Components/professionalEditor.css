@@ -18,14 +18,14 @@
   position: fixed;
   top: 20px;
   right: 28px;
-  z-index: 200;
+  z-index: 1000;
 }
 
 .floating-actions-cluster {
   position: fixed;
   top: 20px;
   right: 28px;
-  z-index: 200;
+  z-index: 1000;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -43,7 +43,6 @@
   font-weight: 700;
   letter-spacing: 0.02em;
   box-shadow: 0 4px 12px rgba(180, 83, 9, 0.12);
-  animation: fabTooltipIn 0.15s ease-out;
 }
 
 .floating-actions-cluster .floating-actions {
@@ -56,34 +55,16 @@
   align-items: center;
   gap: 2px;
   padding: 6px;
-  background: rgba(255, 255, 255, 0.96);
+  background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 999px;
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12), 0 2px 8px rgba(15, 23, 42, 0.06);
-  backdrop-filter: blur(10px);
   overflow: visible;
+  isolation: isolate;
 }
 
-.floating-action-divider {
-  width: 1px;
-  height: 24px;
-  background: #e2e8f0;
-  margin: 0 4px;
-  flex-shrink: 0;
-}
-
-.fab-tooltip-wrap {
-  position: relative;
-  display: inline-flex;
-}
-
-.fab-tooltip-wrap[data-tooltip]:hover::after {
-  content: attr(data-tooltip);
-  position: absolute;
-  bottom: calc(100% + 8px);
-  top: auto;
-  left: 50%;
-  transform: translateX(-50%);
+.fab-tooltip-popup {
+  position: fixed;
   padding: 6px 10px;
   background: #0f172a;
   color: #f8fafc;
@@ -96,62 +77,33 @@
   border-radius: 8px;
   box-shadow: 0 8px 20px rgba(15, 23, 42, 0.18);
   pointer-events: none;
-  z-index: 300;
-  animation: fabTooltipFadeIn 0.12s ease-out;
+  z-index: 999;
 }
 
-.fab-tooltip-wrap--end[data-tooltip]:hover::after {
-  left: auto;
-  right: 0;
-  transform: none;
-}
-
-.fab-tooltip-wrap[data-tooltip]:hover::before {
-  content: "";
-  position: absolute;
-  bottom: calc(100% + 2px);
-  top: auto;
-  left: 50%;
+.fab-tooltip-popup--center {
   transform: translateX(-50%);
-  border: 5px solid transparent;
-  border-top-color: #0f172a;
-  border-bottom-color: transparent;
-  pointer-events: none;
-  z-index: 300;
 }
 
-.fab-tooltip-wrap--end[data-tooltip]:hover::before {
-  left: auto;
-  right: 14px;
-  transform: none;
+.fab-tooltip-popup--end {
+  transform: translateX(-100%);
 }
 
-/* Touch devices: no hover tooltips (prevents sticky/flickering titles) */
+.fab-tooltip-popup[hidden] {
+  display: none !important;
+}
+
 @media (hover: none), (pointer: coarse) {
-  .fab-tooltip-wrap[data-tooltip]::after,
-  .fab-tooltip-wrap[data-tooltip]::before {
+  .fab-tooltip-popup {
     display: none !important;
   }
 }
 
-@keyframes fabTooltipFadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes fabTooltipIn {
-  from {
-    opacity: 0;
-    transform: translateX(-50%) translateY(-4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
+.floating-action-divider {
+  width: 1px;
+  height: 24px;
+  background: #e2e8f0;
+  margin: 0 4px;
+  flex-shrink: 0;
 }
 
 .fab-bar-btn {
@@ -163,11 +115,61 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
   background: transparent;
   color: #475569;
   flex-shrink: 0;
   vertical-align: middle;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.fab-bar-btn.fab-preview:hover {
+  color: #2563eb;
+  background: #eff6ff;
+}
+
+.fab-bar-btn.fab-edit:hover {
+  color: #4f46e5;
+  background: #eef2ff;
+}
+
+.fab-bar-btn.fab-save:hover:not(:disabled) {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.fab-bar-btn.fab-verify:hover {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.fab-bar-btn.fab-export:hover:not(:disabled) {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.fab-bar-btn.fab-print:hover {
+  background: #f1f5f9;
+  color: #020617;
+}
+
+.fab-bar-btn.fab-analyse:hover {
+  background: #f5f3ff;
+  color: #6d28d9;
+}
+
+.fab-bar-btn.fab-score:hover:not(:disabled) {
+  background: #f5f3ff;
+  color: #6d28d9;
+}
+
+.fab-bar-btn.fab-preview.active:hover {
+  background: #1d4ed8;
+  color: white;
+}
+
+.fab-bar-btn.fab-edit.active:hover {
+  background: linear-gradient(135deg, #4338ca, #3730a3);
+  color: white;
 }
 
 .fab-round {
@@ -201,11 +203,6 @@
   color: #475569;
 }
 
-.fab-preview:hover {
-  color: #2563eb;
-  background: #eff6ff;
-}
-
 .fab-preview.active {
   background: #2563eb;
   color: white;
@@ -215,11 +212,6 @@
   color: #475569;
 }
 
-.fab-edit:hover {
-  color: #4f46e5;
-  background: #eef2ff;
-}
-
 .fab-edit.active {
   background: linear-gradient(135deg, #4f46e5, #4338ca);
   color: white;
@@ -227,11 +219,6 @@
 
 .fab-save {
   color: #059669;
-}
-
-.fab-save:hover:not(:disabled) {
-  background: #ecfdf5;
-  color: #047857;
 }
 
 .fab-save-locked,
@@ -245,27 +232,12 @@
   color: #059669;
 }
 
-.fab-verify:hover {
-  background: #ecfdf5;
-  color: #047857;
-}
-
 .fab-export {
   color: #2563eb;
 }
 
-.fab-export:hover {
-  background: #eff6ff;
-  color: #1d4ed8;
-}
-
 .fab-print {
   color: #0f172a;
-}
-
-.fab-print:hover {
-  background: #f1f5f9;
-  color: #020617;
 }
 
 .fab-mobile-label {
@@ -285,18 +257,8 @@
   color: #7c3aed;
 }
 
-.fab-analyse:hover {
-  background: #f5f3ff;
-  color: #6d28d9;
-}
-
 .fab-score {
   color: #7c3aed;
-}
-
-.fab-score:hover:not(:disabled) {
-  background: #f5f3ff;
-  color: #6d28d9;
 }
 
 .fab-score-disabled,
@@ -365,12 +327,6 @@
 
   .fab-bar-btn-labeled .fab-mobile-label {
     display: block;
-  }
-
-  /* Labels replace tooltips on touch — tooltips cause hover flicker */
-  .fab-tooltip-wrap[data-tooltip]:hover::after,
-  .fab-tooltip-wrap[data-tooltip]:hover::before {
-    display: none !important;
   }
 
   .fab-print {
