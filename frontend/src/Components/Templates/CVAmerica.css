@@ -1,64 +1,59 @@
 .cv-america {
-    padding: 40px;
     color: #333;
-    line-height: 1.6;
-    width: 100%;
-    box-sizing: border-box;
 }
 
 .cv-america h1 {
-    font-size: 32px;
+    font-size: var(--cv-text-2xl);
     margin: 0;
     color: #000;
 }
 
 .cv-america .cv-profession {
-    font-size: 18px;
-    color: #666;
-    margin: 5px 0 15px 0;
+    font-size: var(--cv-text-lg);
+    color: var(--cv-color-text-muted);
+    margin: var(--cv-space-1) 0 var(--cv-space-4);
 }
 
 .cv-america .cv-header {
     text-align: center;
     border-bottom: 2px solid #000;
-    padding-bottom: 20px;
-    margin-bottom: 25px;
+    padding-bottom: var(--cv-space-5);
+    margin-bottom: var(--cv-space-6);
     display: flex;
     flex-direction: column;
     align-items: center;
 }
 
-.cv-photo-container {
+.cv-america .cv-photo-container {
     width: 130px;
     height: 130px;
-    margin-bottom: 15px;
+    margin-bottom: var(--cv-space-4);
     overflow: hidden;
     border: 1px solid #000;
 }
 
-.cv-photo {
+.cv-america .cv-photo {
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
 
-
 .cv-america .contact-info {
-    font-size: 13px;
+    font-size: var(--cv-text-sm);
     display: flex;
     justify-content: center;
     align-items: center;
     flex-wrap: wrap;
-    gap: 15px;
-    color: #444;
-    font-family: 'Inter', sans-serif;
-    margin-top: 8px;
+    gap: var(--cv-space-4);
+    color: var(--cv-color-text-muted);
+    margin-top: var(--cv-space-2);
+    font-feature-settings: 'kern' 1, 'tnum' 1;
 }
 
 .cv-america .contact-item {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: var(--cv-space-2);
 }
 
 .cv-america .contact-item svg {
@@ -69,28 +64,27 @@
 .cv-america .contact-link {
     color: #2563eb;
     text-decoration: none;
-    transition: all 0.2s ease;
-    font-size: 12px;
+    font-size: var(--cv-text-xs);
 }
 
-.cv-america .contact-link:hover {
-    color: #1d4ed8;
-    text-decoration: underline;
+.cv-america .cv-intro {
+    margin-bottom: var(--cv-space-4);
 }
 
 .cv-america .section-title {
-    font-size: 18px;
+    font-size: var(--cv-text-lg);
     text-transform: uppercase;
-    border-bottom: 1px solid #ddd;
-    padding-bottom: 5px;
-    margin-bottom: 10px;
+    border-bottom: 1px solid var(--cv-color-border);
+    padding-bottom: var(--cv-space-1);
+    margin-bottom: var(--cv-space-3);
     color: #000;
+    font-weight: 700;
+    letter-spacing: 0.04em;
 }
 
-.cv-america .cv-section {
-    margin-bottom: 25px;
-}
-
-.cv-america .section-content {
-    font-size: 14px;
+@media print {
+    .cv-america .cv-photo-container {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
 }

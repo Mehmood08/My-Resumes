@@ -2,6 +2,7 @@ import React from 'react';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { LuMail, LuPhone, LuMapPin, LuLink } from "react-icons/lu";
+import CVPage from './shared/CVPage';
 import './CVTech.css';
 
 const CVTech = ({ data }) => {
@@ -12,13 +13,13 @@ const CVTech = ({ data }) => {
             return url;
         }
     };
+
     return (
-        <div className="cv-tech">
+        <CVPage theme="tech" className="cv-tech" flush>
             <header className="tech-header">
                 {data.photo && (
                     <div className="cv-photo-container">
                         <img src={data.photo} alt="Profile" className="cv-photo" />
-                        <div className="photo-overlay"></div>
                     </div>
                 )}
                 <div className="tech-branding">
@@ -65,13 +66,13 @@ const CVTech = ({ data }) => {
 
             <div className="tech-grid">
                 {data.sections.map((sec, idx) => (
-                    <section key={idx} className="tech-module">
+                    <section key={idx} className="tech-module cv-section">
                         <div className="module-header">// {sec.title}</div>
-                        <div className="module-body" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked(sec.content)) }} />
+                        <div className="module-body cv-section-body" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked(sec.content)) }} />
                     </section>
                 ))}
             </div>
-        </div>
+        </CVPage>
     );
 };
 

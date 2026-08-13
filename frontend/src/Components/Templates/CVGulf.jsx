@@ -1,6 +1,8 @@
+import React from 'react';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { LuMail, LuPhone, LuMapPin, LuLink } from "react-icons/lu";
+import CVPage from './shared/CVPage';
 import './CVGulf.css';
 
 const CVGulf = ({ data }) => {
@@ -17,7 +19,7 @@ const CVGulf = ({ data }) => {
     };
 
     return (
-        <div className="cv-gulf">
+        <CVPage theme="gulf" className="cv-gulf" flush>
             <header className="cv-header">
                 {data.photo && (
                     <div className="cv-photo-container">
@@ -56,7 +58,7 @@ const CVGulf = ({ data }) => {
             </header>
             <div className="cv-body">
                 {data.intro && (
-                    <div className="cv-intro" style={{ marginBottom: '20px', fontSize: '14px' }}>
+                    <div className="cv-intro">
                         <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked(data.intro)) }} />
                     </div>
                 )}
@@ -69,7 +71,7 @@ const CVGulf = ({ data }) => {
                     </section>
                 ))}
             </div>
-        </div>
+        </CVPage>
     );
 };
 

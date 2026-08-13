@@ -1,7 +1,7 @@
 import React from 'react';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
-import { LuMail, LuPhone, LuMapPin, LuLink } from "react-icons/lu";
+import CVPage from './shared/CVPage';
 import './CVMinimalist.css';
 
 const CVMinimalist = ({ data }) => {
@@ -18,8 +18,7 @@ const CVMinimalist = ({ data }) => {
     };
 
     return (
-        <div className="cv-minimalist">
-            {/* Header Section */}
+        <CVPage theme="minimalist" className="cv-minimalist">
             <div className="mini-header">
                 {data.photo && (
                     <div className="cv-photo-container">
@@ -29,7 +28,6 @@ const CVMinimalist = ({ data }) => {
                 <h1>{data.name || "Your Name"}</h1>
                 {data.profession && <div className="mini-profession">{data.profession}</div>}
 
-                {/* Contact Sub-line (Integrated) */}
                 <div className="mini-contact-row">
                     {data.email && <span>{data.email}</span>}
                     {data.phone && <span>{data.phone}</span>}
@@ -47,21 +45,19 @@ const CVMinimalist = ({ data }) => {
                 </div>
             </div>
 
-            {/* Divider */}
-            <div className="mini-divider"></div>
+            <div className="mini-divider" />
 
-            {/* Content Sections */}
             <div className="mini-content">
                 {data.sections.map((sec, idx) => (
-                    <div key={idx} className="mini-section">
-                        <h2 className="section-title">{sec.title}</h2>
-                        <div className="section-body">
+                    <section key={idx} className="mini-section cv-section">
+                        <h2 className="section-title cv-section-title">{sec.title}</h2>
+                        <div className="section-body cv-section-body">
                             {renderSectionContent(sec.content)}
                         </div>
-                    </div>
+                    </section>
                 ))}
             </div>
-        </div>
+        </CVPage>
     );
 };
 

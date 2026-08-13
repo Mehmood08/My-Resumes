@@ -2,6 +2,7 @@ import React from 'react';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { LuMail, LuPhone, LuMapPin, LuLink } from "react-icons/lu";
+import CVPage from './shared/CVPage';
 import './CVEuropean.css';
 
 const CVEuropean = ({ data }) => {
@@ -20,7 +21,7 @@ const CVEuropean = ({ data }) => {
     };
 
     return (
-        <div className="cv-european">
+        <CVPage theme="european" className="cv-european" flush>
             <aside className="cv-sidebar">
                 {data.photo ? (
                     <div className="cv-photo-container">
@@ -69,10 +70,10 @@ const CVEuropean = ({ data }) => {
                 <header className="main-header">
                     <h1>{data.name || "Your Name"}</h1>
                     <p className="cv-profession">{data.profession}</p>
-                    <div className="header-decoration"></div>
+                    <div className="header-decoration" />
                 </header>
                 {data.intro && (
-                    <div className="cv-intro" style={{ marginBottom: '25px', opacity: 0.8 }}>
+                    <div className="cv-intro">
                         <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked(data.intro)) }} />
                     </div>
                 )}
@@ -85,7 +86,7 @@ const CVEuropean = ({ data }) => {
                     </section>
                 ))}
             </main>
-        </div>
+        </CVPage>
     );
 };
 

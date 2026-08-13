@@ -5,7 +5,7 @@ import GuidedEditor from "./GuidedEditor";
 import CVAnalyseModal from "./CVAnalyseModal";
 import CVScoringModal from "./CVScoringModal";
 import { layouts } from "./templatesData";
-import { LuEye, LuDownload, LuPenLine, LuSave, LuCheck, LuSparkles, LuChartBar } from "react-icons/lu";
+import { LuEye, LuDownload, LuPenLine, LuSave, LuCheck, LuSparkles, LuChartBar, LuLoader } from "react-icons/lu";
 
 export default function MarkdownEditor({
   markdownValue,
@@ -18,6 +18,7 @@ export default function MarkdownEditor({
   onVerificationDismissed,
   onMetaUpdate,
   onDownloadPDF,
+  isExportingPdf = false,
   currentNoteId,
   isPreview,
   onPreviewChange,
@@ -110,6 +111,21 @@ export default function MarkdownEditor({
     setHasAppliedSuggestions(true);
   };
 
+  const FabButton = ({ className, onClick, label, tooltip, disabled, children }) => (
+    <span className="fab-tooltip-wrap" data-tooltip={tooltip}>
+      <button
+        type="button"
+        className={`fab-bar-btn fab-bar-btn-labeled ${className || ''}`}
+        onClick={onClick}
+        aria-label={label}
+        disabled={disabled}
+      >
+        {children}
+        <span className="fab-mobile-label">{label}</span>
+      </button>
+    </span>
+  );
+
   return (
     <div className="editor-container editor-container-full">
       <div className="editor-content editor-content-full">
@@ -164,79 +180,68 @@ export default function MarkdownEditor({
         <div className="floating-actions floating-action-bar">
           {!isPreview && (
             <>
-              <span className="fab-tooltip-wrap" data-tooltip={needsVerification ? "Verify all sections before saving" : "Save resume"}>
-                <button
-                  type="button"
-                  className={`fab-bar-btn fab-save ${needsVerification ? "fab-save-locked" : ""}`}
-                  onClick={() => {
-                    if (needsVerification) return;
-                    handleSave();
-                  }}
-                  aria-label="Save resume"
-                  disabled={needsVerification}
-                >
-                  <LuSave size={20} />
-                </button>
-              </span>
+              <FabButton
+                className={`fab-save ${needsVerification ? "fab-save-locked" : ""}`}
+                onClick={() => {
+                  if (needsVerification) return;
+                  handleSave();
+                }}
+                label="Save"
+                tooltip={needsVerification ? "Verify all sections before saving" : "Save resume"}
+                disabled={needsVerification}
+              >
+                <LuSave size={20} />
+              </FabButton>
               {verifyState.active && !verifyState.verified && (
-                <span className="fab-tooltip-wrap" data-tooltip="Verify this section">
-                  <button
-                    type="button"
-                    className="fab-bar-btn fab-verify"
-                    onClick={() => guidedEditorRef.current?.verifyCurrentSection?.()}
-                    aria-label="Verify section"
-                  >
-                    <LuCheck size={20} />
-                  </button>
-                </span>
+                <FabButton
+                  className="fab-verify"
+                  onClick={() => guidedEditorRef.current?.verifyCurrentSection?.()}
+                  label="Verify"
+                  tooltip="Verify this section"
+                >
+                  <LuCheck size={20} />
+                </FabButton>
               )}
               <span className="floating-action-divider" aria-hidden="true" />
             </>
           )}
-          <span className="fab-tooltip-wrap" data-tooltip={isPreview ? "Back to edit" : "Preview CV"}>
-            <button
-              type="button"
-              className={`fab-bar-btn ${isPreview ? "fab-edit active" : "fab-preview"}`}
-              onClick={togglePreview}
-              aria-label={isPreview ? "Back to edit" : "Preview CV"}
-            >
-              {isPreview ? <LuPenLine size={20} /> : <LuEye size={20} />}
-            </button>
-          </span>
+          <FabButton
+            className={isPreview ? "fab-edit active" : "fab-preview"}
+            onClick={togglePreview}
+            label={isPreview ? "Edit" : "Preview"}
+            tooltip={isPreview ? "Back to edit" : "Preview CV"}
+          >
+            {isPreview ? <LuPenLine size={20} /> : <LuEye size={20} />}
+          </FabButton>
           <span className="floating-action-divider" aria-hidden="true" />
-          <span className="fab-tooltip-wrap fab-tooltip-wrap--end" data-tooltip="Score CV with AI">
-            <button
-              type="button"
-              className="fab-bar-btn fab-score"
-              onClick={openScore}
-              aria-label="Score CV with AI"
-            >
-              <LuChartBar size={20} />
-            </button>
-          </span>
-          <span className="fab-tooltip-wrap fab-tooltip-wrap--end" data-tooltip="Analyse CV against job description">
-            <button
-              type="button"
-              className="fab-bar-btn fab-analyse"
-              onClick={openAnalyse}
-              aria-label="Analyse CV against job description"
-            >
-              <LuSparkles size={20} />
-            </button>
-          </span>
+          <FabButton
+            className="fab-score"
+            onClick={openScore}
+            label="Score"
+            tooltip="Score CV with AI"
+          >
+            <LuChartBar size={20} />
+          </FabButton>
+          <FabButton
+            className="fab-analyse"
+            onClick={openAnalyse}
+            label="Analyse"
+            tooltip="Analyse CV against job description"
+          >
+            <LuSparkles size={20} />
+          </FabButton>
           {isPreview && (
             <>
               <span className="floating-action-divider" aria-hidden="true" />
-              <span className="fab-tooltip-wrap" data-tooltip="Export as PDF">
-                <button
-                  type="button"
-                  className="fab-bar-btn fab-export"
-                  onClick={onDownloadPDF}
-                  aria-label="Export as PDF"
-                >
-                  <LuDownload size={20} />
-                </button>
-              </span>
+              <FabButton
+                className="fab-export"
+                onClick={() => onDownloadPDF(getCurrentMarkdown())}
+                label="PDF"
+                tooltip="Download vector PDF"
+                disabled={isExportingPdf}
+              >
+                {isExportingPdf ? <LuLoader size={20} className="fab-spin" /> : <LuDownload size={20} />}
+              </FabButton>
             </>
           )}
         </div>

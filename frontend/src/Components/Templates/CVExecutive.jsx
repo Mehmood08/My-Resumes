@@ -2,6 +2,7 @@ import React from 'react';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { LuMail, LuPhone, LuMapPin, LuLink } from "react-icons/lu";
+import CVPage from './shared/CVPage';
 import './CVExecutive.css';
 
 const CVExecutive = ({ data }) => {
@@ -12,8 +13,9 @@ const CVExecutive = ({ data }) => {
             return url;
         }
     };
+
     return (
-        <div className="cv-executive">
+        <CVPage theme="executive" className="cv-executive">
             <header className="exec-header">
                 <div className="header-top-wrapper">
                     {data.photo && (
@@ -57,13 +59,13 @@ const CVExecutive = ({ data }) => {
 
             <div className="exec-content">
                 {data.sections.map((sec, idx) => (
-                    <section key={idx} className="exec-section">
-                        <h2>{sec.title}</h2>
-                        <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked(sec.content)) }} />
+                    <section key={idx} className="exec-section cv-section">
+                        <h2 className="exec-section-title">{sec.title}</h2>
+                        <div className="exec-section-body cv-section-body" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked(sec.content)) }} />
                     </section>
                 ))}
             </div>
-        </div>
+        </CVPage>
     );
 };
 

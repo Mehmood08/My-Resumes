@@ -1,80 +1,84 @@
 .cv-tech {
-    padding: 50px 60px;
     background: #0f172a;
     color: #94a3b8;
-    font-family: 'Fira Code', monospace;
+    padding: var(--cv-space-10) var(--cv-space-12);
 }
 
 .tech-header {
     border-left: 4px solid #38bdf8;
-    padding-left: 20px;
-    margin-bottom: 40px;
+    padding-left: var(--cv-space-5);
+    margin-bottom: var(--cv-space-10);
     display: flex;
     justify-content: flex-start;
     align-items: center;
-    gap: 20px;
+    gap: var(--cv-space-5);
+    flex-wrap: wrap;
 }
 
-.cv-photo-container {
+.cv-tech .cv-photo-container {
     width: 140px;
     height: 140px;
     border: 2px solid #38bdf8;
-    position: relative;
     overflow: hidden;
     flex-shrink: 0;
 }
 
-.cv-photo {
+.cv-tech .cv-photo {
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
 
-/* Removed photo-overlay to keep photo natural */
-
-
 .tech-header h1 {
     color: #f8fafc;
     margin: 0;
-    font-size: 2.2rem;
+    font-size: var(--cv-text-2xl);
+    font-weight: 700;
 }
 
 .tech-branding .tag {
     color: #38bdf8;
     font-weight: bold;
-    margin-top: 5px;
+    margin-top: var(--cv-space-1);
+    font-family: var(--cv-font-mono);
+    font-size: var(--cv-text-sm);
 }
 
 .cv-tech .tech-info {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: var(--cv-space-2);
     align-items: flex-end;
+    margin-left: auto;
 }
 
 .cv-tech .tech-info code {
     background: #1e293b;
-    padding: 4px 12px;
+    padding: var(--cv-space-1) var(--cv-space-3);
     border-radius: 4px;
-    font-size: 12px;
+    font-size: var(--cv-text-xs);
     color: #38bdf8;
     display: flex;
     align-items: center;
+    font-family: var(--cv-font-mono);
+    font-feature-settings: 'kern' 1, 'tnum' 1;
 }
 
-.tech-module {
-    margin-bottom: 30px;
+.cv-tech .tech-link {
+    color: #38bdf8;
+    text-decoration: none;
 }
 
 .module-header {
     color: #fbbf24;
     font-weight: bold;
-    margin-bottom: 15px;
+    margin-bottom: var(--cv-space-4);
+    font-size: var(--cv-text-sm);
 }
 
 .module-body {
     background: #1e293b;
-    padding: 20px;
+    padding: var(--cv-space-5);
     border-radius: 8px;
     color: #cbd5e1;
 }
@@ -87,4 +91,12 @@
 .module-body li::before {
     content: "➜ ";
     color: #38bdf8;
+}
+
+@media print {
+    .cv-tech,
+    .module-body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
 }

@@ -2,6 +2,7 @@ import React from 'react';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { LuMail, LuPhone, LuMapPin, LuLink } from "react-icons/lu";
+import CVPage from './shared/CVPage';
 import './CVCreative.css';
 
 const CVCreative = ({ data }) => {
@@ -18,9 +19,8 @@ const CVCreative = ({ data }) => {
     };
 
     return (
-        <div className="cv-creative">
+        <CVPage theme="creative" className="cv-creative" flush>
             <div className="creative-header">
-                <div className="header-blob"></div>
                 <div className="header-content-wrapper">
                     {data.photo && (
                         <div className="cv-photo-container">
@@ -83,7 +83,7 @@ const CVCreative = ({ data }) => {
                     ))}
                 </main>
             </div>
-        </div>
+        </CVPage>
     );
 };
 

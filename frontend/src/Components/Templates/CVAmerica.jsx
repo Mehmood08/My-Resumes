@@ -2,6 +2,7 @@ import React from 'react';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { LuMail, LuPhone, LuMapPin, LuLink } from "react-icons/lu";
+import CVPage from './shared/CVPage';
 import './CVAmerica.css';
 
 const CVAmerica = ({ data }) => {
@@ -9,7 +10,6 @@ const CVAmerica = ({ data }) => {
         return <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked(content)) }} />;
     };
 
-    // Helper to extract domain from URL for display
     const getDisplayUrl = (url) => {
         try {
             return url.replace(/^https?:\/\//, '').replace(/\/$/, '');
@@ -19,7 +19,7 @@ const CVAmerica = ({ data }) => {
     };
 
     return (
-        <div className="cv-america">
+        <CVPage theme="america" className="cv-america">
             <header className="cv-header">
                 {data.photo && (
                     <div className="cv-photo-container">
@@ -63,7 +63,7 @@ const CVAmerica = ({ data }) => {
             </header>
 
             {data.intro && (
-                <div className="cv-intro" style={{ marginBottom: '15px' }}>
+                <div className="cv-intro">
                     <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked(data.intro)) }} />
                 </div>
             )}
@@ -76,7 +76,7 @@ const CVAmerica = ({ data }) => {
                     </div>
                 </section>
             ))}
-        </div>
+        </CVPage>
     );
 };
 

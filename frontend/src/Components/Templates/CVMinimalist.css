@@ -1,150 +1,109 @@
-.cv-minimalist {
-    padding: 60px 80px;
-    background: #fff;
-    font-family: 'Helvetica Neue', Arial, sans-serif;
-    color: #333;
-    line-height: 1.6;
-    max-width: 800px;
-    margin: 0 auto;
+/* Minimalist theme — extends cv-base.css tokens */
+
+.cv-page.cv-minimalist {
+    color: var(--cv-color-text);
 }
 
 /* Header */
-.mini-header {
+.cv-minimalist .mini-header {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    margin-bottom: 60px;
-    padding-top: 20px;
+    margin-bottom: var(--cv-space-10);
+    padding-top: var(--cv-space-5);
     width: 100%;
 }
 
-.cv-photo-container {
+.cv-minimalist .cv-photo-container {
     width: 140px;
     height: 140px;
-    margin-bottom: 20px;
+    margin-bottom: var(--cv-space-5);
     overflow: hidden;
     background: #fdfdfd;
-    transition: transform 0.3s;
 }
 
-.cv-photo-container:hover {
-    transform: scale(1.05);
-}
-
-.cv-photo {
+.cv-minimalist .cv-photo {
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
 
-
-.mini-header h1 {
-    font-size: 2.2rem;
+.cv-minimalist .mini-header h1 {
+    font-size: var(--cv-text-2xl);
     font-weight: 300;
-    letter-spacing: 2px;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
-    margin: 0 0 8px 0;
-    color: #000;
+    margin: 0 0 var(--cv-space-2);
+    color: var(--cv-color-text);
 }
 
-.mini-profession {
-    font-size: 1rem;
-    color: #666;
-    margin-bottom: 16px;
-    letter-spacing: 1px;
+.cv-minimalist .mini-profession {
+    font-size: var(--cv-text-sm);
+    color: var(--cv-color-text-muted);
+    margin-bottom: var(--cv-space-4);
+    letter-spacing: 0.08em;
     text-transform: uppercase;
 }
 
-/* Contact Row (Integrated) */
-.mini-contact-row {
+.cv-minimalist .mini-contact-row {
     display: flex;
     justify-content: center;
-    gap: 16px;
+    gap: var(--cv-space-4);
     flex-wrap: wrap;
-    font-size: 12px;
-    color: #666;
+    font-size: var(--cv-text-xs);
+    color: var(--cv-color-text-subtle);
+    font-feature-settings: 'kern' 1, 'tnum' 1;
 }
 
-/* Add separator between items */
-.mini-contact-row>span::after,
-.mini-contact-row>a::after {
+.cv-minimalist .mini-contact-row > span::after,
+.cv-minimalist .mini-contact-row > a::after {
     content: "|";
-    margin-left: 16px;
-    color: #ccc;
+    margin-left: var(--cv-space-4);
+    color: var(--cv-color-border-strong);
 }
 
-.mini-contact-row>span:last-child::after,
-.mini-contact-row>a:last-child::after {
+.cv-minimalist .mini-contact-row > span:last-child::after,
+.cv-minimalist .mini-contact-row > a:last-child::after {
     display: none;
 }
 
-.mini-contact-row a {
+.cv-minimalist .mini-contact-row a {
     color: inherit;
     text-decoration: none;
-    border-bottom: 1px dotted #999;
+    border-bottom: 1px dotted var(--cv-color-text-subtle);
 }
 
-.mini-contact-row a:hover {
-    color: #000;
-    border-bottom: 1px solid #000;
-}
-
-/* Divider */
-.mini-divider {
+.cv-minimalist .mini-divider {
     width: 60px;
     height: 1px;
-    background: #ddd;
-    margin: 50px auto;
+    background: var(--cv-color-border);
+    margin: var(--cv-space-10) auto;
 }
 
-/* Content */
-.mini-content {
-    margin-top: 50px;
+.cv-minimalist .mini-content {
+    margin-top: var(--cv-space-10);
 }
 
-.mini-section {
-    margin-bottom: 40px;
+.cv-minimalist .mini-section {
+    margin-bottom: var(--cv-space-8);
 }
 
-.section-title {
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    color: #555;
-    margin: 0 0 15px 0;
-    padding-bottom: 8px;
-    border-bottom: 1px solid #eee;
+.cv-minimalist .section-title {
+    letter-spacing: 0.1em;
 }
 
-.section-body {
-    font-size: 0.85rem;
-    color: #333;
-    line-height: 1.7;
+.cv-minimalist .section-body {
+    color: var(--cv-color-text);
 }
 
-.section-body h3 {
-    font-size: 0.95rem;
-    margin: 0 0 5px 0;
+.cv-minimalist .section-body h3 {
     font-weight: 600;
-    color: #1a1a1a;
 }
 
-.section-body p {
-    margin: 10px 0;
-}
-
-.section-body ul {
-    margin: 10px 0;
-    padding-left: 20px;
-}
-
-.section-body li {
-    margin-bottom: 6px;
-}
-
-.section-body strong {
-    font-weight: 600;
-    color: #1a1a1a;
+@media print {
+    .cv-minimalist .cv-photo-container {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
 }

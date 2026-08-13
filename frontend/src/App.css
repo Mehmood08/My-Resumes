@@ -1058,6 +1058,20 @@
     border-color: #c7d2fe;
 }
 
+.main-sidebar-toggle {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    z-index: 900;
+    box-shadow: var(--shadow-sm);
+}
+
+@media (min-width: 769px) {
+    .main-sidebar-toggle {
+        display: none !important;
+    }
+}
+
 .desktop-toggle-btn {
     display: flex !important;
     align-items: center;
@@ -1332,6 +1346,10 @@
         padding: 2px 6px;
         font-size: 8.5px;
         border-radius: 4px;
+    }
+
+    .main-content-full {
+        padding-top: 48px;
     }
 }
 

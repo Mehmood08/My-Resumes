@@ -2,6 +2,7 @@ import React from 'react';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { LuMail, LuPhone, LuMapPin, LuLink } from "react-icons/lu";
+import CVPage from './shared/CVPage';
 import './CVAcademic.css';
 
 const CVAcademic = ({ data }) => {
@@ -12,8 +13,9 @@ const CVAcademic = ({ data }) => {
             return url;
         }
     };
+
     return (
-        <div className="cv-academic">
+        <CVPage theme="academic" className="cv-academic">
             {data.photo && (
                 <div className="cv-photo-container">
                     <img src={data.photo} alt="Profile" className="cv-photo" />
@@ -37,12 +39,12 @@ const CVAcademic = ({ data }) => {
             </div>
 
             {data.sections.map((sec, idx) => (
-                <section key={idx} className="acad-section">
-                    <h3>{sec.title}</h3>
-                    <div className="acad-body" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked(sec.content)) }} />
+                <section key={idx} className="acad-section cv-section">
+                    <h2 className="acad-section-title">{sec.title}</h2>
+                    <div className="acad-body cv-section-body" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked(sec.content)) }} />
                 </section>
             ))}
-        </div>
+        </CVPage>
     );
 };
 
