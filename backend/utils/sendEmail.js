@@ -13,9 +13,12 @@ const sendEmail = async (options, configOverride = null) => {
 
     const resend = new Resend(apiKey);
 
+    const to = options.email;
+
     const { data, error } = await resend.emails.send({
         from,
-        to:      options.email,
+        to,
+        replyTo: options.replyTo,
         subject: options.subject,
         text:    options.message,
         html:    options.html,
@@ -26,7 +29,9 @@ const sendEmail = async (options, configOverride = null) => {
         throw new Error(error.message || 'Failed to send email via Resend.');
     }
 
-    console.log(`✅ Email sent via Resend. ID: ${data.id}`);
+    const toLabel = Array.isArray(to) ? to.join(', ') : to;
+    const replyLabel = options.replyTo ? ` | Reply-To: ${options.replyTo}` : '';
+    console.log(`✅ Email sent via Resend. ID: ${data.id} | From: ${from} | To: ${toLabel}${replyLabel}`);
 };
 
 export default sendEmail;

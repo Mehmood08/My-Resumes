@@ -1,0 +1,122 @@
+.feedback-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  width: 100%;
+  padding: 40px;
+  background-color: #f8fafc;
+  animation: fadeIn 0.5s ease-out;
+}
+
+.feedback-content {
+  max-width: 520px;
+  width: 100%;
+  text-align: center;
+}
+
+.feedback-form {
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.feedback-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.feedback-field label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.feedback-required {
+  color: #ef4444;
+}
+
+.feedback-field input,
+.feedback-field textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+  color: #0f172a;
+  background: white;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.feedback-field input:focus,
+.feedback-field textarea:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.feedback-field textarea {
+  resize: vertical;
+  min-height: 140px;
+}
+
+.feedback-field input:disabled,
+.feedback-field textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.feedback-error {
+  margin: 0;
+  padding: 10px 14px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #dc2626;
+  font-size: 13px;
+}
+
+.feedback-form-actions {
+  display: flex;
+  justify-content: center;
+}
+
+.feedback-form-actions .btn-primary-large {
+  min-width: 200px;
+}
+
+.feedback-spinner {
+  animation: spin 1s linear infinite;
+}
+
+.feedback-success-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #dcfce7;
+  color: #16a34a;
+  margin-bottom: 24px;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+  .feedback-container {
+    padding: 24px 16px;
+  }
+
+  .feedback-form-actions .btn-primary-large {
+    width: 100%;
+    min-width: unset;
+  }
+}

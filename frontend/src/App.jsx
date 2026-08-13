@@ -13,6 +13,7 @@ import { useAuth } from './context/AuthContext';
 import Login from './Components/Login';
 import ResetPassword from './Components/ResetPassword';
 import EmptyState from './Components/EmptyState';
+import Feedback from './Components/Feedback';
 import SystemSetupModal from './Components/SystemSetupModal';
 import { apiFetch, getAuthHeaders } from './utils/api';
 import { consumeResetPasswordToken, clearResetPasswordToken } from './utils/resetPasswordToken';
@@ -58,6 +59,7 @@ function App() {
   const [wizardOptions, setWizardOptions] = useState({ mode: 'select', step: 0 });
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  const [showFeedback, setShowFeedback] = useState(false);
 
   const handleVerificationDismissed = useCallback(() => {
     setNeedsVerification(false);
@@ -395,7 +397,13 @@ function App() {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
+  const openFeedback = () => {
+    setShowFeedback(true);
+    if (window.innerWidth <= 768) setIsSidebarOpen(false);
+  };
+
   const openCreateWizard = () => {
+    setShowFeedback(false);
     setWizardOptions({ mode: 'select', step: 0 });
     setIsWizardOpen(true);
   };
@@ -406,6 +414,7 @@ function App() {
   };
 
   const selectNote = (note) => {
+    setShowFeedback(false);
     setCurrentNote({
       ...note,
       title: note.title || "",
@@ -419,6 +428,7 @@ function App() {
   };
 
   const openSettings = async () => {
+    setShowFeedback(false);
     try {
       const res = await apiFetch(`${import.meta.env.VITE_API_URL}/api/config`);
       if (!res.ok) return;
@@ -449,12 +459,16 @@ function App() {
           isSidebarOpen={isSidebarOpen}
           onToggleSidebar={toggleSidebar}
           onOpenSettings={openSettings}
+          onOpenFeedback={openFeedback}
+          isFeedbackActive={showFeedback}
           onCreateResume={openCreateWizard}
         />
       </ErrorBoundary>
 
       <main className="main-content main-content-full">
-        {shouldShowEditor ? (
+        {showFeedback ? (
+          <Feedback />
+        ) : shouldShowEditor ? (
           <div className="editor-workspace editor-workspace-full">
             <ErrorBoundary>
               <Suspense fallback={<div className="loading-state">Loading Editor...</div>}>
