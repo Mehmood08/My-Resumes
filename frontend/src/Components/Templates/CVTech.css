@@ -83,14 +83,58 @@
     color: #cbd5e1;
 }
 
-.module-body ul {
+.module-body ul,
+.cv-tech .cv-section-body ul {
     list-style: none;
     padding: 0;
+    margin: var(--cv-space-2) 0;
 }
 
-.module-body li::before {
-    content: "➜ ";
+.module-body li,
+.cv-tech .cv-section-body li {
+    position: relative;
+    padding-left: 1.1em;
+    margin-bottom: var(--cv-space-1);
+}
+
+.module-body li::before,
+.cv-tech .cv-section-body li::before {
+    content: ">";
     color: #38bdf8;
+    position: absolute;
+    left: 0;
+    margin-right: 0.35em;
+}
+
+/* Override shared cv-base dark-on-light typography for dark theme */
+.cv-tech .module-body h2,
+.cv-tech .module-body h3,
+.cv-tech .cv-section-body h2,
+.cv-tech .cv-section-body h3 {
+    color: #e2e8f0;
+    border-bottom-color: #334155;
+}
+
+.cv-tech .module-body strong,
+.cv-tech .cv-section-body strong {
+    color: #f8fafc;
+}
+
+.cv-tech .module-body h3 + p em,
+.cv-tech .cv-section-body h3 + p em,
+.cv-tech .module-body h3 + em,
+.cv-tech .cv-section-body h3 + em {
+    color: #94a3b8;
+}
+
+/* Preview: drop white card frame so full A4 dark page matches export */
+.preview-stage .cv-preview:has(.cv-tech) {
+    background: transparent;
+    box-shadow: none;
+}
+
+.preview-stage .cv-preview:has(.cv-tech) .cv-page-scaler {
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
 }
 
 @media print {

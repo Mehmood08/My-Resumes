@@ -28,6 +28,11 @@ function buildContactParts(data, theme) {
     return parts;
 }
 
+function formatSectionTitle(title, theme) {
+    const text = theme.sectionTitle?.uppercase === false ? title : title.toUpperCase();
+    return `${theme.sectionTitle?.prefix ?? ''}${text}`;
+}
+
 function SectionBlocks({ blocks, theme, styles }) {
     return blocks.map((block, idx) => {
         switch (block.type) {
@@ -48,7 +53,7 @@ function SectionBlocks({ blocks, theme, styles }) {
                     <View key={idx} style={styles.list}>
                         {block.items.map((item, i) => (
                             <View key={i} style={styles.listItem}>
-                                <Text style={styles.bullet}>•</Text>
+                                <Text style={styles.bullet}>{theme.bullet?.char ?? '•'}</Text>
                                 <Text style={styles.listText}>{item}</Text>
                             </View>
                         ))}
@@ -75,8 +80,12 @@ function CvSections({ data, theme, styles }) {
                 </View>
             ) : (
                 <View style={styles.sectionTitleRow}>
-                    <Text style={styles.sectionTitleText}>{section.title.toUpperCase()}</Text>
-                    <View style={[styles.sectionRule, { borderBottomColor: theme.sectionTitle.border }]} />
+                    <Text style={styles.sectionTitleText}>
+                        {formatSectionTitle(section.title, theme)}
+                    </Text>
+                    {theme.layout !== 'tech' ? (
+                        <View style={[styles.sectionRule, { borderBottomColor: theme.sectionTitle.border }]} />
+                    ) : null}
                 </View>
             )}
             <View style={styles.sectionBody}>
@@ -272,10 +281,10 @@ function createStyles(theme) {
             marginBottom: 6,
         },
         sectionTitleText: {
-            fontFamily: theme.headingFont,
+            fontFamily: theme.sectionTitle.fontFamily ?? theme.headingFont,
             fontSize: theme.sectionTitle.size,
             color: theme.sectionTitle.color,
-            letterSpacing: 0.8,
+            letterSpacing: theme.sectionTitle.letterSpacing ?? 0.8,
             marginBottom: 3,
         },
         sectionTitleOnFill: {
@@ -320,9 +329,10 @@ function createStyles(theme) {
             paddingRight: 8,
         },
         bullet: {
-            width: 10,
+            width: theme.bullet?.width ?? 10,
             fontSize: theme.body.size,
-            color: theme.body.color,
+            color: theme.bullet?.color ?? theme.body.color,
+            marginRight: 4,
         },
         listText: {
             flex: 1,

@@ -113,10 +113,11 @@ export const PDF_THEMES = {
         name: { color: '#f8fafc', size: 20 },
         profession: { color: '#38bdf8', size: 10 },
         contact: { color: '#38bdf8', size: 8.5 },
-        sectionTitle: { color: '#fbbf24', size: 10, border: '#1e293b' },
+        sectionTitle: { color: '#fbbf24', size: 10, border: '#1e293b', prefix: '// ', uppercase: false, fontFamily: 'Courier', letterSpacing: 0 },
         body: { color: '#cbd5e1', size: 9 },
         accent: '#38bdf8',
         headerStyle: 'tech',
+        bullet: { char: '>', color: '#38bdf8', width: 10 },
     },
     Service: {
         fontFamily: 'Helvetica',

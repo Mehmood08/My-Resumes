@@ -2143,17 +2143,13 @@
 
 .preview-stage .cv-preview {
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.2);
-  max-width: 850px;
-  width: 100%;
+  width: fit-content;
+  max-width: 100%;
   height: fit-content;
+  min-height: 0;
   background: white;
   margin-bottom: 32px;
-}
-
-@media (min-width: 1400px) {
-  .preview-stage .cv-preview {
-    max-width: 900px;
-  }
+  overflow: visible;
 }
 
 /* FLOATING FOOTER */
