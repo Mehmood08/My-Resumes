@@ -1,5 +1,5 @@
 import React, { useState, useEffect, memo, useMemo } from "react";
-import { LuTrash2, LuChevronDown, LuChevronRight, LuPanelLeftClose, LuPanelLeft, LuSettings, LuPlus, LuCopy } from "react-icons/lu";
+import { LuTrash2, LuChevronDown, LuChevronRight, LuPanelLeftClose, LuPanelLeft, LuSettings, LuPlus, LuCopy, LuMessageSquare } from "react-icons/lu";
 import ProfileMenu from "./ProfileMenu";
 
 const LETTER_AVATAR_COLORS = [
@@ -29,7 +29,9 @@ function Sidebar({
   isSidebarOpen,
   onToggleSidebar,
   onOpenSettings,
+  onOpenFeedback,
   onCreateResume,
+  isFeedbackActive,
 }) {
   const [openParents, setOpenParents] = useState({});
   const parents = useMemo(() => Array.isArray(notes) ? notes.filter(n => !n.parentId) : [], [notes]);
@@ -68,6 +70,15 @@ function Sidebar({
         <div className="sidebar-header">
           <div className="sidebar-header-row">
             <div className="sidebar-brand">
+              <a
+                href="https://lycusinc.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="sidebar-brand-logo-link"
+                title="Lycus Inc."
+              >
+                <img src="/lycus-logo.png" alt="Lycus" className="sidebar-brand-logo" />
+              </a>
               <h3 className="sidebar-brand-title">My Resumes</h3>
             </div>
             <button
@@ -175,6 +186,16 @@ function Sidebar({
         </div>
 
         <div className="sidebar-footer">
+          {onOpenFeedback && (
+            <button
+              type="button"
+              className={`sidebar-settings-btn ${isFeedbackActive ? "active" : ""}`}
+              onClick={onOpenFeedback}
+            >
+              <LuMessageSquare size={18} />
+              <span>Feedback</span>
+            </button>
+          )}
           {onOpenSettings && (
             <button
               type="button"
@@ -243,6 +264,17 @@ function Sidebar({
         <div className="sidebar-mini-divider" />
 
         <div className="sidebar-mini-footer">
+          {onOpenFeedback && (
+            <button
+              type="button"
+              className={`sidebar-mini-btn ${isFeedbackActive ? "active" : ""}`}
+              onClick={onOpenFeedback}
+              title="Feedback"
+              aria-label="Feedback"
+            >
+              <LuMessageSquare size={20} />
+            </button>
+          )}
           {onOpenSettings && (
             <button
               type="button"

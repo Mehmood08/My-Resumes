@@ -1,43 +1,49 @@
-## Vercel Speed Insights Installation
+# Vercel Web Analytics Installation
 
-Successfully installed and configured Vercel Speed Insights for this React + Vite project.
+Successfully installed and configured Vercel Web Analytics for this Vite + React project following the latest official documentation.
 
-### Changes Made
+## Changes Made
 
-**1. Installed Package**
-   - Added `@vercel/speed-insights` version 2.0.0 to dependencies
-   - Updated `package.json` and `package-lock.json`
+### 1. Package Installation
+- Installed `@vercel/analytics` package (v2.0.1) using npm
+- Updated `package-lock.json` to reflect the new dependency
 
-**2. Modified Files**
-   - `src/App.jsx`: 
-     - Added import statement: `import { SpeedInsights } from '@vercel/speed-insights/react';`
-     - Added `<SpeedInsights />` component at the root level of the App component (just before the closing div)
+### 2. Modified Files
 
-### Implementation Details
+**frontend/package.json**
+- Added `@vercel/analytics: ^2.0.1` to dependencies
 
-Following the official Vercel Speed Insights documentation (retrieved from https://vercel.com/docs/speed-insights/quickstart), the installation was done according to React/Vite framework-specific instructions:
+**frontend/src/main.jsx**
+- Added import statement: `import { Analytics } from '@vercel/analytics/react';`
+- Added `<Analytics />` component inside the `<AuthProvider>` wrapper alongside the existing `<App />` component
+- Placement ensures analytics tracking initializes across all pages while respecting the authentication context
 
-1. Used the `/react` import path as specified for React applications
-2. Placed the component at the root level of the application for proper tracking
-3. The SpeedInsights component is self-contained and will automatically collect performance metrics once deployed to Vercel
+## Implementation Details
 
-### Verification
+- **Framework**: Vite + React
+- **Package**: @vercel/analytics v2.0.1
+- **Component Placement**: Added to `main.jsx` (the application's root entry point) to ensure comprehensive tracking
+- **Documentation**: Retrieved latest instructions from https://vercel.com/docs/analytics/quickstart
+- **Build Status**: ✅ Build completed successfully without errors
+- **Existing Code**: Preserved all existing functionality and code structure
+- **Similar Package**: Project already had `@vercel/speed-insights` installed, Analytics component follows the same pattern
 
-- ✅ Build completed successfully (`npm run build`)
-- ✅ No new linting errors introduced (pre-existing errors remain unchanged)
-- ✅ Package installation completed without issues
-- ✅ Lock file updated correctly
+## Testing & Verification
 
-### Next Steps
+1. ✅ Build completed successfully (`npm run build`)
+2. ✅ No new linting errors introduced (existing errors were pre-existing)
+3. ✅ Package installation successful with dependencies properly resolved
+4. ✅ Lock file updated correctly
 
-Once this code is deployed to Vercel:
-1. Speed Insights will automatically start collecting performance data
-2. Data will be available in the Vercel dashboard under the Speed Insights section
-3. The Speed Insights script will be automatically injected at `/_vercel/speed-insights/*` routes
-4. Performance metrics will appear in the dashboard after several days of visitor traffic
+## Next Steps
 
-### Notes
+To start collecting analytics data:
+1. Deploy the application to Vercel using `vercel deploy`
+2. Enable Web Analytics in the Vercel dashboard under the Analytics tab
+3. Verify tracking by checking browser Network tab for Fetch/XHR requests to `/<unique-path>/view` after deployment
 
-- The implementation preserves all existing code structure and functionality
-- No breaking changes were introduced
-- The SpeedInsights component is lightweight and non-blocking
+## Notes
+
+- The Analytics component works seamlessly with the existing Speed Insights package
+- No environment variables or additional configuration required for basic setup
+- The component automatically handles data collection once deployed to Vercel

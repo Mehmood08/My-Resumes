@@ -7,6 +7,7 @@ import authRoutes from './api/auth.js';
 import resumeRoutes from './api/resumes.js';
 import configRoutes from './api/config.js';
 import inviteRoutes from './api/invites.js';
+import feedbackRoutes from './api/feedback.js';
 import { isJwtSecretConfigured } from './utils/configHelper.js';
 import { authRateLimiter } from './middleware/rateLimit.js';
 
@@ -86,6 +87,7 @@ app.use('/api/auth', authRateLimiter, authRoutes);
 app.use('/api/resumes', resumeRoutes);
 app.use('/api/config', configRoutes);
 app.use('/api/invites', inviteRoutes);
+app.use('/api/feedback', feedbackRoutes);
 
 app.get('/', (req, res) => {
     res.send(`

@@ -221,6 +221,15 @@
     color: var(--sidebar-text);
 }
 
+.sidebar-settings-btn.active {
+    background: #e0e7ff;
+    color: var(--primary);
+}
+
+.sidebar-external-link {
+    text-decoration: none;
+}
+
 .sidebar-add-btn {
     color: var(--primary);
 }
@@ -286,6 +295,20 @@
     align-items: center;
     gap: 8px;
     min-width: 0;
+    font-size: 17px;
+}
+
+.sidebar-brand-logo-link {
+    display: flex;
+    flex-shrink: 0;
+    line-height: 0;
+}
+
+.sidebar-brand-logo {
+    height: 1em;
+    width: 1em;
+    object-fit: contain;
+    border-radius: 50%;
 }
 
 .sidebar-brand-title {
@@ -294,6 +317,7 @@
     font-weight: 700;
     letter-spacing: -0.02em;
     color: var(--sidebar-text);
+    line-height: 1;
 }
 
 .sidebar-collapse-btn {

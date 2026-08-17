@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, Suspense, lazy } from "react";
 import Sidebar from "./Components/Sidebar";
-import MarkdownEditor from "./Components/MarkdownEditor";
-import TemplateWizard from "./Components/TemplateWizard";
+const MarkdownEditor = lazy(() => import("./Components/MarkdownEditor"));
+const TemplateWizard = lazy(() => import("./Components/TemplateWizard"));
 import "./App.css";
+import "./Components/professionalEditor.css";
 import { v4 as uuidv4 } from 'uuid';
-import html2pdf from 'html2pdf.js';
+
 import { cvTemplates } from './data/cvTemplates';
 import ErrorBoundary from './Components/ErrorBoundary';
 
@@ -12,6 +13,7 @@ import { useAuth } from './context/AuthContext';
 import Login from './Components/Login';
 import ResetPassword from './Components/ResetPassword';
 import EmptyState from './Components/EmptyState';
+import Feedback from './Components/Feedback';
 import SystemSetupModal from './Components/SystemSetupModal';
 import { apiFetch, getAuthHeaders } from './utils/api';
 import { consumeResetPasswordToken, clearResetPasswordToken } from './utils/resetPasswordToken';
@@ -57,6 +59,7 @@ function App() {
   const [wizardOptions, setWizardOptions] = useState({ mode: 'select', step: 0 });
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  const [showFeedback, setShowFeedback] = useState(false);
 
   const handleVerificationDismissed = useCallback(() => {
     setNeedsVerification(false);
@@ -368,9 +371,14 @@ function App() {
     ? notes.find(n => n.id === deleteConfirmId)
     : null;
 
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => {
     const element = document.querySelector(".cv-preview > div") || document.querySelector(".html-preview");
     if (!element) return;
+
+    // Dynamically import html2pdf to split the heavy library from the main bundle
+    const html2pdfModule = await import('html2pdf.js');
+    const html2pdf = html2pdfModule.default || html2pdfModule;
+
     const opt = {
       margin: 10,
       filename: `${currentNote.title || 'Resume'}.pdf`,
@@ -389,7 +397,13 @@ function App() {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
+  const openFeedback = () => {
+    setShowFeedback(true);
+    if (window.innerWidth <= 768) setIsSidebarOpen(false);
+  };
+
   const openCreateWizard = () => {
+    setShowFeedback(false);
     setWizardOptions({ mode: 'select', step: 0 });
     setIsWizardOpen(true);
   };
@@ -400,6 +414,7 @@ function App() {
   };
 
   const selectNote = (note) => {
+    setShowFeedback(false);
     setCurrentNote({
       ...note,
       title: note.title || "",
@@ -413,6 +428,7 @@ function App() {
   };
 
   const openSettings = async () => {
+    setShowFeedback(false);
     try {
       const res = await apiFetch(`${import.meta.env.VITE_API_URL}/api/config`);
       if (!res.ok) return;
@@ -443,43 +459,51 @@ function App() {
           isSidebarOpen={isSidebarOpen}
           onToggleSidebar={toggleSidebar}
           onOpenSettings={openSettings}
+          onOpenFeedback={openFeedback}
+          isFeedbackActive={showFeedback}
           onCreateResume={openCreateWizard}
         />
       </ErrorBoundary>
 
       <main className="main-content main-content-full">
-        {shouldShowEditor ? (
+        {showFeedback ? (
+          <Feedback />
+        ) : shouldShowEditor ? (
           <div className="editor-workspace editor-workspace-full">
             <ErrorBoundary>
-              <MarkdownEditor
-                key={currentNote.id || (currentNote.isDraft ? 'draft' : 'new')}
-                markdownValue={currentNote.desc}
-                onMarkdownChange={(val) => updateCurrentNote({ desc: val })}
-                cvFormat={cvFormat}
-                onFormatChange={setCvFormat}
-                onSave={handleSaveNote}
-                onStartWizard={openCreateWizard}
-                needsVerification={needsVerification}
-                onVerificationDismissed={handleVerificationDismissed}
-                onMetaUpdate={handleAutoTitleUpdate}
-                onDownloadPDF={handleDownloadPDF}
-                currentNoteId={currentNote.id}
-                isPreview={isPreviewMode}
-                onPreviewChange={setIsPreviewMode}
-              />
+              <Suspense fallback={<div className="loading-state">Loading Editor...</div>}>
+                <MarkdownEditor
+                  key={currentNote.id || (currentNote.isDraft ? 'draft' : 'new')}
+                  markdownValue={currentNote.desc}
+                  onMarkdownChange={(val) => updateCurrentNote({ desc: val })}
+                  cvFormat={cvFormat}
+                  onFormatChange={setCvFormat}
+                  onSave={handleSaveNote}
+                  onStartWizard={openCreateWizard}
+                  needsVerification={needsVerification}
+                  onVerificationDismissed={handleVerificationDismissed}
+                  onMetaUpdate={handleAutoTitleUpdate}
+                  onDownloadPDF={handleDownloadPDF}
+                  currentNoteId={currentNote.id}
+                  isPreview={isPreviewMode}
+                  onPreviewChange={setIsPreviewMode}
+                />
+              </Suspense>
             </ErrorBoundary>
           </div>
         ) : (
           <EmptyState hasResumes={hasResumes} onSelectMode={handleOpenWizardFromEmpty} />
         )}
       </main>
-      <TemplateWizard
-        isOpen={isWizardOpen}
-        onClose={() => setIsWizardOpen(false)}
-        onCreate={(selections) => handleCreateNote("", selections)}
-        initialMode={wizardOptions.mode}
-        initialStep={wizardOptions.step}
-      />
+      <Suspense fallback={null}>
+        <TemplateWizard
+          isOpen={isWizardOpen}
+          onClose={() => setIsWizardOpen(false)}
+          onCreate={(selections) => handleCreateNote("", selections)}
+          initialMode={wizardOptions.mode}
+          initialStep={wizardOptions.step}
+        />
+      </Suspense>
 
       {/* Setup modal — auto-opens on first login if API keys are not configured */}
       {isSettingsOpen && (

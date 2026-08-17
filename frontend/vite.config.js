@@ -30,7 +30,6 @@ export default defineConfig({
             if (id.includes('react-icons')) {
               return 'icons';
             }
-            return 'vendor';
           }
         }
       }

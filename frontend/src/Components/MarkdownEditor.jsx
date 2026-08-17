@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import "./professionalEditor.css";
+
 import CVPreview from "./CVPreview";
 import GuidedEditor from "./GuidedEditor";
 import CVAnalyseModal from "./CVAnalyseModal";

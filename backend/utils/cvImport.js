@@ -163,9 +163,16 @@ async function mapWithGemini(content, filename, userId = null) {
     };
 }
 
+function hasImportableContent(content) {
+    if (content.plainText?.trim()) return true;
+    if (content.markup?.trim()) return true;
+    // Scanned/image PDFs may yield no text from pdf-parse; Gemini can OCR the raw PDF.
+    if (content.format === 'pdf' && content.buffer) return true;
+    return false;
+}
+
 export async function importCvFromContent(content, filename = '', userId = null) {
-    const { plainText } = content;
-    if (!plainText?.trim()) {
+    if (!hasImportableContent(content)) {
         throw new Error('Could not extract any text from the uploaded file.');
     }
 
