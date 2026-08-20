@@ -26,22 +26,23 @@
   --cv-padding-x: 20mm;
   --cv-padding-y: 18mm;
 
-  /* --- Typography --- */
-  --cv-font-sans: 'Source Sans 3', 'Inter', system-ui, -apple-system, sans-serif;
-  --cv-font-serif: 'Source Serif 4', 'Times New Roman', Times, serif;
+  /* --- Typography (Professional Google Fonts) --- */
+  --cv-font-sans: 'Inter', 'Source Sans 3', system-ui, -apple-system, sans-serif;
+  --cv-font-serif: 'Merriweather', 'Source Serif 4', 'Georgia', Times, serif;
   --cv-font-mono: 'Fira Code', 'Consolas', monospace;
   --cv-font-display: 'Outfit', var(--cv-font-sans);
 
-  --cv-text-xs: 0.6875rem;   /* 11px */
-  --cv-text-sm: 0.8125rem;   /* 13px */
-  --cv-text-base: 0.9375rem; /* 15px */
-  --cv-text-lg: 1.0625rem;   /* 17px */
+  /* --- Font sizes (bumped up for readability) --- */
+  --cv-text-xs: 0.75rem;     /* 12px — was 11px */
+  --cv-text-sm: 0.875rem;    /* 14px — was 13px */
+  --cv-text-base: 1rem;      /* 16px — was 15px */
+  --cv-text-lg: 1.125rem;    /* 18px — was 17px */
   --cv-text-xl: 1.375rem;    /* 22px */
-  --cv-text-2xl: 1.75rem;    /* 28px */
+  --cv-text-2xl: 1.875rem;   /* 30px — was 28px */
 
-  --cv-leading-tight: 1.35;
-  --cv-leading-normal: 1.55;
-  --cv-leading-relaxed: 1.7;
+  --cv-leading-tight: 1.4;
+  --cv-leading-normal: 1.6;
+  --cv-leading-relaxed: 1.75;
 
   /* --- Colors --- */
   --cv-color-text: #1a1a1a;
@@ -55,6 +56,7 @@
   --cv-preview-gutter: 16px;
   --cv-preview-scale: 1;
 }
+
 
 /* ============================================================
    A4 page shell
