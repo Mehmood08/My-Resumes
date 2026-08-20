@@ -75,7 +75,7 @@ function Sidebar({
                 target="_blank"
                 rel="noopener noreferrer"
                 className="sidebar-brand-logo-link"
-                title="Lycus Inc."
+                aria-label="Visit Lycus Inc."
               >
                 <img src="/lycus-logo.png" alt="Lycus" className="sidebar-brand-logo" />
               </a>
@@ -84,7 +84,6 @@ function Sidebar({
             <button
               className="sidebar-collapse-btn"
               onClick={onToggleSidebar}
-              title="Collapse sidebar"
               aria-label="Collapse sidebar"
             >
               <LuPanelLeftClose size={18} />
@@ -137,10 +136,10 @@ function Sidebar({
                   </div>
 
                   <div className="note-buttons" onClick={e => e.stopPropagation()}>
-                    <button className="copy-btn" onClick={() => onDuplicateNote(parent.id)} title="Duplicate">
+                    <button className="copy-btn" onClick={() => onDuplicateNote(parent.id)} aria-label="Duplicate resume">
                       <LuCopy size={14} />
                     </button>
-                    <button className="delete-btn" onClick={() => onDeleteNote(parent.id)} title="Delete">
+                    <button className="delete-btn" onClick={() => onDeleteNote(parent.id)} aria-label="Delete resume">
                       <LuTrash2 size={14} />
                     </button>
                   </div>
@@ -169,10 +168,10 @@ function Sidebar({
                         </div>
 
                         <div className="note-buttons" onClick={e => e.stopPropagation()}>
-                          <button className="copy-btn" onClick={() => onDuplicateNote(child.id)} title="Duplicate">
+                          <button className="copy-btn" onClick={() => onDuplicateNote(child.id)} aria-label="Duplicate resume">
                             <LuCopy size={14} />
                           </button>
-                          <button className="delete-btn" onClick={() => onDeleteNote(child.id)} title="Delete">
+                          <button className="delete-btn" onClick={() => onDeleteNote(child.id)} aria-label="Delete resume">
                             <LuTrash2 size={14} />
                           </button>
                         </div>
@@ -216,7 +215,6 @@ function Sidebar({
           type="button"
           className="sidebar-mini-btn"
           onClick={onToggleSidebar}
-          title="Expand sidebar"
           aria-label="Expand sidebar"
         >
           <LuPanelLeft size={20} />
@@ -229,7 +227,6 @@ function Sidebar({
             type="button"
             className="sidebar-mini-btn sidebar-mini-add-btn"
             onClick={onCreateResume}
-            title="New Resume"
             aria-label="New Resume"
           >
             <LuPlus size={20} />
@@ -247,7 +244,7 @@ function Sidebar({
               type="button"
               className={`sidebar-mini-resume-btn ${activeNoteId === parent.id ? "active" : ""}`}
               onClick={() => handleSelectNote(parent)}
-              title={parent.title || "Untitled"}
+              aria-label={`Open ${parent.title || "Untitled"}`}
             >
               <span
                 className="cv-letter-avatar cv-letter-avatar--mini"
@@ -269,7 +266,6 @@ function Sidebar({
               type="button"
               className={`sidebar-mini-btn ${isFeedbackActive ? "active" : ""}`}
               onClick={onOpenFeedback}
-              title="Feedback"
               aria-label="Feedback"
             >
               <LuMessageSquare size={20} />
@@ -280,7 +276,6 @@ function Sidebar({
               type="button"
               className="sidebar-mini-btn sidebar-mini-settings-btn"
               onClick={onOpenSettings}
-              title="Settings"
               aria-label="Settings"
             >
               <LuSettings size={20} />

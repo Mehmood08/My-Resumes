@@ -24,7 +24,7 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            if (id.includes('html2pdf.js') || id.includes('jspdf') || id.includes('html2canvas')) {
+            if (id.includes('@react-pdf/renderer') || id.includes('html2pdf.js') || id.includes('jspdf') || id.includes('html2canvas')) {
               return 'pdf-generator';
             }
             if (id.includes('react-icons')) {

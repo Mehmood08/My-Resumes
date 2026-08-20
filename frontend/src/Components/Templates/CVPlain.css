@@ -1,0 +1,25 @@
+.cv-plain .cv-plain-body {
+    font-size: var(--cv-text-base);
+    line-height: var(--cv-leading-relaxed);
+}
+
+.cv-plain .cv-plain-body h1 {
+    font-size: var(--cv-text-2xl);
+    margin-bottom: var(--cv-space-4);
+    font-weight: 700;
+}
+
+.cv-plain .cv-plain-body h2 {
+    font-size: var(--cv-text-lg);
+    margin: var(--cv-space-6) 0 var(--cv-space-3);
+    font-variant: small-caps;
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid var(--cv-color-border);
+    padding-bottom: var(--cv-space-2);
+}
+
+.cv-plain .cv-plain-body h3 {
+    font-size: var(--cv-text-base);
+    margin: var(--cv-space-4) 0 var(--cv-space-1);
+    font-weight: 600;
+}

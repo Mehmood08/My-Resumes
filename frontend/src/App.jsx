@@ -18,7 +18,7 @@ import SystemSetupModal from './Components/SystemSetupModal';
 import { apiFetch, getAuthHeaders } from './utils/api';
 import { consumeResetPasswordToken, clearResetPasswordToken } from './utils/resetPasswordToken';
 import { SpeedInsights } from "@vercel/speed-insights/react";
-import { LuTrash2 } from "react-icons/lu";
+import { LuTrash2, LuPanelLeft } from "react-icons/lu";
 
 function App() {
   const { user, getUserId } = useAuth();
@@ -55,11 +55,20 @@ function App() {
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [backendStatus, setBackendStatus] = useState("checking");
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 769px)');
+    const syncSidebar = (event) => setIsSidebarOpen(event.matches);
+    setIsSidebarOpen(mq.matches);
+    mq.addEventListener('change', syncSidebar);
+    return () => mq.removeEventListener('change', syncSidebar);
+  }, []);
   const [needsVerification, setNeedsVerification] = useState(false);
   const [wizardOptions, setWizardOptions] = useState({ mode: 'select', step: 0 });
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
 
   const handleVerificationDismissed = useCallback(() => {
     setNeedsVerification(false);
@@ -371,26 +380,24 @@ function App() {
     ? notes.find(n => n.id === deleteConfirmId)
     : null;
 
-  const handleDownloadPDF = async () => {
-    const element = document.querySelector(".cv-preview > div") || document.querySelector(".html-preview");
-    if (!element) return;
+  const handleDownloadPDF = async (markdownOverride) => {
+    const markdown = markdownOverride ?? currentNote.desc;
+    if (!markdown?.trim()) return;
 
-    // Dynamically import html2pdf to split the heavy library from the main bundle
-    const html2pdfModule = await import('html2pdf.js');
-    const html2pdf = html2pdfModule.default || html2pdfModule;
-
-    const opt = {
-      margin: 10,
-      filename: `${currentNote.title || 'Resume'}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-      pagebreak: { 
-        mode: ['css', 'legacy'], // Utilize native CSS behaviors rather than forcing whole sections to jump
-        avoid: ['h2', 'h3', 'p', 'li', '.contact-info', '.cv-photo-container'] // Target atomic elements instead of large sections! 
-      }
-    };
-    html2pdf().set(opt).from(element).save();
+    setIsExportingPdf(true);
+    try {
+      const { exportCvPdf } = await import('./utils/exportCvPdf');
+      await exportCvPdf({
+        markdown,
+        format: cvFormat,
+        filename: currentNote.title || 'Resume',
+      });
+    } catch (err) {
+      console.error('PDF export failed', err);
+      alert('Failed to generate PDF. Please try again.');
+    } finally {
+      setIsExportingPdf(false);
+    }
   };
 
   const toggleSidebar = () => {
@@ -466,6 +473,16 @@ function App() {
       </ErrorBoundary>
 
       <main className="main-content main-content-full">
+        {!showFeedback && (
+          <button
+            type="button"
+            className={`sidebar-panel-toggle mobile-only main-sidebar-toggle ${isSidebarOpen ? 'sidebar-panel-toggle-open' : ''}`}
+            onClick={toggleSidebar}
+            aria-label={isSidebarOpen ? 'Close resume list' : 'Open resume list'}
+          >
+            <LuPanelLeft size={18} />
+          </button>
+        )}
         {showFeedback ? (
           <Feedback />
         ) : shouldShowEditor ? (
@@ -484,6 +501,7 @@ function App() {
                   onVerificationDismissed={handleVerificationDismissed}
                   onMetaUpdate={handleAutoTitleUpdate}
                   onDownloadPDF={handleDownloadPDF}
+                  isExportingPdf={isExportingPdf}
                   currentNoteId={currentNote.id}
                   isPreview={isPreviewMode}
                   onPreviewChange={setIsPreviewMode}

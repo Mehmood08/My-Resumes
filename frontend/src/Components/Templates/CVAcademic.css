@@ -1,63 +1,72 @@
 .cv-academic {
-    padding: 60px 80px;
-    font-family: 'Times New Roman', serif;
-    line-height: 1.5;
-    color: black;
-    width: 100%;
-    box-sizing: border-box;
+    color: var(--cv-color-text);
+    line-height: var(--cv-leading-normal);
 }
 
-.cv-photo-container {
+.cv-academic .cv-photo-container {
     width: 140px;
     height: 140px;
-    margin: 0 auto 15px auto;
+    margin: 0 auto var(--cv-space-4) auto;
     overflow: hidden;
-    border: 1px solid black;
+    border: 1px solid var(--cv-color-text);
     padding: 2px;
 }
 
-.cv-photo {
+.cv-academic .cv-photo {
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
 
-.name-center {
+.cv-academic .name-center {
     text-align: center;
-    font-size: 1.8rem;
-    margin-bottom: 5px;
+    font-size: var(--cv-text-xl);
+    margin-bottom: var(--cv-space-1);
+    font-weight: 600;
 }
 
 .cv-academic .contact-center {
-    font-size: 13px;
-    color: #444;
+    font-size: var(--cv-text-sm);
+    color: var(--cv-color-text-muted);
     text-align: center;
-    margin-bottom: 30px;
+    margin-bottom: var(--cv-space-8);
     display: flex;
     justify-content: center;
-    gap: 20px;
-    border-bottom: 1px solid black;
-    padding-bottom: 10px;
+    flex-wrap: wrap;
+    gap: var(--cv-space-5);
+    border-bottom: 1px solid var(--cv-color-text);
+    padding-bottom: var(--cv-space-3);
 }
 
 .cv-academic .contact-item {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: var(--cv-space-2);
+    font-feature-settings: 'kern' 1, 'tnum' 1;
 }
 
-.acad-section {
-    margin-bottom: 25px;
+.cv-academic .contact-link {
+    color: #1e40af;
+    text-decoration: none;
 }
 
-.acad-section h3 {
+.cv-academic .acad-section-title {
     text-transform: uppercase;
-    font-size: 1.1rem;
-    margin-bottom: 8px;
+    font-size: var(--cv-text-base);
+    margin-bottom: var(--cv-space-2);
     text-decoration: underline;
+    font-weight: 700;
+    letter-spacing: 0.04em;
 }
 
-.acad-body {
-    font-size: 1rem;
+.cv-academic .acad-body {
+    font-size: var(--cv-text-base);
     text-align: justify;
+}
+
+@media print {
+    .cv-academic .cv-photo-container {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
 }

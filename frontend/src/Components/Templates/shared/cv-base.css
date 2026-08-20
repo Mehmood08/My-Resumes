@@ -1,0 +1,392 @@
+/* ============================================================
+   CV Design System — Phase 1 foundation + Phase 2 shared components
+   Shared typography, A4 page sizing, preview scaling, CVHeader/CVEntry/CVSections.
+   Import once from CVPreview.jsx.
+   ============================================================ */
+
+:root {
+  /* --- Page (A4) --- */
+  --cv-page-width: 210mm;
+  --cv-page-min-height: 297mm;
+  --cv-page-width-px: 794px;
+  --cv-page-min-height-px: 1123px;
+
+  /* --- Spacing (4pt grid) --- */
+  --cv-space-1: 4px;
+  --cv-space-2: 8px;
+  --cv-space-3: 12px;
+  --cv-space-4: 16px;
+  --cv-space-5: 20px;
+  --cv-space-6: 24px;
+  --cv-space-8: 32px;
+  --cv-space-10: 40px;
+  --cv-space-12: 48px;
+
+  /* --- Page margins (export / print fidelity) --- */
+  --cv-padding-x: 20mm;
+  --cv-padding-y: 18mm;
+
+  /* --- Typography --- */
+  --cv-font-sans: 'Source Sans 3', 'Inter', system-ui, -apple-system, sans-serif;
+  --cv-font-serif: 'Source Serif 4', 'Times New Roman', Times, serif;
+  --cv-font-mono: 'Fira Code', 'Consolas', monospace;
+  --cv-font-display: 'Outfit', var(--cv-font-sans);
+
+  --cv-text-xs: 0.6875rem;   /* 11px */
+  --cv-text-sm: 0.8125rem;   /* 13px */
+  --cv-text-base: 0.9375rem; /* 15px */
+  --cv-text-lg: 1.0625rem;   /* 17px */
+  --cv-text-xl: 1.375rem;    /* 22px */
+  --cv-text-2xl: 1.75rem;    /* 28px */
+
+  --cv-leading-tight: 1.35;
+  --cv-leading-normal: 1.55;
+  --cv-leading-relaxed: 1.7;
+
+  /* --- Colors --- */
+  --cv-color-text: #1a1a1a;
+  --cv-color-text-muted: #555555;
+  --cv-color-text-subtle: #777777;
+  --cv-color-border: #e5e5e5;
+  --cv-color-border-strong: #cccccc;
+  --cv-color-bg: #ffffff;
+
+  /* --- Preview scaling (screen only) --- */
+  --cv-preview-gutter: 16px;
+  --cv-preview-scale: 1;
+}
+
+/* ============================================================
+   A4 page shell
+   ============================================================ */
+
+.cv-page-scaler {
+  margin: 0 auto;
+  flex-shrink: 0;
+}
+
+.cv-page-viewport {
+  width: var(--cv-page-width);
+}
+
+.cv-page {
+  box-sizing: border-box;
+  width: var(--cv-page-width);
+  min-height: var(--cv-page-min-height);
+  padding: var(--cv-padding-y) var(--cv-padding-x);
+  background: var(--cv-color-bg);
+  color: var(--cv-color-text);
+  font-family: var(--cv-font-sans);
+  font-size: var(--cv-text-base);
+  line-height: var(--cv-leading-normal);
+  font-feature-settings: 'kern' 1, 'liga' 1, 'tnum' 1;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  hyphens: auto;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Full-bleed layouts (sidebar, colored headers) manage their own padding */
+.cv-page.cv-page--flush {
+  padding: 0;
+}
+
+/* Theme font stacks */
+.cv-page.cv-theme-minimalist,
+.cv-page.cv-theme-professional,
+.cv-page.cv-theme-america,
+.cv-page.cv-theme-gulf,
+.cv-page.cv-theme-service,
+.cv-page.cv-theme-european,
+.cv-page.cv-theme-plain {
+  font-family: var(--cv-font-sans);
+}
+
+.cv-page.cv-theme-creative {
+  font-family: var(--cv-font-display);
+}
+
+.cv-page.cv-theme-academic,
+.cv-page.cv-theme-executive {
+  font-family: var(--cv-font-serif);
+}
+
+.cv-page.cv-theme-tech {
+  font-family: var(--cv-font-sans);
+}
+
+.cv-page.cv-theme-tech code,
+.cv-page.cv-theme-tech pre,
+.cv-page.cv-theme-tech .module-header {
+  font-family: var(--cv-font-mono);
+}
+
+/* ============================================================
+   Shared typography primitives (opt-in per template)
+   ============================================================ */
+
+.cv-page .cv-section {
+  margin-bottom: var(--cv-space-8);
+}
+
+.cv-page .cv-section:last-child {
+  margin-bottom: 0;
+}
+
+.cv-page .cv-section-title {
+  font-size: var(--cv-text-xs);
+  font-weight: 700;
+  font-variant: small-caps;
+  letter-spacing: 0.08em;
+  color: var(--cv-color-text-muted);
+  border-bottom: 1px solid var(--cv-color-border);
+  padding-bottom: var(--cv-space-2);
+  margin: 0 0 var(--cv-space-4);
+  page-break-after: avoid;
+  break-after: avoid-page;
+}
+
+.cv-page .cv-section-body,
+.cv-page .section-content {
+  font-size: var(--cv-text-sm);
+  line-height: var(--cv-leading-relaxed);
+}
+
+.cv-page .cv-section-body h3,
+.cv-page .section-content h3 {
+  font-size: var(--cv-text-base);
+  font-weight: 600;
+  margin: 0 0 var(--cv-space-1);
+  color: var(--cv-color-text);
+  page-break-after: avoid;
+  break-after: avoid-page;
+}
+
+.cv-page .cv-section-body p,
+.cv-page .section-content p {
+  margin: var(--cv-space-2) 0;
+}
+
+.cv-page .cv-section-body ul,
+.cv-page .section-content ul {
+  margin: var(--cv-space-2) 0;
+  padding-left: var(--cv-space-5);
+}
+
+.cv-page .cv-section-body li,
+.cv-page .section-content li {
+  margin-bottom: var(--cv-space-1);
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+.cv-page .cv-section-body strong,
+.cv-page .section-content strong {
+  font-weight: 600;
+  color: var(--cv-color-text);
+}
+
+/* Section titles — small caps across templates */
+.cv-page .section-title,
+.cv-page .acad-section-title,
+.cv-page .exec-section-title,
+.cv-page .service-section-title {
+  font-variant: small-caps;
+  letter-spacing: 0.06em;
+}
+
+/* Markdown experience/education entries (### Title | Company + *dates*) */
+.cv-page .section-content h3,
+.cv-page .cv-section-body h3 {
+  margin-top: var(--cv-space-4);
+  padding-bottom: var(--cv-space-1);
+  border-bottom: 1px solid var(--cv-color-border);
+}
+
+.cv-page .section-content h3:first-child,
+.cv-page .cv-section-body h3:first-child {
+  margin-top: 0;
+}
+
+.cv-page .section-content h3 + p em,
+.cv-page .cv-section-body h3 + p em,
+.cv-page .section-content h3 + em,
+.cv-page .cv-section-body h3 + em {
+  display: block;
+  font-size: var(--cv-text-xs);
+  color: var(--cv-color-text-subtle);
+  font-style: normal;
+  font-feature-settings: 'tnum' 1;
+  margin: var(--cv-space-1) 0 var(--cv-space-2);
+}
+
+.cv-page .section-content p,
+.cv-page .cv-section-body p {
+  orphans: 3;
+  widows: 3;
+}
+
+/* ============================================================
+   Preview scaling — phones & tablets (NOT applied during export)
+   Scale the viewport wrapper; .cv-page stays full A4 for PDF capture.
+   ============================================================ */
+
+@media (max-width: 1024px) {
+  .preview-stage .cv-page-scaler {
+    --cv-preview-scale: min(
+      1,
+      calc((100vw - 2 * var(--cv-preview-gutter)) / var(--cv-page-width-px))
+    );
+    width: calc(var(--cv-page-width-px) * var(--cv-preview-scale));
+    overflow: visible;
+  }
+
+  .preview-stage .cv-page-viewport {
+    transform: scale(var(--cv-preview-scale));
+    transform-origin: top left;
+  }
+}
+
+@media (max-width: 767px) {
+  .preview-stage {
+    padding: var(--cv-space-4) var(--cv-preview-gutter);
+  }
+
+  .preview-stage .cv-page-scaler {
+    --cv-preview-gutter: 16px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  .preview-stage .cv-page-scaler {
+    --cv-preview-gutter: 24px;
+  }
+}
+
+/* ============================================================
+   Print / PDF fidelity (Phase 4A — browser print → PDF)
+   ============================================================ */
+
+@page {
+  size: A4 portrait;
+  margin: 0;
+}
+
+@media print {
+  html,
+  body {
+    width: 210mm;
+    height: auto;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    overflow: visible !important;
+  }
+
+  /* Hide application chrome */
+  .sidebar,
+  .sidebar-overlay,
+  .sidebar-mini-rail,
+  .floating-actions-cluster,
+  .preview-template-picker,
+  .editor-mobile-bar,
+  .main-sidebar-toggle,
+  .template-wizard-modal,
+  .profile-logout-overlay,
+  .verification-popup-overlay,
+  .app-toast,
+  .wizard-sidebar,
+  .mobile-step-banner,
+  .floating-toolbar {
+    display: none !important;
+  }
+
+  .app-layout,
+  .main-content,
+  .main-content-full,
+  .editor-workspace,
+  .editor-workspace-full,
+  .editor-container,
+  .editor-container-full,
+  .editor-content,
+  .editor-content-full,
+  .template-selection-container,
+  .selection-split-layout,
+  .right-panel-preview,
+  .preview-stage,
+  .cv-preview {
+    display: block !important;
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: white !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  .cv-page-scaler,
+  .cv-page-viewport {
+    width: auto !important;
+    height: auto !important;
+    transform: none !important;
+    overflow: visible !important;
+    margin: 0 !important;
+  }
+
+  .cv-page {
+    width: var(--cv-page-width) !important;
+    min-height: var(--cv-page-min-height) !important;
+    transform: none !important;
+    box-shadow: none !important;
+    margin: 0 auto !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Icons are decorative; contact text remains */
+  .cv-page svg {
+    display: none !important;
+  }
+
+  .cv-page .cv-section,
+  .cv-page .cv-section-body li,
+  .cv-page .section-content li {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .cv-page h1,
+  .cv-page h2,
+  .cv-page h3,
+  .cv-page .section-title {
+    page-break-after: avoid;
+    break-after: avoid-page;
+  }
+}
+
+/* Active while print dialog is open — disables preview scaling */
+body.cv-print-mode .preview-stage .cv-page-scaler,
+body.cv-exporting .preview-stage .cv-page-scaler {
+  width: var(--cv-page-width) !important;
+  overflow: visible !important;
+}
+
+body.cv-print-mode .preview-stage .cv-page-viewport,
+body.cv-exporting .preview-stage .cv-page-viewport {
+  transform: none !important;
+}
+
+/* Thumbnail picker: keep existing scale wrapper; reset page transform */
+.thumbnail-scale-wrapper .cv-page-scaler {
+  width: var(--cv-page-width);
+}
+
+.thumbnail-scale-wrapper .cv-page-viewport {
+  transform: none;
+}

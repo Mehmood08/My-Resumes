@@ -1,20 +1,16 @@
 .cv-professional {
-    background: white;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     color: #333;
-    line-height: 1.6;
-    padding: 60px 80px;
 }
 
 .cv-professional .cv-header {
     border-bottom: 3px solid #1a365d;
-    padding-bottom: 24px;
-    margin-bottom: 35px;
+    padding-bottom: var(--cv-space-6);
+    margin-bottom: var(--cv-space-8);
     text-align: center;
 }
 
 .cv-professional .cv-photo-container {
-    margin: 0 auto 15px auto;
+    margin: 0 auto var(--cv-space-4) auto;
     width: 150px;
     height: 150px;
     border-radius: 50%;
@@ -29,39 +25,40 @@
 }
 
 .cv-professional .header-center {
-    margin-bottom: 20px;
+    margin-bottom: var(--cv-space-5);
 }
 
 .cv-professional h1 {
-    font-size: 2.5rem;
+    font-size: var(--cv-text-2xl);
     margin: 0;
     color: #1a365d;
     text-transform: uppercase;
-    letter-spacing: -1px;
+    letter-spacing: -0.02em;
     font-weight: 700;
 }
 
 .cv-professional .cv-profession {
-    font-size: 1.2rem;
+    font-size: var(--cv-text-lg);
     color: #4a5568;
-    margin: 8px 0 0 0;
+    margin: var(--cv-space-2) 0 0 0;
     font-weight: 500;
 }
 
 .cv-professional .contact-info {
     display: flex;
     flex-wrap: wrap;
-    gap: 20px;
+    gap: var(--cv-space-5);
     justify-content: center;
     align-items: center;
 }
 
 .cv-professional .contact-item {
-    font-size: 13px;
+    font-size: var(--cv-text-sm);
     color: #4b5563;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--cv-space-2);
+    font-feature-settings: 'kern' 1, 'tnum' 1;
 }
 
 .cv-professional .contact-item svg {
@@ -73,39 +70,23 @@
 .cv-professional .contact-link {
     color: #2563eb;
     text-decoration: none;
-    transition: all 0.2s ease;
-    font-size: 12px;
-}
-
-.cv-professional .contact-link:hover {
-    color: #1d4ed8;
-    text-decoration: underline;
-}
-
-.cv-professional .cv-section {
-    margin-bottom: 25px;
+    font-size: var(--cv-text-xs);
 }
 
 .cv-professional .section-title {
-    font-size: 1.1rem;
+    font-size: var(--cv-text-base);
     color: #1a365d;
     border-bottom: 1px solid #e2e8f0;
-    padding-bottom: 5px;
-    margin-bottom: 12px;
+    padding-bottom: var(--cv-space-1);
+    margin-bottom: var(--cv-space-3);
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 0.06em;
     font-weight: 700;
 }
 
-.cv-professional .section-content {
-    font-size: 0.95rem;
-}
-
-.cv-professional .section-content ul {
-    padding-left: 20px;
-    margin: 10px 0;
-}
-
-.cv-professional .section-content li {
-    margin-bottom: 5px;
+@media print {
+    .cv-professional .cv-photo-container {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
 }

@@ -1,11 +1,11 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 
 import CVPreview from "./CVPreview";
 import GuidedEditor from "./GuidedEditor";
 import CVAnalyseModal from "./CVAnalyseModal";
 import CVScoringModal from "./CVScoringModal";
+import FloatingActionBar from "./FloatingActionBar";
 import { layouts } from "./templatesData";
-import { LuEye, LuDownload, LuPenLine, LuSave, LuCheck, LuSparkles, LuChartBar } from "react-icons/lu";
 
 export default function MarkdownEditor({
   markdownValue,
@@ -18,6 +18,7 @@ export default function MarkdownEditor({
   onVerificationDismissed,
   onMetaUpdate,
   onDownloadPDF,
+  isExportingPdf = false,
   currentNoteId,
   isPreview,
   onPreviewChange,
@@ -30,6 +31,7 @@ export default function MarkdownEditor({
   const [hasAppliedSuggestions, setHasAppliedSuggestions] = useState(false);
   const guidedEditorRef = useRef();
   const pendingApplyRef = useRef(null);
+  const getCurrentMarkdownRef = useRef(() => "");
 
   useEffect(() => {
     setLocalMarkdown(markdownValue);
@@ -50,14 +52,16 @@ export default function MarkdownEditor({
     return () => clearTimeout(handler);
   }, [localMarkdown, onMarkdownChange]);
 
-  const getCurrentMarkdown = () => {
+  const getCurrentMarkdown = useCallback(() => {
     if (!isPreview) {
       return guidedEditorRef.current?.getDisplayMarkdown?.() ?? localMarkdown;
     }
     return previewMarkdown || localMarkdown;
-  };
+  }, [isPreview, localMarkdown, previewMarkdown]);
 
-  const handleSave = () => {
+  getCurrentMarkdownRef.current = getCurrentMarkdown;
+
+  const handleSave = useCallback(() => {
     const isValid = guidedEditorRef.current?.validate?.() ?? true;
     if (!isValid) return;
     const latest = guidedEditorRef.current?.getMarkdown?.() ?? localMarkdown;
@@ -65,40 +69,55 @@ export default function MarkdownEditor({
     onMarkdownChange(latest);
     onSave(latest);
     setHasAppliedSuggestions(false);
-  };
+  }, [localMarkdown, onMarkdownChange, onSave]);
 
-  const openPreview = () => {
-    const latest = getCurrentMarkdown();
+  const handleSaveClick = useCallback(() => {
+    if (needsVerification) return;
+    handleSave();
+  }, [needsVerification, handleSave]);
+
+  const openPreview = useCallback(() => {
+    const latest = getCurrentMarkdownRef.current();
     setPreviewMarkdown(latest);
     setLocalMarkdown(latest);
     onMarkdownChange(latest);
     onPreviewChange?.(true);
-  };
+  }, [onMarkdownChange, onPreviewChange]);
 
-  const closePreview = () => onPreviewChange?.(false);
+  const closePreview = useCallback(() => {
+    onPreviewChange?.(false);
+  }, [onPreviewChange]);
 
-  const togglePreview = () => {
+  const togglePreview = useCallback(() => {
     if (isPreview) closePreview();
     else openPreview();
-  };
+  }, [isPreview, closePreview, openPreview]);
 
-  const syncLatestMarkdown = () => {
-    const latest = getCurrentMarkdown();
+  const syncLatestMarkdown = useCallback(() => {
+    const latest = getCurrentMarkdownRef.current();
     setLocalMarkdown(latest);
     setPreviewMarkdown(latest);
     onMarkdownChange(latest);
     return latest;
-  };
+  }, [onMarkdownChange]);
 
-  const openAnalyse = () => {
+  const openAnalyse = useCallback(() => {
     syncLatestMarkdown();
     setIsAnalyseOpen(true);
-  };
+  }, [syncLatestMarkdown]);
 
-  const openScore = () => {
+  const openScore = useCallback(() => {
     syncLatestMarkdown();
     setIsScoreOpen(true);
-  };
+  }, [syncLatestMarkdown]);
+
+  const handleVerify = useCallback(() => {
+    guidedEditorRef.current?.verifyCurrentSection?.();
+  }, []);
+
+  const handleExportPdf = useCallback(() => {
+    onDownloadPDF(getCurrentMarkdownRef.current());
+  }, [onDownloadPDF]);
 
   const handleApplySection = (sectionId, content) => {
     if (isPreview) {
@@ -133,7 +152,7 @@ export default function MarkdownEditor({
             <div className="selection-split-layout">
               <aside className="preview-template-picker">
                 <div className="preview-template-list">
-                  {layouts.map(layout => (
+                  {layouts.map((layout) => (
                     <button
                       key={layout.id}
                       type="button"
@@ -157,90 +176,19 @@ export default function MarkdownEditor({
         )}
       </div>
 
-      <div className="floating-actions-cluster">
-        {hasAppliedSuggestions && (
-          <span className="unsaved-changes-badge">Unsaved</span>
-        )}
-        <div className="floating-actions floating-action-bar">
-          {!isPreview && (
-            <>
-              <span className="fab-tooltip-wrap" data-tooltip={needsVerification ? "Verify all sections before saving" : "Save resume"}>
-                <button
-                  type="button"
-                  className={`fab-bar-btn fab-save ${needsVerification ? "fab-save-locked" : ""}`}
-                  onClick={() => {
-                    if (needsVerification) return;
-                    handleSave();
-                  }}
-                  aria-label="Save resume"
-                  disabled={needsVerification}
-                >
-                  <LuSave size={20} />
-                </button>
-              </span>
-              {verifyState.active && !verifyState.verified && (
-                <span className="fab-tooltip-wrap" data-tooltip="Verify this section">
-                  <button
-                    type="button"
-                    className="fab-bar-btn fab-verify"
-                    onClick={() => guidedEditorRef.current?.verifyCurrentSection?.()}
-                    aria-label="Verify section"
-                  >
-                    <LuCheck size={20} />
-                  </button>
-                </span>
-              )}
-              <span className="floating-action-divider" aria-hidden="true" />
-            </>
-          )}
-          <span className="fab-tooltip-wrap" data-tooltip={isPreview ? "Back to edit" : "Preview CV"}>
-            <button
-              type="button"
-              className={`fab-bar-btn ${isPreview ? "fab-edit active" : "fab-preview"}`}
-              onClick={togglePreview}
-              aria-label={isPreview ? "Back to edit" : "Preview CV"}
-            >
-              {isPreview ? <LuPenLine size={20} /> : <LuEye size={20} />}
-            </button>
-          </span>
-          <span className="floating-action-divider" aria-hidden="true" />
-          <span className="fab-tooltip-wrap fab-tooltip-wrap--end" data-tooltip="Score CV with AI">
-            <button
-              type="button"
-              className="fab-bar-btn fab-score"
-              onClick={openScore}
-              aria-label="Score CV with AI"
-            >
-              <LuChartBar size={20} />
-            </button>
-          </span>
-          <span className="fab-tooltip-wrap fab-tooltip-wrap--end" data-tooltip="Analyse CV against job description">
-            <button
-              type="button"
-              className="fab-bar-btn fab-analyse"
-              onClick={openAnalyse}
-              aria-label="Analyse CV against job description"
-            >
-              <LuSparkles size={20} />
-            </button>
-          </span>
-          {isPreview && (
-            <>
-              <span className="floating-action-divider" aria-hidden="true" />
-              <span className="fab-tooltip-wrap" data-tooltip="Export as PDF">
-                <button
-                  type="button"
-                  className="fab-bar-btn fab-export"
-                  onClick={onDownloadPDF}
-                  aria-label="Export as PDF"
-                >
-                  <LuDownload size={20} />
-                </button>
-              </span>
-            </>
-          )}
-        </div>
-      </div>
+      <FloatingActionBar
+        isPreview={isPreview}
+        needsVerification={needsVerification}
+        verifyState={verifyState}
+        hasAppliedSuggestions={hasAppliedSuggestions}
+        isExportingPdf={isExportingPdf}
+        onSave={handleSaveClick}
+        onVerify={handleVerify}
+        onTogglePreview={togglePreview}
+        onOpenScore={openScore}
+        onOpenAnalyse={openAnalyse}
+        onExportPdf={handleExportPdf}
+      />
 
       <CVAnalyseModal
         isOpen={isAnalyseOpen}

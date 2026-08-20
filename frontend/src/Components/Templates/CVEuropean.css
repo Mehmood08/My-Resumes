@@ -1,16 +1,15 @@
 .cv-european {
     display: flex;
-    min-height: 29.7cm;
+    min-height: var(--cv-page-min-height);
     background: #fff;
-    width: 100%;
-    box-sizing: border-box;
 }
 
 .cv-european .cv-sidebar {
     width: 250px;
     background: #0f172a;
     color: #fff;
-    padding: 40px 25px;
+    padding: var(--cv-space-10) var(--cv-space-6);
+    flex-shrink: 0;
 }
 
 .cv-european .cv-photo-container {
@@ -18,7 +17,7 @@
     height: 150px;
     border-radius: 50%;
     overflow: hidden;
-    margin-bottom: 30px;
+    margin-bottom: var(--cv-space-8);
     border: 3px solid #3498db;
     background: #1e293b;
 }
@@ -37,29 +36,29 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 24px;
+    font-size: var(--cv-text-xl);
     font-weight: 700;
-    margin-bottom: 30px;
+    margin-bottom: var(--cv-space-8);
 }
 
-
 .cv-european .sidebar-contact h3 {
-    font-size: 16px;
+    font-size: var(--cv-text-base);
     text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 20px;
+    letter-spacing: 0.06em;
+    margin-bottom: var(--cv-space-5);
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    padding-bottom: 10px;
+    padding-bottom: var(--cv-space-3);
 }
 
 .cv-european .contact-item {
-    font-size: 12px;
-    margin-bottom: 15px;
+    font-size: var(--cv-text-xs);
+    margin-bottom: var(--cv-space-4);
     opacity: 0.9;
     display: flex;
     align-items: flex-start;
-    gap: 10px;
+    gap: var(--cv-space-3);
     word-break: break-word;
+    font-feature-settings: 'kern' 1, 'tnum' 1;
 }
 
 .cv-european .contact-item svg {
@@ -71,53 +70,53 @@
 .cv-european .contact-link {
     color: #3498db;
     text-decoration: none;
-    transition: all 0.2s ease;
     word-break: break-all;
-}
-
-.cv-european .contact-link:hover {
-    color: #5dade2;
-    text-decoration: underline;
 }
 
 .cv-european .cv-main {
     flex: 1;
-    padding: 50px 60px;
+    padding: var(--cv-space-10) var(--cv-space-12);
     background: #fff;
+    min-width: 0;
 }
 
 .cv-european h1 {
-    font-size: 36px;
+    font-size: var(--cv-text-2xl);
     margin: 0;
     color: #1e293b;
 }
 
 .cv-european .cv-profession {
-    font-size: 18px;
+    font-size: var(--cv-text-lg);
     color: #64748b;
-    margin: 5px 0 20px 0;
+    margin: var(--cv-space-1) 0 var(--cv-space-5);
 }
 
 .cv-european .header-decoration {
     width: 50px;
     height: 4px;
     background: #3498db;
-    margin-bottom: 40px;
+    margin-bottom: var(--cv-space-10);
+}
+
+.cv-european .cv-intro {
+    margin-bottom: var(--cv-space-6);
+    opacity: 0.85;
 }
 
 .cv-european .section-title {
-    font-size: 20px;
+    font-size: var(--cv-text-xl);
     color: #1e293b;
     border-bottom: 2px solid #f1f5f9;
-    padding-bottom: 8px;
-    margin-bottom: 20px;
+    padding-bottom: var(--cv-space-2);
+    margin-bottom: var(--cv-space-5);
+    font-weight: 700;
+    letter-spacing: 0.02em;
 }
 
-.cv-european .cv-section {
-    margin-bottom: 35px;
-}
-
-.cv-european .section-content {
-    font-size: 14px;
-    color: #334155;
+@media print {
+    .cv-european .cv-sidebar {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
 }

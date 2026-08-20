@@ -86,8 +86,7 @@ export default function ProfileMenu({ variant = 'default' }) {
           onClick={() => setIsOpen(prev => !prev)}
           aria-expanded={isOpen}
           aria-haspopup="true"
-          aria-label="Profile menu"
-          title={user.name}
+          aria-label={`Profile menu, ${user.name}`}
         >
           <LuUser size={iconSize} className="profile-menu-icon" />
           {isSidebar && <span>Profile</span>}
